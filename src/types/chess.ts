@@ -117,6 +117,14 @@ export interface RepertoireMove {
   children: string[]; // RepertoireMove IDs
 }
 
+export interface RepertoireVariation {
+  id: string;
+  name: string;
+  eco?: string;
+  moves: string[];
+  description?: string;
+}
+
 export interface OpeningRepertoire {
   id: string;
   name: string;
@@ -125,6 +133,7 @@ export interface OpeningRepertoire {
   description?: string;
   rootMoves: string[]; // top level move IDs
   allMoves: Record<string, RepertoireMove>;
+  variations?: RepertoireVariation[];
   createdAt: number;
   updatedAt: number;
 }
