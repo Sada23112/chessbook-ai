@@ -19,7 +19,7 @@ export const App: React.FC = () => {
   }, [loadSettings]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-slate-100 font-sans pb-14 md:pb-0">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-slate-100 font-sans pb-[max(3.5rem,calc(env(safe-area-inset-bottom)+3.25rem))] md:pb-0">
       {/* Sidebar Navigation */}
       <Sidebar />
 

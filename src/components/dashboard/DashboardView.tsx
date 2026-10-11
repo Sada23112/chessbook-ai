@@ -140,7 +140,7 @@ export const DashboardView: React.FC = () => {
       ) : (
         <>
           {/* Top Metrics Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
             <div className="bg-surface rounded-xl p-4 border border-surface-border flex flex-col justify-between">
               <span className="text-xs text-slate-400 font-medium">Games Analyzed</span>
               <div className="flex items-baseline space-x-2 mt-2">

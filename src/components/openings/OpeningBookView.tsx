@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
+import { InteractiveChessboard } from '../common/InteractiveChessboard';
 import {
   BookOpen,
   Plus,
@@ -126,43 +126,29 @@ export const OpeningBookView: React.FC = () => {
     return chess.fen();
   }, [activeLine, plyIndex]);
 
-  // Handle move played in practice mode
-  const onPieceDrop = ({
-    sourceSquare,
-    targetSquare,
-  }: {
-    sourceSquare: string;
-    targetSquare: string | null;
-  }): boolean => {
-    if (!isPracticing || !activeRepertoire || !targetSquare) return false;
+  // Handle move played in practice mode (supports tap-to-move and drag-and-drop)
+  const handleMove = ({ san }: { san: string }): boolean => {
+    if (!isPracticing || !activeRepertoire) return false;
 
-    try {
-      const chess = new Chess(currentFen);
-      const move = chess.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-      if (!move) return false;
+    // Check if move matches next expected move in active line
+    const expectedMove = activeLine[plyIndex];
+    if (san === expectedMove) {
+      setPracticeStatus('Correct move! Excellent memory.');
+      const nextPly = plyIndex + 1;
+      setPlyIndex(nextPly);
 
-      // Check if move matches next expected move in active line
-      const expectedMove = activeLine[plyIndex];
-      if (move.san === expectedMove) {
-        setPracticeStatus('Correct move! Excellent memory.');
-        const nextPly = plyIndex + 1;
-        setPlyIndex(nextPly);
-
-        // If next move is opponent's, auto-play it after 600ms
-        if (nextPly < activeLine.length) {
-          setTimeout(() => {
-            setPlyIndex(nextPly + 1);
-            setPracticeStatus('Your turn again. Find the next repertoire move.');
-          }, 600);
-        } else {
-          setPracticeStatus('Line completed! You mastered this variation.');
-        }
-        return true;
+      // If next move is opponent's, auto-play it after 600ms
+      if (nextPly < activeLine.length) {
+        setTimeout(() => {
+          setPlyIndex(nextPly + 1);
+          setPracticeStatus('Your turn again. Find the next repertoire move.');
+        }, 600);
       } else {
-        setPracticeStatus(`Incorrect (${move.san}). Expected repertoire move is ${expectedMove}.`);
-        return false;
+        setPracticeStatus('Line completed! You mastered this variation.');
       }
-    } catch {
+      return true;
+    } else {
+      setPracticeStatus(`Incorrect (${san}). Expected repertoire move is ${expectedMove}.`);
       return false;
     }
   };
@@ -211,7 +197,7 @@ export const OpeningBookView: React.FC = () => {
                 : 'bg-accent hover:bg-accent-hover text-black shadow'
             }`}
           >
-            <Dumbbell size={16} />
+            <Dumbbell size={18} />
             <span>{isPracticing ? 'Exit Practice Mode' : 'Start Repertoire Practice'}</span>
           </button>
         </div>
@@ -227,13 +213,13 @@ export const OpeningBookView: React.FC = () => {
               loadRepLine(rep);
               setIsPracticing(false);
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition border flex items-center space-x-2 ${
+            className={`min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-semibold transition border flex items-center space-x-2 ${
               activeRepId === rep.id
                 ? 'bg-accent/15 text-accent border-accent/40 shadow-sm'
                 : 'bg-surface text-slate-400 hover:text-slate-200 border-surface-border'
             }`}
           >
-            <BookOpen size={14} />
+            <BookOpen size={16} />
             <span>{rep.name}</span>
           </button>
         ))}
@@ -243,16 +229,14 @@ export const OpeningBookView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
         {/* Left Column: Board & Navigation */}
         <div className="lg:col-span-6 flex flex-col items-center">
-          <div className="w-full max-w-[460px] aspect-square rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated">
-            <Chessboard
-              options={{
-                position: currentFen,
-                boardOrientation: activeRepertoire?.color || 'white',
-                allowDragging: isPracticing,
-                onPieceDrop,
-                darkSquareStyle: { backgroundColor: '#2e3a44' },
-                lightSquareStyle: { backgroundColor: '#5c6d7c' },
-              }}
+          <div className="w-full max-w-[min(100vw-2.5rem,460px)] aspect-square flex items-center justify-center">
+            <InteractiveChessboard
+              fen={currentFen}
+              boardOrientation={activeRepertoire?.color || 'white'}
+              turn={activeRepertoire?.color === 'white' ? 'w' : 'b'}
+              allowMoves={isPracticing}
+              onMove={handleMove}
+              maxWidth="100%"
             />
           </div>
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
+import { InteractiveChessboard } from '../common/InteractiveChessboard';
 import confetti from 'canvas-confetti';
 import {
   Dumbbell,
@@ -53,45 +53,41 @@ export const TrainingView: React.FC = () => {
     return currentCard.turn === 'w' ? 'white' : 'black';
   }, [currentCard]);
 
-  // Handle move on board
-  const onPieceDrop = ({
-    sourceSquare,
-    targetSquare,
+  // Handle move on board (supports tap-to-move and drag-and-drop)
+  const handleMove = ({
+    from,
+    to,
+    san,
+    fen: nextFen,
   }: {
-    sourceSquare: string;
-    targetSquare: string | null;
+    from: string;
+    to: string;
+    san: string;
+    fen: string;
   }): boolean => {
-    if (!currentCard || hasSolved !== null || !targetSquare) return false;
+    if (!currentCard || hasSolved !== null) return false;
 
-    try {
-      const chess = new Chess(boardFen);
-      const move = chess.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-      if (!move) return false;
+    const playedUci = `${from}${to}`;
 
-      const playedUci = `${sourceSquare}${targetSquare}${move.promotion || ''}`;
+    // Check if played move matches solution (either SAN or UCI)
+    const isCorrect =
+      currentCard.solutionMovesSan.includes(san) ||
+      currentCard.solutionMovesUci.some((u) => u.startsWith(playedUci));
 
-      // Check if played move matches solution (either SAN or UCI)
-      const isCorrect =
-        currentCard.solutionMovesSan.includes(move.san) ||
-        currentCard.solutionMovesUci.includes(playedUci);
-
-      if (isCorrect) {
-        setBoardFen(chess.fen());
-        setHasSolved(true);
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.7 },
-        });
-        answerTrainingCard(currentCard.id, true);
-        return true;
-      } else {
-        setBoardFen(chess.fen());
-        setHasSolved(false);
-        answerTrainingCard(currentCard.id, false);
-        return true;
-      }
-    } catch {
+    if (isCorrect) {
+      setBoardFen(nextFen);
+      setHasSolved(true);
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+      });
+      answerTrainingCard(currentCard.id, true);
+      return true;
+    } else {
+      setBoardFen(nextFen);
+      setHasSolved(false);
+      answerTrainingCard(currentCard.id, false);
       return false;
     }
   };
@@ -179,15 +175,19 @@ export const TrainingView: React.FC = () => {
               </span>
             </div>
 
-            <div className="w-full max-w-[480px] aspect-square rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated">
-              <Chessboard
-                options={{
-                  position: boardFen,
-                  boardOrientation: turn,
-                  onPieceDrop,
-                  darkSquareStyle: { backgroundColor: '#2e3a44' },
-                  lightSquareStyle: { backgroundColor: '#5c6d7c' },
-                }}
+            <div className="w-full max-w-[min(100vw-2.5rem,480px)] aspect-square flex items-center justify-center">
+              <InteractiveChessboard
+                fen={boardFen}
+                boardOrientation={turn}
+                turn={currentCard.turn}
+                allowMoves={hasSolved === null}
+                onMove={handleMove}
+                highlightSquares={
+                  showHint && currentCard
+                    ? [currentCard.solutionMovesUci[0]?.slice(0, 2)].filter(Boolean)
+                    : []
+                }
+                maxWidth="100%"
               />
             </div>
           </div>

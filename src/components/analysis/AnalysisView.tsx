@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
+import { InteractiveChessboard } from '../common/InteractiveChessboard';
 import {
   ChevronFirst,
   ChevronLast,
@@ -87,8 +87,18 @@ export const AnalysisView: React.FC = () => {
     }
   }, [activeGame]);
 
+  const [exploredFen, setExploredFen] = useState<string | null>(null);
+  const [exploredSan, setExploredSan] = useState<string | null>(null);
+
+  // Clear explored variations when navigating ply
+  useEffect(() => {
+    setExploredFen(null);
+    setExploredSan(null);
+  }, [currentPly]);
+
   const currentPosData = gamePositions[currentPly] || gamePositions[0];
   const currentFen = currentPosData ? currentPosData.fen : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  const displayFen = exploredFen || currentFen;
 
   // Analysis position data
   const currentAnalysisPos = activeAnalysis?.positions[currentPly];
@@ -223,33 +233,63 @@ export const AnalysisView: React.FC = () => {
         </div>
 
         {/* Board & Eval Bar Container */}
-        <div className="w-full max-w-[560px] flex gap-3 items-stretch justify-center">
+        <div className="w-full max-w-[560px] flex gap-2 sm:gap-3 items-stretch justify-center px-1 sm:px-0">
           {/* Vertical Eval Bar */}
-          <EvalBar
-            score={evalScore}
-            mate={evalMate}
-            orientation={boardOrientation}
-          />
+          <div className="w-6 sm:w-7 flex-shrink-0 flex items-stretch">
+            <EvalBar
+              score={evalScore}
+              mate={evalMate}
+              orientation={boardOrientation}
+            />
+          </div>
 
           {/* Interactive Chessboard */}
-          <div className="w-[340px] sm:w-[480px] md:w-[500px] aspect-square rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated">
-            <Chessboard
-              options={{
-                position: currentFen,
-                boardOrientation: boardOrientation,
-                allowDragging: false,
-                arrows: customArrows,
-                squareStyles: customSquareStyles,
-                darkSquareStyle: { backgroundColor: '#2e3a44' },
-                lightSquareStyle: { backgroundColor: '#5c6d7c' },
-                boardStyle: {
-                  borderRadius: '8px',
-                  boxShadow: '0 5px 15px rgba(0, 0, 0, 0.5)',
-                },
+          <div className="flex-1 min-w-0 max-w-[490px] aspect-square flex items-center justify-center">
+            <InteractiveChessboard
+              fen={displayFen}
+              boardOrientation={boardOrientation}
+              allowMoves={true}
+              onMove={(move) => {
+                const nextMove = gamePositions[currentPly + 1];
+                if (nextMove && nextMove.san === move.san) {
+                  setExploredFen(null);
+                  setExploredSan(null);
+                  nextPly();
+                  return true;
+                }
+                setExploredFen(move.fen);
+                setExploredSan(move.san);
+                return true;
               }}
+              arrows={customArrows}
+              lastMove={
+                currentPosData?.from && currentPosData?.to
+                  ? { from: currentPosData.from, to: currentPosData.to }
+                  : null
+              }
+              customSquareStyles={customSquareStyles}
+              maxWidth="100%"
             />
           </div>
         </div>
+
+        {/* Exploratory Variation Banner if off-book */}
+        {exploredFen && (
+          <div className="w-full max-w-[560px] mt-2.5 p-2.5 rounded-lg bg-surface-elevated border border-accent/40 flex items-center justify-between text-xs">
+            <span className="text-slate-200">
+              Exploring variation (<span className="text-accent font-mono font-bold">{exploredSan}</span>)
+            </span>
+            <button
+              onClick={() => {
+                setExploredFen(null);
+                setExploredSan(null);
+              }}
+              className="px-3 py-1.5 min-h-[36px] text-xs bg-surface border border-surface-border hover:bg-surface-border text-slate-200 rounded-md font-semibold transition flex items-center space-x-1"
+            >
+              <span>Return to Game</span>
+            </button>
+          </div>
+        )}
 
         {/* Move Navigation Bar */}
         <div className="w-full max-w-[560px] mt-4 flex items-center justify-between bg-surface-elevated border border-surface-border rounded-xl p-2">
@@ -257,41 +297,41 @@ export const AnalysisView: React.FC = () => {
             <button
               onClick={firstPly}
               disabled={currentPly === 0}
-              className="p-2 text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
+              className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
               title="First move (Up Arrow)"
             >
-              <ChevronFirst size={18} />
+              <ChevronFirst size={20} />
             </button>
             <button
               onClick={prevPly}
               disabled={currentPly === 0}
-              className="p-2 text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
+              className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
               title="Previous move (Left Arrow)"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={20} />
             </button>
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="p-2 text-accent hover:bg-accent/15 rounded-lg transition"
+              className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-accent hover:bg-accent/15 rounded-lg transition"
               title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
             >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              {isPlaying ? <Pause size={20} /> : <Play size={20} />}
             </button>
             <button
               onClick={nextPly}
               disabled={currentPly >= gamePositions.length - 1}
-              className="p-2 text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
+              className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
               title="Next move (Right Arrow)"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={20} />
             </button>
             <button
               onClick={lastPly}
               disabled={currentPly >= gamePositions.length - 1}
-              className="p-2 text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
+              className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
               title="Last move (Down Arrow)"
             >
-              <ChevronLast size={18} />
+              <ChevronLast size={20} />
             </button>
           </div>
 

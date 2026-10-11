@@ -131,20 +131,40 @@ export const Sidebar: React.FC = () => {
       </aside>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-surface-border z-30 flex items-center justify-around py-1.5 px-2">
-        {navItems.slice(0, 5).map((item) => {
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-surface-border z-40 flex items-center justify-around px-1 py-1"
+        style={{ paddingBottom: 'max(0.35rem, env(safe-area-inset-bottom))' }}
+      >
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
+          const shortLabel =
+            item.id === 'dashboard'
+              ? 'Home'
+              : item.id === 'analysis'
+              ? 'Analysis'
+              : item.id === 'my-games'
+              ? 'Games'
+              : item.id === 'opening-book'
+              ? 'Openings'
+              : item.id === 'training'
+              ? 'Train'
+              : item.id === 'progress'
+              ? 'Stats'
+              : 'Settings';
+
           return (
             <button
               key={item.id}
               onClick={() => setTab(item.id)}
-              className={`flex flex-col items-center py-1 px-2 rounded-lg text-[10px] font-medium transition ${
-                isActive ? 'text-accent' : 'text-slate-400 hover:text-slate-200'
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg font-medium transition min-h-[48px] ${
+                isActive
+                  ? 'text-accent font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Icon size={18} />
-              <span className="mt-0.5">{item.label}</span>
+              <Icon size={19} className={isActive ? 'text-accent' : 'text-slate-400'} />
+              <span className="mt-0.5 text-[9px] leading-tight truncate">{shortLabel}</span>
             </button>
           );
         })}
