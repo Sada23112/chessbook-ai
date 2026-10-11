@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import type { Arrow, PieceDropHandlerArgs, SquareHandlerArgs } from 'react-chessboard';
+import type {
+  Arrow,
+  PieceDropHandlerArgs,
+  SquareHandlerArgs,
+} from 'react-chessboard';
 
 export interface InteractiveChessboardProps {
+  /** Optional unique identifier for this board instance */
+  id?: string;
   /** The position in FEN string format */
   fen: string;
   /** Board orientation ('white' or 'black') */
@@ -62,6 +68,7 @@ const THEME_COLORS = {
 };
 
 export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
+  id: idProp,
   fen,
   boardOrientation = 'white',
   allowMoves = true,
@@ -78,6 +85,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   maxWidth = '520px',
 }) => {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+  const handledByBoardRef = useRef<boolean>(false);
 
   // Clear piece selection whenever position FEN changes
   useEffect(() => {
@@ -152,10 +160,11 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
     [fen, onMove]
   );
 
-  // Tap-to-select and tap-to-move handler
-  const handleSquareClick = useCallback(
-    ({ square }: SquareHandlerArgs) => {
+  // Unified tap-to-select and tap-to-move processor
+  const processSquareTap = useCallback(
+    (square: string) => {
       if (disabled) return;
+
       onSquareClickProp?.(square);
 
       if (!allowMoves) {
@@ -228,6 +237,15 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
     ]
   );
 
+  // Square click handler from react-chessboard
+  const handleSquareClick = useCallback(
+    ({ square }: SquareHandlerArgs) => {
+      handledByBoardRef.current = true;
+      processSquareTap(square);
+    },
+    [processSquareTap]
+  );
+
   // Drag-and-drop handler
   const handlePieceDrop = useCallback(
     ({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean => {
@@ -254,6 +272,77 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       return pieceColor === currentChess.turn();
     },
     [allowMoves, disabled, turn, currentChess]
+  );
+
+  // Fallback touch event handlers for mobile touch devices
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    time: number;
+    square: string | null;
+  } | null>(null);
+
+  const getSquareFromPoint = useCallback((clientX: number, clientY: number): string | null => {
+    if (typeof document === 'undefined' || !document.elementFromPoint) return null;
+    try {
+      const el = document.elementFromPoint(clientX, clientY);
+      if (!el) return null;
+      const squareEl = el.closest('[data-square]');
+      return squareEl?.getAttribute('data-square') || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      handledByBoardRef.current = false;
+      if (e.touches.length !== 1) {
+        touchStartRef.current = null;
+        return;
+      }
+      const touch = e.touches[0];
+      const sq = getSquareFromPoint(touch.clientX, touch.clientY);
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+        square: sq,
+      };
+    },
+    [getSquareFromPoint]
+  );
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      const start = touchStartRef.current;
+      touchStartRef.current = null;
+      if (!start) return;
+
+      // If react-chessboard's internal handler already processed this tap, skip fallback
+      if (handledByBoardRef.current) {
+        handledByBoardRef.current = false;
+        return;
+      }
+
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const elapsed = Date.now() - start.time;
+
+      // If movement is under 14px and completed within 450ms, it is a deliberate tap
+      if (dist < 14 && elapsed < 450) {
+        const endSquare = getSquareFromPoint(touch.clientX, touch.clientY);
+        const targetSquare = endSquare || start.square;
+        if (targetSquare) {
+          processSquareTap(targetSquare);
+        }
+      }
+    },
+    [getSquareFromPoint, processSquareTap]
   );
 
   // Compose dynamic square styles
@@ -335,13 +424,23 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   return (
     <div
       className={`w-full aspect-square touch-none select-none rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated transition-all ${className}`}
-      style={{ maxWidth }}
+      style={{
+        maxWidth,
+        touchAction: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       <Chessboard
         options={{
+          id: idProp || 'chessbook-board',
           position: fen,
           boardOrientation,
           allowDragging: allowMoves && !disabled,
+          dragActivationDistance: 15,
           canDragPiece,
           onPieceDrop: handlePieceDrop,
           onSquareClick: handleSquareClick,

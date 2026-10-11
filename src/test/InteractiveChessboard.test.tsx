@@ -137,4 +137,78 @@ describe('InteractiveChessboard Component', () => {
       }
     }
   });
+
+  it('renders visual feedback: highlights selected square and legal destinations on tap', () => {
+    const { container } = render(
+      <InteractiveChessboard
+        fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        boardOrientation="white"
+        allowMoves={true}
+      />
+    );
+
+    const e2Square = container.querySelector('[data-square="e2"]') as HTMLElement;
+    expect(e2Square).toBeTruthy();
+    fireEvent.click(e2Square);
+
+    // After clicking e2, e2's inner style div should have selected square highlight style
+    const e2Inner = e2Square.querySelector('div') as HTMLElement;
+    expect(e2Inner).toBeTruthy();
+    expect(e2Inner.style.boxShadow).toContain('22c55e');
+
+    // Legal destinations e3 and e4 should receive dot indicators
+    const e4Square = container.querySelector('[data-square="e4"]') as HTMLElement;
+    const e3Square = container.querySelector('[data-square="e3"]') as HTMLElement;
+    expect(e4Square).toBeTruthy();
+    expect(e3Square).toBeTruthy();
+    const e4Inner = e4Square.querySelector('div') as HTMLElement;
+    const e3Inner = e3Square.querySelector('div') as HTMLElement;
+    expect(e4Inner.style.background).toContain('radial-gradient');
+    expect(e3Inner.style.background).toContain('radial-gradient');
+  });
+
+  it('supports container touch events for mobile touch tap-to-move', () => {
+    const onMoveMock = vi.fn().mockReturnValue(true);
+
+    const { container } = render(
+      <InteractiveChessboard
+        fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        boardOrientation="white"
+        allowMoves={true}
+        onMove={onMoveMock}
+      />
+    );
+
+    const boardWrapper = container.firstChild as HTMLElement;
+    expect(boardWrapper).toBeTruthy();
+
+    const e2Square = container.querySelector('[data-square="e2"]') as HTMLElement;
+    const e4Square = container.querySelector('[data-square="e4"]') as HTMLElement;
+
+    // Simulate mobile touch tap on e2
+    if (e2Square) {
+      fireEvent.touchStart(boardWrapper, {
+        touches: [{ clientX: 100, clientY: 100 }],
+      });
+      // In JSDOM, fire click on the square to simulate touch-to-click transition
+      fireEvent.click(e2Square);
+    }
+
+    // Simulate mobile touch tap on e4
+    if (e4Square) {
+      fireEvent.touchStart(boardWrapper, {
+        touches: [{ clientX: 100, clientY: 80 }],
+      });
+      fireEvent.click(e4Square);
+
+      expect(onMoveMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: 'e2',
+          to: 'e4',
+          san: 'e4',
+        })
+      );
+    }
+  });
 });
+

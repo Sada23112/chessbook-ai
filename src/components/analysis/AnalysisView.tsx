@@ -186,7 +186,7 @@ export const AnalysisView: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col lg:flex-row h-full overflow-y-auto lg:overflow-hidden bg-background">
       {/* Left / Center Column: Board, Eval, Navigation Controls */}
-      <div className="flex-1 flex flex-col p-4 lg:p-6 overflow-y-auto items-center">
+      <div className="flex-1 flex flex-col p-2 sm:p-4 lg:p-6 overflow-y-auto items-center">
         {/* Game Title & Header */}
         <div className="w-full max-w-[560px] flex items-center justify-between mb-3 text-sm">
           <div className="flex items-center space-x-2 truncate">
@@ -233,9 +233,9 @@ export const AnalysisView: React.FC = () => {
         </div>
 
         {/* Board & Eval Bar Container */}
-        <div className="w-full max-w-[560px] flex gap-2 sm:gap-3 items-stretch justify-center px-1 sm:px-0">
+        <div className="w-full max-w-[560px] flex gap-1.5 sm:gap-3 items-stretch justify-center px-0.5 sm:px-0">
           {/* Vertical Eval Bar */}
-          <div className="w-6 sm:w-7 flex-shrink-0 flex items-stretch">
+          <div className="w-5 sm:w-7 flex-shrink-0 flex items-stretch">
             <EvalBar
               score={evalScore}
               mate={evalMate}
