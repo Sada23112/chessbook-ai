@@ -14,9 +14,10 @@ import {
 import { db } from '../../db/db';
 import type { GameRecord, GameAnalysis, TrainingCard, WeaknessRecord } from '../../types/chess';
 import { useAppStore } from '../../store/useAppStore';
+import { getGameOutcome } from '../../utils/gameOutcome';
 
 export const DashboardView: React.FC = () => {
-  const { setTab, setActiveGame } = useAppStore();
+  const { setTab, setActiveGame, settings } = useAppStore();
   const [games, setGames] = useState<GameRecord[]>([]);
   const [analyses, setAnalyses] = useState<GameAnalysis[]>([]);
   const [dueCardsCount, setDueCardsCount] = useState(0);
@@ -62,6 +63,8 @@ export const DashboardView: React.FC = () => {
     { blunders: 0, mistakes: 0, inaccuracies: 0 }
   );
 
+  const userHandle = settings?.playerUsernames?.chessCom || 'Sada012';
+
   // Opening breakdown
   const openingMap = new Map<string, { total: number; wins: number; draws: number; losses: number }>();
   for (const g of games) {
@@ -71,9 +74,10 @@ export const DashboardView: React.FC = () => {
       }
       const item = openingMap.get(g.opening)!;
       item.total++;
-      if (g.result === '1-0') item.wins++;
-      else if (g.result === '0-1') item.losses++;
-      else if (g.result === '1/2-1/2') item.draws++;
+      const outcome = getGameOutcome(g, userHandle);
+      if (outcome.isWin) item.wins++;
+      else if (outcome.isLoss) item.losses++;
+      else if (outcome.isDraw) item.draws++;
     }
   }
 
@@ -203,17 +207,31 @@ export const DashboardView: React.FC = () => {
                     className="p-3 rounded-lg bg-surface-elevated hover:bg-surface-border border border-surface-border/60 transition cursor-pointer flex items-center justify-between text-xs"
                   >
                     <div className="flex items-center space-x-3 truncate">
-                      <span
-                        className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
-                          game.result === '1-0'
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : game.result === '0-1'
-                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                            : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                        }`}
-                      >
-                        {game.result}
-                      </span>
+                      {(() => {
+                        const outcome = getGameOutcome(game, userHandle);
+                        return (
+                          <span
+                            className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] flex items-center space-x-1 border ${outcome.badgeClass}`}
+                          >
+                            <span>{game.result}</span>
+                            {outcome.isWin && (
+                              <span className="text-[9px] font-sans font-extrabold uppercase px-1 rounded bg-emerald-500/20 text-emerald-300">
+                                WIN
+                              </span>
+                            )}
+                            {outcome.isLoss && (
+                              <span className="text-[9px] font-sans font-extrabold uppercase px-1 rounded bg-rose-500/20 text-rose-300">
+                                LOSS
+                              </span>
+                            )}
+                            {outcome.isDraw && (
+                              <span className="text-[9px] font-sans font-extrabold uppercase px-1 rounded bg-slate-500/20 text-slate-300">
+                                DRAW
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })()}
                       <div className="truncate">
                         <span className="font-semibold text-slate-200">{game.white}</span>
                         <span className="text-slate-500 mx-1.5">vs</span>

@@ -17,6 +17,7 @@ import type { GameRecord } from '../../types/chess';
 import { parseMultiplePgns, parseSinglePgn } from '../../utils/pgnParser';
 import { fetchLichessGames, fetchChessComGames } from '../../services/onlineImportService';
 import { useAppStore } from '../../store/useAppStore';
+import { getGameOutcome } from '../../utils/gameOutcome';
 
 const SAMPLE_GAMES: Array<{ title: string; desc: string; pgn: string }> = [
   {
@@ -454,17 +455,34 @@ export const MyGamesView: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-mono text-slate-500">{game.date}</span>
-                    <span
-                      className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
-                        game.result === '1-0'
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : game.result === '0-1'
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
-                      }`}
-                    >
-                      {game.result}
-                    </span>
+                    {(() => {
+                      const outcome = getGameOutcome(
+                        game,
+                        settings?.playerUsernames?.chessCom || chessComUser || 'Sada012'
+                      );
+                      return (
+                        <span
+                          className={`text-xs font-mono font-bold px-2 py-0.5 rounded border flex items-center space-x-1.5 ${outcome.badgeClass}`}
+                        >
+                          <span>{game.result}</span>
+                          {outcome.isWin && (
+                            <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-emerald-500/20 text-emerald-300">
+                              WIN
+                            </span>
+                          )}
+                          {outcome.isLoss && (
+                            <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-rose-500/20 text-rose-300">
+                              LOSS
+                            </span>
+                          )}
+                          {outcome.isDraw && (
+                            <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-slate-500/20 text-slate-300">
+                              DRAW
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   <div className="space-y-1 mb-3">

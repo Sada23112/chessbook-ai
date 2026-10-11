@@ -97,15 +97,13 @@ export function parseSinglePgn(
 
     const fingerprint = computeFingerprint(white, black, date, history);
 
-    // Determine user color if targetUsername provided
+    // Determine user color if targetUsername provided or fallback to default handle
     let userColor: PieceColor | undefined = undefined;
-    if (targetUsername) {
-      const lowerTarget = targetUsername.toLowerCase();
-      if (white.toLowerCase().includes(lowerTarget)) {
-        userColor = 'white';
-      } else if (black.toLowerCase().includes(lowerTarget)) {
-        userColor = 'black';
-      }
+    const target = (targetUsername || 'Sada012').toLowerCase();
+    if (white.toLowerCase().includes(target)) {
+      userColor = 'white';
+    } else if (black.toLowerCase().includes(target)) {
+      userColor = 'black';
     }
 
     // Stable ID

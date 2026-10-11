@@ -22,6 +22,7 @@ import {
 import { useAppStore } from '../../store/useAppStore';
 import { EvalBar } from '../common/EvalBar';
 import { EvalGraph } from '../common/EvalGraph';
+import { getGameOutcome } from '../../utils/gameOutcome';
 import type { MoveClassification } from '../../types/chess';
 
 export const CLASSIFICATION_BADGES: Record<
@@ -57,6 +58,7 @@ export const AnalysisView: React.FC = () => {
     startAnalysis,
     stopAnalysis,
     setTab,
+    settings,
   } = useAppStore();
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -181,9 +183,34 @@ export const AnalysisView: React.FC = () => {
             <span className="font-bold text-slate-200 truncate">{activeGame.white}</span>
             <span className="text-slate-500 font-mono text-xs">vs</span>
             <span className="font-bold text-slate-200 truncate">{activeGame.black}</span>
-            <span className="text-xs px-2 py-0.5 rounded bg-surface-elevated font-mono text-slate-400 border border-surface-border">
-              {activeGame.result}
-            </span>
+            {(() => {
+              const outcome = getGameOutcome(
+                activeGame,
+                settings?.playerUsernames?.chessCom || 'Sada012'
+              );
+              return (
+                <span
+                  className={`text-xs px-2 py-0.5 rounded font-mono font-bold border flex items-center space-x-1.5 ${outcome.badgeClass}`}
+                >
+                  <span>{activeGame.result}</span>
+                  {outcome.isWin && (
+                    <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-emerald-500/20 text-emerald-300">
+                      WIN
+                    </span>
+                  )}
+                  {outcome.isLoss && (
+                    <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-rose-500/20 text-rose-300">
+                      LOSS
+                    </span>
+                  )}
+                  {outcome.isDraw && (
+                    <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-slate-500/20 text-slate-300">
+                      DRAW
+                    </span>
+                  )}
+                </span>
+              );
+            })()}
           </div>
           <button
             onClick={flipBoard}
