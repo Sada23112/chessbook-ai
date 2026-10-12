@@ -513,21 +513,21 @@ export const MyGamesView: React.FC = () => {
                   )}
                 </div>
 
-                <div className="pt-3 border-t border-surface-border/60 flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-slate-400">{game.movesCount} plies</span>
-                    {game.summary ? (
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium text-[10px] border border-emerald-500/30">
-                        Analyzed
-                      </span>
-                    ) : (
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">
-                        Unanalyzed
-                      </span>
-                    )}
-                  </div>
+                <div className="pt-3 border-t border-surface-border/60 flex flex-col gap-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-slate-400">{game.movesCount} plies</span>
+                      {game.summary ? (
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium text-[10px] border border-emerald-500/30">
+                          Analyzed
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">
+                          Unanalyzed
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="flex items-center space-x-1">
                     <button
                       onClick={(e) => handleDelete(game.id, e)}
                       className="p-1 text-slate-500 hover:text-rose-400 transition rounded"
@@ -535,9 +535,27 @@ export const MyGamesView: React.FC = () => {
                     >
                       <Trash2 size={14} />
                     </button>
-                    <span className="text-accent group-hover:translate-x-1 transition-transform">
-                      →
-                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveGame(game.id, 'opening_coach');
+                      }}
+                      className="flex-1 py-1.5 px-2 bg-accent/15 hover:bg-accent text-accent hover:text-black font-semibold rounded-lg text-[11px] transition text-center border border-accent/30"
+                    >
+                      Review Opening Mistakes
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveGame(game.id, 'full_game');
+                      }}
+                      className="py-1.5 px-2.5 bg-surface-elevated hover:bg-surface-border text-slate-300 font-semibold rounded-lg text-[11px] transition border border-surface-border"
+                    >
+                      Full Game
+                    </button>
                   </div>
                 </div>
               </div>

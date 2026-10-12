@@ -39,22 +39,36 @@ export function calculateMoveAccuracy(cpl: number): number {
 }
 
 export interface ClassificationParams {
-  evalBefore: number; // Mover's perspective
-  evalAfter: number;  // Mover's perspective
+  evalBefore: number; // Mover's perspective centipawns
+  evalAfter: number;  // Mover's perspective centipawns
   isBestMove: boolean;
+  isBookMove?: boolean;
   isOnlyLegalMove?: boolean;
+  isGreatMove?: boolean;
   isPieceSacrifice?: boolean;
   customThresholds?: UserSettings['customClassifications'];
 }
 
+/**
+ * Classifies a played move based on engine evaluation, tactical context, and repertoire data.
+ * Adheres to Chess.com-style classifications with rigorous, documented criteria.
+ */
 export function classifyMove({
   evalBefore,
   evalAfter,
   isBestMove,
+  isBookMove = false,
   isOnlyLegalMove = false,
+  isGreatMove = false,
   isPieceSacrifice = false,
   customThresholds,
 }: ClassificationParams): { classification: MoveClassification; cpl: number } {
+  // 1. Book move: Verified match against opening repertoire or opening book
+  if (isBookMove) {
+    return { classification: 'book', cpl: 0 };
+  }
+
+  // 2. Forced move: The only legal option available
   if (isOnlyLegalMove) {
     return { classification: 'forced', cpl: 0 };
   }
@@ -63,11 +77,17 @@ export function classifyMove({
   const rawLoss = evalBefore - evalAfter;
   const cpl = Math.max(0, Math.round(rawLoss));
 
-  // Brilliant move: Chess.com definition: piece sacrifice that is best move and maintains winning advantage
-  if ((isBestMove || cpl <= 5) && isPieceSacrifice && evalAfter >= 100) {
+  // 3. Brilliant move: Piece sacrifice that is the top engine move and maintains a decisive winning advantage
+  if ((isBestMove || cpl <= 5) && isPieceSacrifice && evalAfter >= 100 && evalBefore < 1000) {
     return { classification: 'brilliant', cpl: 0 };
   }
 
+  // 4. Great move: Crucial only-move or key tactical find maintaining advantage
+  if (isGreatMove && (isBestMove || cpl <= 10)) {
+    return { classification: 'great', cpl: 0 };
+  }
+
+  // 5. Best move: Top engine choice within analysis settings
   if (isBestMove || cpl <= 5) {
     return { classification: 'best', cpl: 0 };
   }
@@ -76,36 +96,41 @@ export function classifyMove({
   const mistakeThresh = customThresholds?.mistakeThreshold ?? 90;
   const inaccuracyThresh = customThresholds?.inaccuracyThreshold ?? 40;
 
-  // Missed Win: player was winning (+300 or mate) but dropped to near equal (< +120) or losing
+  // 6. Missed Win: Player had a winning position (+300 or mate) but dropped to equal/losing
   if (evalBefore >= 300 && evalAfter < 120 && cpl >= 150) {
     return { classification: 'missedWin', cpl };
   }
 
-  // If already overwhelmingly winning and still completely winning, don't penalize as blunder
+  // Overwhelmingly winning positions: If eval is +600 and still +450, avoid labeling as blunder
   if (evalBefore >= 600 && evalAfter >= 450) {
     return { classification: 'good', cpl };
   }
 
+  // 7. Blunder
   if (cpl >= blunderThresh) {
     return { classification: 'blunder', cpl };
   }
 
+  // 8. Mistake
   if (cpl >= mistakeThresh) {
     return { classification: 'mistake', cpl };
   }
 
+  // 9. Inaccuracy
   if (cpl >= inaccuracyThresh) {
     return { classification: 'inaccuracy', cpl };
   }
 
+  // 10. Excellent move (near optimal, <= 15 CPL)
   if (cpl <= 15) {
     return { classification: 'excellent', cpl };
   }
 
+  // 11. Good move
   return { classification: 'good', cpl };
 }
 
-// Estimate performance Elo based on game accuracy and average centipawn loss
+// Estimate performance rating based on game accuracy and average centipawn loss
 export function estimatePerformanceElo(accuracy: number, avgCpl: number): number {
   const base = 400 + Math.pow(Math.max(0, accuracy) / 100, 2.3) * 2350;
   const cplDeduction = Math.min(350, avgCpl * 2.2);

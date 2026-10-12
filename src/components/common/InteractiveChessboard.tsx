@@ -7,6 +7,13 @@ import type {
   SquareHandlerArgs,
 } from 'react-chessboard';
 
+export interface SquareAnnotation {
+  square: string;
+  label: string;
+  bg?: string;
+  color?: string;
+}
+
 export interface InteractiveChessboardProps {
   /** Optional unique identifier for this board instance */
   id?: string;
@@ -30,6 +37,8 @@ export interface InteractiveChessboardProps {
   }) => boolean | void;
   /** Last move for visual origin/destination highlighting */
   lastMove?: { from: string; to: string } | null;
+  /** Move-quality annotation badge on board (e.g. !!, ★, ?, ??) */
+  moveAnnotation?: SquareAnnotation | null;
   /** Arrows to display on the board (e.g. engine best move) */
   arrows?: Arrow[];
   /** Custom extra square styles to overlay */
@@ -75,6 +84,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   turn,
   onMove,
   lastMove,
+  moveAnnotation,
   arrows = [],
   customSquareStyles = {},
   highlightSquares = [],
@@ -428,6 +438,41 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   const activeColors = THEME_COLORS[boardTheme] || THEME_COLORS.emerald;
 
+  const squareRenderer = useCallback(
+    ({ square, children }: SquareHandlerArgs & { children?: React.ReactNode }) => {
+      const isAnnotated = moveAnnotation && moveAnnotation.square === square;
+      return (
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          {children}
+          {isAnnotated && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '4%',
+                right: '4%',
+                zIndex: 30,
+                pointerEvents: 'none',
+                borderRadius: '9999px',
+                padding: '1px 5px',
+                fontSize: '11px',
+                fontWeight: 800,
+                fontFamily: 'monospace',
+                lineHeight: '1.2',
+                backgroundColor: moveAnnotation.bg || '#22c55e',
+                color: moveAnnotation.color || '#000000',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                border: '1.5px solid rgba(255,255,255,0.7)',
+              }}
+            >
+              {moveAnnotation.label}
+            </div>
+          )}
+        </div>
+      );
+    },
+    [moveAnnotation]
+  );
+
   // Memoize chessboard options to prevent unneeded sensor re-initialization and board re-renders
   const chessboardOptions = useMemo(
     () => ({
@@ -439,6 +484,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       canDragPiece,
       onPieceDrop: handlePieceDrop,
       onSquareClick: handleSquareClick,
+      squareRenderer: moveAnnotation ? squareRenderer : undefined,
       arrows,
       squareStyles,
       darkSquareStyle: { backgroundColor: activeColors.dark },
@@ -459,6 +505,8 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       canDragPiece,
       handlePieceDrop,
       handleSquareClick,
+      squareRenderer,
+      moveAnnotation,
       arrows,
       squareStyles,
       activeColors,

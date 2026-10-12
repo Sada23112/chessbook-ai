@@ -4,6 +4,7 @@ export type PieceColor = 'white' | 'black';
 
 export type MoveClassification =
   | 'brilliant'
+  | 'great'
   | 'best'
   | 'excellent'
   | 'good'

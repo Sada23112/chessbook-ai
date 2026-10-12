@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Chess } from 'chess.js';
 import { InteractiveChessboard } from '../common/InteractiveChessboard';
 import confetti from 'canvas-confetti';
@@ -12,10 +12,17 @@ import {
   Sparkles,
   BookOpen,
   Filter,
+  Eye,
+  HelpCircle,
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
-import { db } from '../../db/db';
 import type { TrainingCard } from '../../types/chess';
+import {
+  type TrainingMachineState,
+  createTrainingMachineState,
+  transitionTrainingMachine,
+  validateMoveAgainstExercise,
+} from '../../training/trainingStateMachine';
 
 export const TrainingView: React.FC = () => {
   const {
@@ -25,88 +32,167 @@ export const TrainingView: React.FC = () => {
     setTrainingFilter,
     loadTrainingQueue,
     answerTrainingCard,
+    nextTrainingCard,
   } = useAppStore();
 
-  const [hasSolved, setHasSolved] = useState<boolean | null>(null);
   const [showHint, setShowHint] = useState<boolean>(false);
   const [boardFen, setBoardFen] = useState<string>('');
+  const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
 
+  // Load cards on initial mount
   useEffect(() => {
     loadTrainingQueue();
   }, [loadTrainingQueue]);
 
   const currentCard: TrainingCard | undefined = trainingQueue[currentCardIndex];
 
-  // Reset board when card changes
+  // State machine state
+  const [machineState, setMachineState] = useState<TrainingMachineState | null>(null);
+  const requestCounterRef = useRef<number>(0);
+
+  // Initialize state machine when current card changes
   useEffect(() => {
     if (currentCard) {
+      const initial = createTrainingMachineState({
+        id: currentCard.id,
+        fen: currentCard.fen,
+        turn: currentCard.turn,
+        solutionMovesSan: currentCard.solutionMovesSan,
+        solutionMovesUci: currentCard.solutionMovesUci,
+        continuation: currentCard.continuation,
+        playedMoveSan: currentCard.playedMoveSan,
+        lesson: currentCard.lesson,
+        motif: currentCard.motif,
+      });
+      setMachineState(initial);
       setBoardFen(currentCard.fen);
-      setHasSolved(null);
+      setLastMove(null);
       setShowHint(false);
+    } else {
+      setMachineState(null);
     }
   }, [currentCard]);
 
-  // Turn from FEN
   // Turn from FEN
   const turn: 'white' | 'black' = useMemo(() => {
     if (!currentCard) return 'white';
     return currentCard.turn === 'w' ? 'white' : 'black';
   }, [currentCard]);
 
-  // Handle move on board (supports tap-to-move and drag-and-drop)
-  const handleMove = ({
-    from,
-    to,
-    san,
-    fen: nextFen,
-  }: {
-    from: string;
-    to: string;
-    san: string;
-    fen: string;
-  }): boolean => {
-    if (!currentCard || hasSolved !== null) return false;
+  // Handle move on board with complete validation and state machine guards
+  const handleMove = useCallback(
+    ({
+      from,
+      to,
+      san,
+      fen: nextFen,
+      promotion,
+    }: {
+      from: string;
+      to: string;
+      san: string;
+      fen: string;
+      promotion?: string;
+    }): boolean => {
+      if (!currentCard || !machineState) return false;
+      if (machineState.status !== 'awaiting_move') return false;
 
-    const playedUci = `${from}${to}`;
+      const requestId = `req_${++requestCounterRef.current}`;
 
-    // Check if played move matches solution (either SAN or UCI)
-    const isCorrect =
-      currentCard.solutionMovesSan.includes(san) ||
-      currentCard.solutionMovesUci.some((u) => u.startsWith(playedUci));
-
-    if (isCorrect) {
-      setBoardFen(nextFen);
-      setHasSolved(true);
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.7 },
+      // Start validation transition
+      const validatingState = transitionTrainingMachine(machineState, {
+        type: 'START_MOVE_VALIDATION',
+        attempt: { from, to, promotion, san },
+        requestId,
       });
-      answerTrainingCard(currentCard.id, true);
-      return true;
-    } else {
-      setBoardFen(nextFen);
-      setHasSolved(false);
-      answerTrainingCard(currentCard.id, false);
-      return false;
-    }
-  };
+      setMachineState(validatingState);
+
+      // Perform authoritative validation
+      const validation = validateMoveAgainstExercise(
+        {
+          id: currentCard.id,
+          fen: currentCard.fen,
+          turn: currentCard.turn,
+          solutionMovesSan: currentCard.solutionMovesSan,
+          solutionMovesUci: currentCard.solutionMovesUci,
+        },
+        { from, to, promotion, san }
+      );
+
+      // Transition based on result
+      const nextState = transitionTrainingMachine(validatingState, {
+        type: 'MOVE_VALIDATION_RESULT',
+        result: validation,
+        requestId,
+      });
+      setMachineState(nextState);
+
+      if (validation.isCorrect) {
+        setBoardFen(nextFen);
+        setLastMove({ from, to });
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.7 },
+        });
+        // Save success in SRS database (without auto-skipping to next card!)
+        answerTrainingCard(currentCard.id, true);
+        return true;
+      } else {
+        // Incorrect move: do not advance exercise, keep position active
+        setLastMove({ from, to });
+        answerTrainingCard(currentCard.id, false);
+        return false;
+      }
+    },
+    [currentCard, machineState, answerTrainingCard]
+  );
 
   const handleNext = () => {
-    setHasSolved(null);
     setShowHint(false);
-    useAppStore.setState((s) => ({
-      currentCardIndex: s.currentCardIndex + 1,
-    }));
+    setLastMove(null);
+    nextTrainingCard();
   };
 
   const handleRetry = () => {
-    if (currentCard) {
+    if (currentCard && machineState) {
       setBoardFen(currentCard.fen);
-      setHasSolved(null);
+      setLastMove(null);
       setShowHint(false);
+      setMachineState(transitionTrainingMachine(machineState, { type: 'RETRY' }));
     }
   };
+
+  const handleRevealSolution = () => {
+    if (!currentCard || !machineState) return;
+
+    try {
+      const chess = new Chess(currentCard.fen);
+      const bestUci = currentCard.solutionMovesUci[0];
+      if (bestUci && bestUci.length >= 4) {
+        const from = bestUci.slice(0, 2);
+        const to = bestUci.slice(2, 4);
+        const promo = bestUci[4] || undefined;
+        const m = chess.move({ from, to, promotion: promo });
+        if (m) {
+          setBoardFen(chess.fen());
+          setLastMove({ from, to });
+          setMachineState(
+            transitionTrainingMachine(machineState, {
+              type: 'SHOW_SOLUTION',
+              solutionFen: chess.fen(),
+            })
+          );
+        }
+      }
+    } catch {
+      // fallback
+    }
+  };
+
+  const isSolved = machineState?.status === 'correct_feedback';
+  const isIncorrect = machineState?.status === 'incorrect_feedback';
+  const isShowingSolution = machineState?.status === 'showing_solution';
 
   return (
     <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto bg-background">
@@ -167,7 +253,11 @@ export const TrainingView: React.FC = () => {
           <div className="lg:col-span-7 flex flex-col items-center">
             <div className="w-full max-w-[480px] flex items-center justify-between mb-3 text-xs font-mono text-slate-400">
               <span className="flex items-center space-x-1.5 font-sans font-semibold text-slate-200">
-                <span className={`w-3 h-3 rounded-full ${turn === 'white' ? 'bg-white' : 'bg-slate-900 border border-slate-600'}`} />
+                <span
+                  className={`w-3 h-3 rounded-full ${
+                    turn === 'white' ? 'bg-white' : 'bg-slate-900 border border-slate-600'
+                  }`}
+                />
                 <span>{turn === 'white' ? 'White' : 'Black'} to move</span>
               </span>
               <span>
@@ -180,8 +270,9 @@ export const TrainingView: React.FC = () => {
                 fen={boardFen}
                 boardOrientation={turn}
                 turn={currentCard.turn}
-                allowMoves={hasSolved === null}
+                allowMoves={machineState?.status === 'awaiting_move'}
                 onMove={handleMove}
+                lastMove={lastMove}
                 highlightSquares={
                   showHint && currentCard
                     ? [currentCard.solutionMovesUci[0]?.slice(0, 2)].filter(Boolean)
@@ -213,8 +304,8 @@ export const TrainingView: React.FC = () => {
                 Can you find the engine-recommended continuation?
               </p>
 
-              {/* Status Outcome */}
-              {hasSolved === true && (
+              {/* Status Outcome: Correct */}
+              {isSolved && (
                 <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mb-4 animate-in fade-in">
                   <div className="flex items-center space-x-2 font-bold text-sm mb-1">
                     <CheckCircle2 size={18} />
@@ -226,11 +317,25 @@ export const TrainingView: React.FC = () => {
                 </div>
               )}
 
-              {hasSolved === false && (
+              {/* Status Outcome: Incorrect */}
+              {isIncorrect && (
                 <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 mb-4 animate-in fade-in">
                   <div className="flex items-center space-x-2 font-bold text-sm mb-1">
                     <XCircle size={18} />
-                    <span>Incorrect Move</span>
+                    <span>Not the Best Move</span>
+                  </div>
+                  <p className="text-xs text-slate-200 leading-relaxed mt-1">
+                    That move is not the accepted continuation. The position remains active so you can try again!
+                  </p>
+                </div>
+              )}
+
+              {/* Status Outcome: Revealed Solution */}
+              {isShowingSolution && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 mb-4 animate-in fade-in">
+                  <div className="flex items-center space-x-2 font-bold text-sm mb-1">
+                    <Eye size={18} />
+                    <span>Solution Revealed</span>
                   </div>
                   <p className="text-xs text-slate-200 leading-relaxed mt-1">
                     The optimal move was <span className="font-mono text-emerald-400 font-bold">{currentCard.solutionMovesSan[0]}</span>.
@@ -242,12 +347,14 @@ export const TrainingView: React.FC = () => {
               )}
 
               {/* Hint section */}
-              {showHint && hasSolved === null && (
+              {showHint && machineState?.status === 'awaiting_move' && (
                 <div className="p-3 rounded-lg bg-surface-elevated border border-surface-border text-xs text-slate-300 mb-4 flex items-start space-x-2">
                   <Lightbulb size={16} className="text-amber-400 mt-0.5 shrink-0" />
                   <div>
                     <span className="font-semibold text-amber-400 block mb-0.5">Tactical Hint</span>
-                    <span>Focus on motif: {currentCard.motif}. Look for forcing candidate moves.</span>
+                    <span>
+                      The piece to move is on square <span className="font-mono text-sky-400 font-bold uppercase">{currentCard.solutionMovesUci[0]?.slice(0, 2)}</span>. Motif: {currentCard.motif}.
+                    </span>
                   </div>
                 </div>
               )}
@@ -255,7 +362,7 @@ export const TrainingView: React.FC = () => {
 
             {/* Actions */}
             <div className="space-y-2 pt-4 border-t border-surface-border mt-4">
-              {hasSolved !== null ? (
+              {isSolved || isShowingSolution ? (
                 <button
                   onClick={handleNext}
                   className="w-full py-2.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg text-xs transition flex items-center justify-center space-x-2 shadow"
@@ -274,21 +381,22 @@ export const TrainingView: React.FC = () => {
                     <span>Show Hint</span>
                   </button>
                   <button
-                    onClick={() => setHasSolved(false)}
-                    className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 rounded-lg text-xs font-medium border border-surface-border transition"
+                    onClick={handleRevealSolution}
+                    className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 rounded-lg text-xs font-medium border border-surface-border transition flex items-center justify-center space-x-1.5"
                   >
-                    Show Solution
+                    <Eye size={14} className="text-slate-400" />
+                    <span>Reveal Solution</span>
                   </button>
                 </div>
               )}
 
-              {hasSolved === false && (
+              {isIncorrect && (
                 <button
                   onClick={handleRetry}
-                  className="w-full py-2 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 rounded-lg text-xs font-medium border border-surface-border transition flex items-center justify-center space-x-1.5"
+                  className="w-full py-2.5 px-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-semibold border border-rose-500/40 transition flex items-center justify-center space-x-1.5 shadow"
                 >
                   <RotateCcw size={14} />
-                  <span>Retry Position</span>
+                  <span>Try Again</span>
                 </button>
               )}
             </div>

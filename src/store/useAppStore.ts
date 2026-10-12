@@ -26,6 +26,8 @@ interface AppState {
   isAnalyzing: boolean;
   analysisProgress: { current: number; total: number };
   engineStatus: string;
+  analysisStage: 'summary' | 'opening_coach' | 'full_game';
+  setAnalysisStage: (stage: 'summary' | 'opening_coach' | 'full_game') => void;
 
   // Training state
   trainingFilter: 'due' | 'all' | 'mistakes' | 'tactics';
@@ -38,7 +40,7 @@ interface AppState {
   // Actions
   loadSettings: () => Promise<void>;
   updateSettings: (partial: Partial<UserSettings>) => Promise<void>;
-  setActiveGame: (gameId: string) => Promise<void>;
+  setActiveGame: (gameId: string, initialStage?: 'summary' | 'opening_coach' | 'full_game') => Promise<void>;
   setCurrentPly: (ply: number) => void;
   nextPly: () => void;
   prevPly: () => void;
@@ -50,6 +52,7 @@ interface AppState {
   setTrainingFilter: (filter: 'due' | 'all' | 'mistakes' | 'tactics') => void;
   loadTrainingQueue: () => Promise<void>;
   answerTrainingCard: (cardId: string, isCorrect: boolean) => Promise<void>;
+  nextTrainingCard: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -64,6 +67,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   isAnalyzing: false,
   analysisProgress: { current: 0, total: 0 },
   engineStatus: 'ready',
+  analysisStage: 'summary',
+  setAnalysisStage: (stage) => set({ analysisStage: stage }),
 
   trainingFilter: 'due',
   trainingQueue: [],
@@ -83,7 +88,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ settings: updated });
   },
 
-  setActiveGame: async (gameId: string) => {
+  setActiveGame: async (gameId: string, initialStage: 'summary' | 'opening_coach' | 'full_game' = 'summary') => {
     const game = await db.games.get(gameId);
     if (!game) return;
 
@@ -95,6 +100,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeAnalysis: analysis,
       currentPly: 0,
       boardOrientation: game.userColor || 'white',
+      analysisStage: initialStage,
       currentTab: 'analysis',
     });
   },
@@ -199,8 +205,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       lastReviewed: Date.now(),
       lastSuccess: isCorrect,
     });
+    // NOTE: Does NOT advance currentCardIndex automatically so user can review feedback, inspect solution, or retry!
+  },
 
-    // Advance to next card
+  nextTrainingCard: () => {
     set((state) => ({
       currentCardIndex: state.currentCardIndex + 1,
     }));

@@ -352,6 +352,7 @@ class StockfishManager {
 
     const whiteStats: Record<MoveClassification, number> = {
       brilliant: 0,
+      great: 0,
       best: 0,
       excellent: 0,
       good: 0,
@@ -365,6 +366,7 @@ class StockfishManager {
 
     const blackStats: Record<MoveClassification, number> = {
       brilliant: 0,
+      great: 0,
       best: 0,
       excellent: 0,
       good: 0,
