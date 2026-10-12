@@ -74,9 +74,11 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
   const [activeComparisonTab, setActiveComparisonTab] = useState<'better' | 'actual'>('better');
 
   const requestCounterRef = useRef<number>(0);
+  const isValidatingRef = useRef<boolean>(false);
 
   // Initialize state machine whenever activeMistake changes
   useEffect(() => {
+    isValidatingRef.current = false;
     if (activeMistake) {
       const state = createTrainingMachineState({
         id: activeMistake.id,
@@ -112,8 +114,9 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
       promotion?: string;
     }): boolean => {
       if (!activeMistake || !machineState) return false;
-      if (machineState.status !== 'awaiting_move') return false;
+      if (machineState.status !== 'awaiting_move' || isValidatingRef.current) return false;
 
+      isValidatingRef.current = true;
       const requestId = `req_${++requestCounterRef.current}`;
 
       const validatingState = transitionTrainingMachine(machineState, {
@@ -140,6 +143,7 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
         requestId,
       });
       setMachineState(nextState);
+      isValidatingRef.current = false;
 
       if (validation.isCorrect) {
         setBoardFen(nextFen);
@@ -160,6 +164,7 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
   );
 
   const handleRetry = () => {
+    isValidatingRef.current = false;
     if (activeMistake && machineState) {
       setBoardFen(activeMistake.fenBefore);
       setLastMove(null);

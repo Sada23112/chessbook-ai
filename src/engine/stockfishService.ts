@@ -28,12 +28,26 @@ export interface EngineParsedInfo {
 
 export type EngineStatus = 'uninitialized' | 'loading' | 'ready' | 'analyzing' | 'error';
 
+export type AnalysisLifecycleState =
+  | 'idle'
+  | 'queued'
+  | 'initializing'
+  | 'analyzing'
+  | 'finalizing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
 class StockfishManager {
   private worker: Worker | null = null;
   private status: EngineStatus = 'uninitialized';
+  private lifecycleState: AnalysisLifecycleState = 'idle';
   private statusListeners: Array<(status: EngineStatus) => void> = [];
+  private lifecycleListeners: Array<(state: AnalysisLifecycleState) => void> = [];
   private currentResolver: ((info: EngineParsedInfo) => void) | null = null;
   private currentRejecter: ((err: Error) => void) | null = null;
+  private currentRequestId = 0;
+  private requestCounter = 0;
   private latestInfo: Partial<EngineParsedInfo> = {};
   private isCancelled = false;
 
@@ -41,17 +55,34 @@ class StockfishManager {
     return this.status;
   }
 
+  getLifecycleState(): AnalysisLifecycleState {
+    return this.lifecycleState;
+  }
+
   onStatusChange(listener: (status: EngineStatus) => void): () => void {
     this.statusListeners.push(listener);
     listener(this.status);
     return () => {
-      this.statusListeners = this.statusListeners.filter(l => l !== listener);
+      this.statusListeners = this.statusListeners.filter((l) => l !== listener);
+    };
+  }
+
+  onLifecycleChange(listener: (state: AnalysisLifecycleState) => void): () => void {
+    this.lifecycleListeners.push(listener);
+    listener(this.lifecycleState);
+    return () => {
+      this.lifecycleListeners = this.lifecycleListeners.filter((l) => l !== listener);
     };
   }
 
   private setStatus(newStatus: EngineStatus) {
     this.status = newStatus;
-    this.statusListeners.forEach(l => l(newStatus));
+    this.statusListeners.forEach((l) => l(newStatus));
+  }
+
+  private setLifecycleState(newState: AnalysisLifecycleState) {
+    this.lifecycleState = newState;
+    this.lifecycleListeners.forEach((l) => l(newState));
   }
 
   async init(): Promise<boolean> {
@@ -141,7 +172,8 @@ class StockfishManager {
       }
     } else if (line.startsWith('bestmove ')) {
       const parts = line.split(/\s+/);
-      const bestMove = parts[1] || this.latestInfo.bestMove || 'e2e4';
+      const rawMove = parts[1];
+      const bestMove = rawMove && rawMove !== '(none)' ? rawMove : (this.latestInfo.bestMove || '');
 
       if (this.currentResolver) {
         const resolved: EngineParsedInfo = {
@@ -149,7 +181,7 @@ class StockfishManager {
           scoreCp: this.latestInfo.scoreCp ?? 0,
           mate: this.latestInfo.mate,
           bestMove,
-          pv: this.latestInfo.pv || [bestMove],
+          pv: this.latestInfo.pv && this.latestInfo.pv.length > 0 ? this.latestInfo.pv : (bestMove ? [bestMove] : []),
         };
         const res = this.currentResolver;
         this.currentResolver = null;
@@ -159,8 +191,36 @@ class StockfishManager {
     }
   }
 
-  // Analyze single position
+  // Analyze single position with terminal state detection and bounded timeout
   async analyzePosition(fen: string, depth = 12): Promise<EngineParsedInfo> {
+    // 1. Immediately handle terminal positions without querying Stockfish (which hangs on 0 root moves)
+    try {
+      const chess = new Chess(fen);
+      if (chess.isGameOver() || chess.moves().length === 0) {
+        if (chess.isCheckmate() || chess.inCheck()) {
+          const score = chess.turn() === 'w' ? -9900 : 9900;
+          return {
+            depth: 0,
+            scoreCp: score,
+            mate: 0,
+            bestMove: '',
+            pv: [],
+          };
+        } else {
+          // Stalemate or draw
+          return {
+            depth: 0,
+            scoreCp: 0,
+            mate: undefined,
+            bestMove: '',
+            pv: [],
+          };
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     await this.init();
 
     // Fallback if worker not available
@@ -168,21 +228,53 @@ class StockfishManager {
       return this.fallbackEvaluate(fen, depth);
     }
 
-    return new Promise<EngineParsedInfo>((resolve, reject) => {
+    return new Promise<EngineParsedInfo>((resolve) => {
+      const reqId = ++this.requestCounter;
+      this.currentRequestId = reqId;
       this.latestInfo = { depth: 0, pv: [] };
-      this.currentResolver = resolve;
-      this.currentRejecter = reject;
 
-      this.worker!.postMessage('stop');
-      this.worker!.postMessage(`position fen ${fen}`);
-      this.worker!.postMessage(`go depth ${depth}`);
+      // Bounded safety timeout (4500ms max per position): Never let a position hang indefinitely!
+      const timeoutId = setTimeout(() => {
+        if (this.currentRequestId === reqId && this.currentResolver) {
+          console.warn(`[Stockfish] Position analysis timed out for FEN: ${fen.slice(0, 30)}..., using fallback`);
+          const fallback = this.fallbackEvaluate(fen, depth);
+          const res = this.currentResolver;
+          this.currentResolver = null;
+          this.currentRejecter = null;
+          res(fallback);
+        }
+      }, 4500);
+
+      this.currentResolver = (info: EngineParsedInfo) => {
+        clearTimeout(timeoutId);
+        resolve(info);
+      };
+
+      this.currentRejecter = (err: Error) => {
+        clearTimeout(timeoutId);
+        console.warn('[Stockfish] Rejection during position evaluation:', err);
+        resolve(this.fallbackEvaluate(fen, depth));
+      };
+
+      try {
+        this.worker!.postMessage('stop');
+        this.worker!.postMessage(`position fen ${fen}`);
+        this.worker!.postMessage(`go depth ${depth}`);
+      } catch (err) {
+        clearTimeout(timeoutId);
+        resolve(this.fallbackEvaluate(fen, depth));
+      }
     });
   }
 
   stop() {
     this.isCancelled = true;
     if (this.worker) {
-      this.worker.postMessage('stop');
+      try {
+        this.worker.postMessage('stop');
+      } catch {
+        // ignore
+      }
     }
     if (this.currentResolver) {
       this.currentResolver({
@@ -194,7 +286,23 @@ class StockfishManager {
       this.currentResolver = null;
       this.currentRejecter = null;
     }
+    this.setLifecycleState('cancelled');
     this.setStatus('ready');
+  }
+
+  terminate() {
+    if (this.worker) {
+      try {
+        this.worker.terminate();
+      } catch {
+        // ignore
+      }
+      this.worker = null;
+    }
+    this.currentResolver = null;
+    this.currentRejecter = null;
+    this.setStatus('uninitialized');
+    this.setLifecycleState('idle');
   }
 
   // Deterministic rule-based fallback if WebAssembly worker is unavailable in environment
@@ -248,43 +356,55 @@ class StockfishManager {
     options: {
       depth: number;
       onProgress?: (currentPly: number, totalPlies: number) => void;
+      onStageChange?: (stage: AnalysisLifecycleState) => void;
       shouldCancel?: () => boolean;
     }
   ): Promise<GameAnalysis> {
     this.isCancelled = false;
+    this.setLifecycleState('initializing');
+    options.onStageChange?.('initializing');
     this.setStatus('analyzing');
 
-    const chess = new Chess();
-    chess.loadPgn(game.pgn);
-    const historyVerbose = chess.history({ verbose: true });
-    const totalPlies = historyVerbose.length;
+    try {
+      const chess = new Chess();
+      chess.loadPgn(game.pgn);
+      const historyVerbose = chess.history({ verbose: true });
+      const totalPlies = historyVerbose.length;
 
-    // Build list of FENs for each position: ply 0 (initial) up to ply N
-    const replayChess = new Chess();
-    const positionsData: Array<{ ply: number; fen: string; move?: (typeof historyVerbose)[0] }> = [
-      { ply: 0, fen: replayChess.fen() },
-    ];
+      // Build list of FENs for each position: ply 0 (initial) up to ply N
+      const replayChess = new Chess();
+      const positionsData: Array<{ ply: number; fen: string; move?: (typeof historyVerbose)[0] }> = [
+        { ply: 0, fen: replayChess.fen() },
+      ];
 
-    for (let i = 0; i < historyVerbose.length; i++) {
-      const m = historyVerbose[i];
-      replayChess.move(m);
-      positionsData.push({ ply: i + 1, fen: replayChess.fen(), move: m });
-    }
-
-    const analyzedPositions: PositionAnalysis[] = [];
-    const settings = await db.getSettings();
-
-    // Analyze each position
-    for (let i = 0; i < positionsData.length; i++) {
-      if (this.isCancelled || options.shouldCancel?.()) {
-        this.setStatus('ready');
-        throw new Error('Analysis cancelled by user');
+      for (let i = 0; i < historyVerbose.length; i++) {
+        const m = historyVerbose[i];
+        replayChess.move(m);
+        positionsData.push({ ply: i + 1, fen: replayChess.fen(), move: m });
       }
 
-      const item = positionsData[i];
-      options.onProgress?.(i, positionsData.length);
+      const totalPositions = positionsData.length;
+      options.onProgress?.(0, totalPositions);
+      this.setLifecycleState('analyzing');
+      options.onStageChange?.('analyzing');
 
-      const engineResult = await this.analyzePosition(item.fen, options.depth);
+      const analyzedPositions: PositionAnalysis[] = [];
+      const settings = await db.getSettings();
+
+      // Analyze each position
+      for (let i = 0; i < positionsData.length; i++) {
+        if (this.isCancelled || options.shouldCancel?.()) {
+          this.setLifecycleState('cancelled');
+          options.onStageChange?.('cancelled');
+          this.setStatus('ready');
+          throw new Error('Analysis cancelled by user');
+        }
+
+        const item = positionsData[i];
+        const engineResult = await this.analyzePosition(item.fen, options.depth);
+
+        // Report progress increment after completing position i
+        options.onProgress?.(i + 1, totalPositions);
 
       // Determine turn from FEN
       const currentTurn = item.fen.split(' ')[1] as 'w' | 'b';
@@ -341,6 +461,10 @@ class StockfishManager {
         depth: options.depth,
       });
     }
+
+    // All positions analyzed — transition to finalizing phase
+    this.setLifecycleState('finalizing');
+    options.onStageChange?.('finalizing');
 
     // Compute move classifications and coach explanations
     let whiteTotalCpl = 0;
@@ -539,7 +663,7 @@ class StockfishManager {
       summary,
     };
 
-    // Save analysis and update game in Dexie DB
+    // 1. Confirm analysis record write
     await db.analyses.put(analysisRecord);
     await db.games.update(game.id, {
       analyzedAt: Date.now(),
@@ -547,14 +671,38 @@ class StockfishManager {
       summary,
     });
 
-    // Refresh aggregated personal weaknesses
-    const allGames = await db.games.toArray();
-    const allAnalyses = await db.analyses.toArray();
-    await aggregateWeaknessesFromAnalyses(allGames, allAnalyses);
+    // 2. Verify persistence before declaring completed
+    const verified = await db.analyses.get(game.id);
+    if (!verified) {
+      console.warn('[Stockfish] Re-writing analysis record to ensure persistence...');
+      await db.analyses.put(analysisRecord);
+    }
 
+    // 3. Refresh aggregated personal weaknesses in a non-blocking safe block
+    try {
+      const allGames = await db.games.toArray();
+      const allAnalyses = await db.analyses.toArray();
+      await aggregateWeaknessesFromAnalyses(allGames, allAnalyses);
+    } catch (aggErr) {
+      console.warn('[Stockfish] Optional weakness aggregation error ignored:', aggErr);
+    }
+
+    this.setLifecycleState('completed');
+    options.onStageChange?.('completed');
     this.setStatus('ready');
     return analysisRecord;
+  } catch (err) {
+    this.setStatus('ready');
+    if (this.isCancelled) {
+      this.setLifecycleState('cancelled');
+      options.onStageChange?.('cancelled');
+    } else {
+      this.setLifecycleState('failed');
+      options.onStageChange?.('failed');
+    }
+    throw err;
   }
+}
 }
 
 export const stockfishService = new StockfishManager();

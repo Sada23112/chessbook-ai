@@ -10,7 +10,29 @@ if (typeof window !== 'undefined' && !window.Worker) {
     constructor(stringUrl: string) {
       this.url = stringUrl;
     }
-    postMessage(_data: unknown) {}
+    postMessage(data: unknown) {
+      if (typeof data === 'string') {
+        const cmd = data.trim();
+        if (cmd === 'uci') {
+          setTimeout(() => {
+            this.onmessage?.({ data: 'uciok' } as MessageEvent);
+          }, 0);
+        } else if (cmd === 'isready') {
+          setTimeout(() => {
+            this.onmessage?.({ data: 'readyok' } as MessageEvent);
+          }, 0);
+        } else if (cmd.startsWith('go')) {
+          setTimeout(() => {
+            this.onmessage?.({ data: 'info depth 8 score cp 20 pv e2e4 e7e5' } as MessageEvent);
+            this.onmessage?.({ data: 'bestmove e2e4' } as MessageEvent);
+          }, 0);
+        } else if (cmd === 'stop') {
+          setTimeout(() => {
+            this.onmessage?.({ data: 'bestmove (none)' } as MessageEvent);
+          }, 0);
+        }
+      }
+    }
     terminate() {}
     addEventListener() {}
     removeEventListener() {}

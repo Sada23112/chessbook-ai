@@ -114,7 +114,7 @@ export const Sidebar: React.FC = () => {
                       style={{
                         width: `${
                           analysisProgress.total > 0
-                            ? Math.round((analysisProgress.current / analysisProgress.total) * 100)
+                            ? Math.min(100, Math.round((analysisProgress.current / analysisProgress.total) * 100))
                             : 0
                         }%`,
                       }}

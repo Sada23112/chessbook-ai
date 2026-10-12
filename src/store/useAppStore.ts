@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { GameRecord, GameAnalysis, TrainingCard, UserSettings, PieceColor } from '../types/chess';
 import { db } from '../db/db';
-import { stockfishService } from '../engine/stockfishService';
+import { stockfishService, type AnalysisLifecycleState } from '../engine/stockfishService';
 import { calculateNextReview } from '../training/srsEngine';
 
 export type NavTab =
@@ -24,6 +24,8 @@ interface AppState {
   currentPly: number;
   boardOrientation: PieceColor;
   isAnalyzing: boolean;
+  analysisLifecycle: AnalysisLifecycleState;
+  analysisError: string | null;
   analysisProgress: { current: number; total: number };
   engineStatus: string;
   analysisStage: 'summary' | 'opening_coach' | 'full_game';
@@ -65,6 +67,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentPly: 0,
   boardOrientation: 'white',
   isAnalyzing: false,
+  analysisLifecycle: 'idle',
+  analysisError: null,
   analysisProgress: { current: 0, total: 0 },
   engineStatus: 'ready',
   analysisStage: 'summary',
@@ -101,6 +105,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       currentPly: 0,
       boardOrientation: game.userColor || 'white',
       analysisStage: initialStage,
+      analysisLifecycle: analysis ? 'completed' : 'idle',
+      analysisError: null,
       currentTab: 'analysis',
     });
   },
@@ -144,13 +150,24 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const targetDepth = depthOverride || settings?.engineDepth || 14;
 
-    set({ isAnalyzing: true, analysisProgress: { current: 0, total: activeGame.movesCount } });
+    set({
+      isAnalyzing: true,
+      analysisLifecycle: 'initializing',
+      analysisError: null,
+      analysisProgress: { current: 0, total: activeGame.movesCount + 1 },
+    });
 
     try {
       const analysis = await stockfishService.analyzeGame(activeGame, {
         depth: targetDepth,
         onProgress: (current, total) => {
-          set({ analysisProgress: { current, total } });
+          set({
+            analysisProgress: { current, total },
+            analysisLifecycle: current >= total ? 'finalizing' : 'analyzing',
+          });
+        },
+        onStageChange: (stage) => {
+          set({ analysisLifecycle: stage });
         },
       });
 
@@ -160,16 +177,23 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeAnalysis: analysis,
         activeGame: updatedGame || activeGame,
         isAnalyzing: false,
+        analysisLifecycle: 'completed',
+        analysisError: null,
       });
     } catch (err) {
       console.warn('Game analysis error:', err);
-      set({ isAnalyzing: false });
+      const isCancelled = stockfishService.getLifecycleState() === 'cancelled';
+      set({
+        isAnalyzing: false,
+        analysisLifecycle: isCancelled ? 'cancelled' : 'failed',
+        analysisError: err instanceof Error ? err.message : 'Analysis failed',
+      });
     }
   },
 
   stopAnalysis: () => {
     stockfishService.stop();
-    set({ isAnalyzing: false });
+    set({ isAnalyzing: false, analysisLifecycle: 'cancelled' });
   },
 
   setTrainingFilter: (filter) => {

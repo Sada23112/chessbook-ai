@@ -167,8 +167,9 @@ describe('InteractiveChessboard Component', () => {
     expect(e3Inner.style.background).toContain('radial-gradient');
   });
 
-  it('supports container touch events for mobile touch tap-to-move', () => {
-    const onMoveMock = vi.fn().mockReturnValue(true);
+  it('clears selectedSquare when an onMove callback rejects the move (returns false)', () => {
+    // Rejects the first move (e.g. incorrect trainer solution)
+    const onMoveMock = vi.fn().mockReturnValue(false);
 
     const { container } = render(
       <InteractiveChessboard
@@ -179,36 +180,58 @@ describe('InteractiveChessboard Component', () => {
       />
     );
 
-    const boardWrapper = container.firstChild as HTMLElement;
-    expect(boardWrapper).toBeTruthy();
-
     const e2Square = container.querySelector('[data-square="e2"]') as HTMLElement;
     const e4Square = container.querySelector('[data-square="e4"]') as HTMLElement;
 
-    // Simulate mobile touch tap on e2
-    if (e2Square) {
-      fireEvent.touchStart(boardWrapper, {
-        touches: [{ clientX: 100, clientY: 100 }],
-      });
-      // In JSDOM, fire click on the square to simulate touch-to-click transition
-      fireEvent.click(e2Square);
-    }
+    // 1. Select e2 and move to e4 -> onMove returns false
+    fireEvent.click(e2Square);
+    fireEvent.click(e4Square);
+    expect(onMoveMock).toHaveBeenCalledTimes(1);
 
-    // Simulate mobile touch tap on e4
-    if (e4Square) {
-      fireEvent.touchStart(boardWrapper, {
-        touches: [{ clientX: 100, clientY: 80 }],
-      });
-      fireEvent.click(e4Square);
+    // 2. Now tap d2 (another pawn). Because selection was cleared, d2 should be selected,
+    // not treated as an illegal move from e2 to d2!
+    const d2Square = container.querySelector('[data-square="d2"]') as HTMLElement;
+    const d4Square = container.querySelector('[data-square="d4"]') as HTMLElement;
 
-      expect(onMoveMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: 'e2',
-          to: 'e4',
-          san: 'e4',
-        })
-      );
-    }
+    fireEvent.click(d2Square);
+    // Move d2 to d4
+    fireEvent.click(d4Square);
+    expect(onMoveMock).toHaveBeenCalledTimes(2);
+    expect(onMoveMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        from: 'd2',
+        to: 'd4',
+        san: 'd4',
+      })
+    );
+  });
+
+  it('does not trigger onMove when merely selecting a piece or tapping empty/illegal squares', () => {
+    const onMoveMock = vi.fn();
+
+    const { container } = render(
+      <InteractiveChessboard
+        fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        boardOrientation="white"
+        allowMoves={true}
+        onMove={onMoveMock}
+      />
+    );
+
+    // Click friendly piece
+    const e2Square = container.querySelector('[data-square="e2"]') as HTMLElement;
+    fireEvent.click(e2Square);
+    expect(onMoveMock).not.toHaveBeenCalled();
+
+    // Click empty square that is not a legal move (e.g. a4)
+    const a4Square = container.querySelector('[data-square="a4"]') as HTMLElement;
+    fireEvent.click(a4Square);
+    expect(onMoveMock).not.toHaveBeenCalled();
+
+    // Click an opponent piece that cannot be captured legally (e.g. e7)
+    const e7Square = container.querySelector('[data-square="e7"]') as HTMLElement;
+    fireEvent.click(e7Square);
+    expect(onMoveMock).not.toHaveBeenCalled();
   });
 });
 

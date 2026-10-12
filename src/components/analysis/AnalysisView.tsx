@@ -58,6 +58,8 @@ export const AnalysisView: React.FC = () => {
     currentPly,
     boardOrientation,
     isAnalyzing,
+    analysisLifecycle,
+    analysisError,
     analysisProgress,
     analysisStage,
     setAnalysisStage,
@@ -348,7 +350,13 @@ export const AnalysisView: React.FC = () => {
                   className="px-6 py-3 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-sm transition shadow-lg flex items-center justify-center space-x-2"
                 >
                   <Sparkles size={18} />
-                  <span>{isAnalyzing ? 'Analyzing Game...' : 'Run Stockfish Review'}</span>
+                  <span>
+                    {isAnalyzing
+                      ? analysisLifecycle === 'finalizing'
+                        ? 'Finalizing Game Review...'
+                        : 'Analyzing with Stockfish...'
+                      : 'Run Stockfish Review'}
+                  </span>
                 </button>
               )}
             </div>
@@ -629,10 +637,16 @@ export const AnalysisView: React.FC = () => {
           {isAnalyzing ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-slate-300">
-                <span>Analyzing move {analysisProgress.current} of {analysisProgress.total}...</span>
+                <span>
+                  {analysisLifecycle === 'finalizing'
+                    ? 'Finalizing Game Review report & saving...'
+                    : analysisLifecycle === 'initializing'
+                    ? 'Initializing engine...'
+                    : `Analyzing move ${analysisProgress.current} of ${analysisProgress.total}...`}
+                </span>
                 <span className="font-mono text-accent">
                   {analysisProgress.total > 0
-                    ? `${Math.round((analysisProgress.current / analysisProgress.total) * 100)}%`
+                    ? `${Math.min(100, Math.round((analysisProgress.current / analysisProgress.total) * 100))}%`
                     : '0%'}
                 </span>
               </div>
@@ -642,7 +656,7 @@ export const AnalysisView: React.FC = () => {
                   style={{
                     width: `${
                       analysisProgress.total > 0
-                        ? (analysisProgress.current / analysisProgress.total) * 100
+                        ? Math.min(100, (analysisProgress.current / analysisProgress.total) * 100)
                         : 0
                     }%`,
                   }}
@@ -656,13 +670,32 @@ export const AnalysisView: React.FC = () => {
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => startAnalysis(selectedDepth)}
-              className="w-full py-2 px-3 bg-accent hover:bg-accent-hover text-black font-semibold text-xs rounded-lg transition flex items-center justify-center space-x-2 shadow"
-            >
-              <Sparkles size={16} />
-              <span>{activeAnalysis ? 'Re-Analyze with Stockfish' : 'Run Full Game Review'}</span>
-            </button>
+            <div className="space-y-2">
+              {analysisLifecycle === 'failed' && (
+                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+                  <div className="flex items-center space-x-1.5 font-bold mb-1">
+                    <AlertTriangle size={14} />
+                    <span>Analysis Incomplete</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 mb-2">
+                    {analysisError || 'Engine evaluation stopped unexpectedly. You can safely retry.'}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={() => startAnalysis(selectedDepth)}
+                className="w-full py-2 px-3 bg-accent hover:bg-accent-hover text-black font-semibold text-xs rounded-lg transition flex items-center justify-center space-x-2 shadow"
+              >
+                <Sparkles size={16} />
+                <span>
+                  {analysisLifecycle === 'failed'
+                    ? 'Retry Game Review'
+                    : activeAnalysis
+                    ? 'Re-Analyze with Stockfish'
+                    : 'Run Full Game Review'}
+                </span>
+              </button>
+            </div>
           )}
         </div>
 

@@ -5,6 +5,7 @@ import type {
   Arrow,
   PieceDropHandlerArgs,
   SquareHandlerArgs,
+  PieceHandlerArgs,
 } from 'react-chessboard';
 import type { TrainingArrow } from '../../types/chess';
 import { BoardArrowOverlay } from './BoardArrowOverlay';
@@ -154,13 +155,21 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
     }
   }, [currentChess, selectedSquare]);
 
+  const handledPieceSquareRef = useRef<string | null>(null);
+
   // Execute a verified legal move
   const executeMove = useCallback(
     (from: string, to: string, promotion: string = 'q'): boolean => {
       try {
         const testChess = new Chess(fen);
         const moveResult = testChess.move({ from, to, promotion });
-        if (!moveResult) return false;
+        if (!moveResult) {
+          setSelectedSquare(null);
+          return false;
+        }
+
+        // Always clear selected square after completing an attempted move
+        setSelectedSquare(null);
 
         if (onMove) {
           const accepted = onMove({
@@ -172,13 +181,13 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
             captured: moveResult.captured,
             promotion: moveResult.promotion,
           });
-          // If onMove returns explicitly false, move is rejected
+          // If onMove returns explicitly false, move is rejected by trainer
           if (accepted === false) return false;
         }
 
-        setSelectedSquare(null);
         return true;
       } catch {
+        setSelectedSquare(null);
         return false;
       }
     },
@@ -193,7 +202,6 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       onSquareClickProp?.(square);
 
       if (!allowMoves) {
-        // If moves aren't allowed, just notify onSquareClick
         return;
       }
 
@@ -201,22 +209,22 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       const pieceOnSquare = currentChess.get(sq);
       const activeTurn = currentChess.turn();
 
-      // Case 1: A square is currently selected
+      // Case 1: A piece is already selected
       if (selectedSquare) {
-        // Tapped same square -> Deselect
+        // Tapped the exact same square -> Deselect piece
         if (selectedSquare === sq) {
           setSelectedSquare(null);
           return;
         }
 
-        // Tapped a legal destination square -> Make move!
+        // Tapped a verified legal destination square -> Execute move!
         const legalMove = legalDestinations.find((m) => m.to === sq);
         if (legalMove) {
           executeMove(selectedSquare, sq, legalMove.promotion || 'q');
           return;
         }
 
-        // Tapped another piece of the active player's color -> Switch selection!
+        // Tapped another friendly piece of the active player -> Switch selection!
         const canSwitch =
           pieceOnSquare &&
           pieceOnSquare.color === activeTurn &&
@@ -232,16 +240,16 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
           return;
         }
 
-        // Tapped an invalid/empty square -> Cancel selection
+        // Tapped an invalid/empty square -> Deselect without treating as an answer attempt
         setSelectedSquare(null);
         return;
       }
 
-      // Case 2: No square currently selected -> Select friendly piece with legal moves
+      // Case 2: No piece currently selected -> Select friendly piece with legal moves
       if (pieceOnSquare) {
         // If turn filter is active, only allow selecting user's side
         if (turn && pieceOnSquare.color !== turn) return;
-        // Can only move pieces belonging to the side whose turn it is
+        // Can only select pieces belonging to the side whose turn it is
         if (pieceOnSquare.color !== activeTurn) return;
 
         const moves = currentChess.moves({ square: sq, verbose: true });
@@ -266,7 +274,24 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   const handleSquareClick = useCallback(
     ({ square }: SquareHandlerArgs) => {
       handledByBoardRef.current = true;
+      if (handledPieceSquareRef.current === square) return;
       processSquareTap(square);
+    },
+    [processSquareTap]
+  );
+
+  // Piece click handler from react-chessboard (critical for mobile and desktop piece selection)
+  const handlePieceClick = useCallback(
+    ({ square }: PieceHandlerArgs) => {
+      if (!square) return;
+      handledByBoardRef.current = true;
+      handledPieceSquareRef.current = square;
+      processSquareTap(square);
+      // Clear in microtask so bubbling square click in this exact event tick is ignored,
+      // while allowing immediate subsequent user clicks (e.g. rapid deselect or fast moves)
+      Promise.resolve().then(() => {
+        handledPieceSquareRef.current = null;
+      });
     },
     [processSquareTap]
   );
@@ -274,8 +299,13 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   // Drag-and-drop handler
   const handlePieceDrop = useCallback(
     ({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean => {
-      if (!allowMoves || disabled || !targetSquare) return false;
-      if (sourceSquare === targetSquare) return false;
+      if (!allowMoves || disabled) return false;
+
+      // If dropped on the same square, treat as a tap-to-select on that piece!
+      if (!targetSquare || sourceSquare === targetSquare) {
+        processSquareTap(sourceSquare);
+        return false;
+      }
 
       // Verify piece color
       const piece = currentChess.get(sourceSquare as Square);
@@ -285,7 +315,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
       return executeMove(sourceSquare, targetSquare, 'q');
     },
-    [allowMoves, disabled, currentChess, turn, executeMove]
+    [allowMoves, disabled, currentChess, turn, executeMove, processSquareTap]
   );
 
   // Check if a piece can be dragged
@@ -493,8 +523,9 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       position: fen,
       boardOrientation,
       allowDragging: allowMoves && !disabled,
-      dragActivationDistance: 15,
+      dragActivationDistance: 25,
       canDragPiece,
+      onPieceClick: handlePieceClick,
       onPieceDrop: handlePieceDrop,
       onSquareClick: handleSquareClick,
       squareRenderer: moveAnnotation ? squareRenderer : undefined,
@@ -515,6 +546,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       allowMoves,
       disabled,
       canDragPiece,
+      handlePieceClick,
       handlePieceDrop,
       handleSquareClick,
       squareRenderer,
