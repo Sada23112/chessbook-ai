@@ -87,9 +87,11 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const handledByBoardRef = useRef<boolean>(false);
 
-  // Clear piece selection whenever position FEN changes
+  // Clear piece selection and reset touch refs whenever position FEN changes
   useEffect(() => {
     setSelectedSquare(null);
+    touchStartRef.current = null;
+    handledByBoardRef.current = false;
   }, [fen]);
 
   // Compute legal moves from the current position
@@ -345,6 +347,11 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
     [getSquareFromPoint, processSquareTap]
   );
 
+  const handleTouchCancel = useCallback(() => {
+    touchStartRef.current = null;
+    handledByBoardRef.current = false;
+  }, []);
+
   // Compose dynamic square styles
   const squareStyles = useMemo(() => {
     const styles: Record<string, React.CSSProperties> = {};
@@ -421,41 +428,58 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   const activeColors = THEME_COLORS[boardTheme] || THEME_COLORS.emerald;
 
+  // Memoize chessboard options to prevent unneeded sensor re-initialization and board re-renders
+  const chessboardOptions = useMemo(
+    () => ({
+      id: idProp || 'chessbook-board',
+      position: fen,
+      boardOrientation,
+      allowDragging: allowMoves && !disabled,
+      dragActivationDistance: 15,
+      canDragPiece,
+      onPieceDrop: handlePieceDrop,
+      onSquareClick: handleSquareClick,
+      arrows,
+      squareStyles,
+      darkSquareStyle: { backgroundColor: activeColors.dark },
+      lightSquareStyle: { backgroundColor: activeColors.light },
+      boardStyle: {
+        borderRadius: '10px',
+        touchAction: 'manipulation',
+      },
+      animationDurationInMs: 200,
+      showAnimations: true,
+    }),
+    [
+      idProp,
+      fen,
+      boardOrientation,
+      allowMoves,
+      disabled,
+      canDragPiece,
+      handlePieceDrop,
+      handleSquareClick,
+      arrows,
+      squareStyles,
+      activeColors,
+    ]
+  );
+
   return (
     <div
-      className={`w-full aspect-square touch-none select-none rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated transition-all ${className}`}
+      className={`w-full aspect-square select-none rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated transition-all ${className}`}
       style={{
         maxWidth,
-        touchAction: 'none',
+        touchAction: 'manipulation',
         WebkitUserSelect: 'none',
         userSelect: 'none',
         WebkitTapHighlightColor: 'transparent',
       }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
     >
-      <Chessboard
-        options={{
-          id: idProp || 'chessbook-board',
-          position: fen,
-          boardOrientation,
-          allowDragging: allowMoves && !disabled,
-          dragActivationDistance: 15,
-          canDragPiece,
-          onPieceDrop: handlePieceDrop,
-          onSquareClick: handleSquareClick,
-          arrows,
-          squareStyles,
-          darkSquareStyle: { backgroundColor: activeColors.dark },
-          lightSquareStyle: { backgroundColor: activeColors.light },
-          boardStyle: {
-            borderRadius: '10px',
-            touchAction: 'none',
-          },
-          animationDurationInMs: 200,
-          showAnimations: true,
-        }}
-      />
+      <Chessboard options={chessboardOptions} />
     </div>
   );
 };
