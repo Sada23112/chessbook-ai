@@ -22,6 +22,8 @@ import type {
   OpeningCourse,
   CourseLesson,
   CourseLineRecord,
+  CourseLessonRecord,
+  LearningMode,
 } from '../../types/chess';
 import { db } from '../../db/db';
 import {
@@ -30,6 +32,11 @@ import {
   calculateLessonProgress,
 } from '../../repertoire/courseEngine';
 import { CompactBoardPreview } from '../common/CompactBoardPreview';
+import {
+  Lock,
+  ShieldCheck,
+  Eye,
+} from 'lucide-react';
 
 export interface OpeningCourseViewProps {
   repertoire: OpeningRepertoire;
@@ -37,7 +44,9 @@ export interface OpeningCourseViewProps {
   onStartLessonTraining: (
     repertoire: OpeningRepertoire,
     lesson: CourseLesson,
-    variationId?: string
+    variationId?: string,
+    mode?: LearningMode,
+    isRecallTest?: boolean
   ) => void;
   onBrowseMoveTree: (repertoire: OpeningRepertoire, variation?: RepertoireVariation) => void;
 }
@@ -49,6 +58,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
   onBrowseMoveTree,
 }) => {
   const [lineRecords, setLineRecords] = useState<CourseLineRecord[]>([]);
+  const [lessonRecords, setLessonRecords] = useState<CourseLessonRecord[]>([]);
   const [expandedLessons, setExpandedLessons] = useState<Record<string, boolean>>({});
   const [isResetting, setIsResetting] = useState(false);
 
@@ -62,6 +72,8 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
     try {
       const records = await db.getCourseLinesProgress(course.id);
       setLineRecords(records);
+      const lRecs = await db.getCourseLessonsProgress(course.id);
+      setLessonRecords(lRecs);
     } catch (err) {
       console.warn('Error loading course progress:', err);
     }
@@ -79,6 +91,15 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
     }
     return map;
   }, [lineRecords]);
+
+  // Map of lessonId -> CourseLessonRecord
+  const lessonRecordsMap = useMemo(() => {
+    const map = new Map<string, CourseLessonRecord>();
+    for (const rec of lessonRecords) {
+      map.set(rec.lessonId, rec);
+    }
+    return map;
+  }, [lessonRecords]);
 
   // Overall course progress
   const courseProgress = useMemo(() => {
@@ -427,15 +448,22 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
         <div className="space-y-4">
           {course.lessons.map((lesson) => {
-            const lessonSummary = calculateLessonProgress(lesson, lineRecordsMap);
+            const lessonSummary = calculateLessonProgress(
+              lesson,
+              lineRecordsMap,
+              lessonRecordsMap,
+              course.lessons
+            );
             const isExpanded = !!expandedLessons[lesson.id];
 
             return (
               <div
                 key={lesson.id}
                 className={`bg-surface rounded-2xl border transition duration-200 overflow-hidden ${
-                  lessonSummary.isCompleted
-                    ? 'border-emerald-500/30 bg-surface/90'
+                  lessonSummary.recallTestPassed
+                    ? 'border-emerald-500/40 bg-surface/90'
+                    : lessonSummary.isLocked
+                    ? 'border-surface-border/50 opacity-70 bg-surface/60'
                     : 'border-surface-border hover:border-surface-border/90'
                 }`}
               >
@@ -445,15 +473,19 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                     {/* Level Number Badge */}
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 border ${
-                        lessonSummary.isCompleted
+                        lessonSummary.recallTestPassed
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                          : lessonSummary.status === 'in_progress'
-                          ? 'bg-accent/20 text-accent border-accent/40'
-                          : 'bg-surface-elevated text-slate-300 border-surface-border'
+                          : lessonSummary.isLocked
+                          ? 'bg-surface-elevated/40 text-slate-500 border-surface-border/50'
+                          : lessonSummary.learningStageCompleted
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-accent/20 text-accent border-accent/40'
                       }`}
                     >
-                      {lessonSummary.isCompleted ? (
+                      {lessonSummary.recallTestPassed ? (
                         <CheckCircle2 size={20} className="text-emerald-400" />
+                      ) : lessonSummary.isLocked ? (
+                        <Lock size={18} className="text-slate-500" />
                       ) : (
                         <span>L{lesson.levelNumber}</span>
                       )}
@@ -482,12 +514,57 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                         {lesson.description}
                       </p>
 
+                      {/* Two-Stage Progress Badges */}
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        {lessonSummary.isLocked ? (
+                          <span className="text-[11px] font-semibold text-amber-400/90 flex items-center space-x-1">
+                            <Lock size={12} />
+                            <span>Locked: Pass Level {lesson.levelNumber - 1} Blind Recall Test to unlock</span>
+                          </span>
+                        ) : (
+                          <>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center space-x-1 ${
+                                lessonSummary.learningStageCompleted
+                                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                  : 'bg-surface-elevated text-slate-400 border-surface-border'
+                              }`}
+                            >
+                              <Eye size={11} />
+                              <span>
+                                Stage 1: {lessonSummary.learningStageCompleted ? 'Lines Learned ✓' : 'Learning with Arrows'}
+                              </span>
+                            </span>
+
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center space-x-1 ${
+                                lessonSummary.recallTestPassed
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                  : lessonSummary.learningStageCompleted
+                                  ? 'bg-blue-500/15 text-blue-300 border-blue-500/30 font-semibold animate-pulse'
+                                  : 'bg-surface-elevated text-slate-500 border-surface-border'
+                              }`}
+                            >
+                              <ShieldCheck size={11} />
+                              <span>
+                                Stage 2:{' '}
+                                {lessonSummary.recallTestPassed
+                                  ? 'Blind Recall Passed ✓'
+                                  : lessonSummary.learningStageCompleted
+                                  ? 'Ready for Test'
+                                  : 'Locked'}
+                              </span>
+                            </span>
+                          </>
+                        )}
+                      </div>
+
                       {/* Lesson Progress Bar */}
                       <div className="flex items-center space-x-3 text-xs">
                         <div className="w-32 sm:w-48 h-2 bg-surface-elevated rounded-full overflow-hidden border border-surface-border">
                           <div
                             className={`h-full transition-all duration-300 rounded-full ${
-                              lessonSummary.isCompleted ? 'bg-emerald-400' : 'bg-accent'
+                              lessonSummary.recallTestPassed ? 'bg-emerald-400' : 'bg-accent'
                             }`}
                             style={{ width: `${lessonSummary.percentage}%` }}
                           />
@@ -502,33 +579,78 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
                   {/* Lesson Controls */}
                   <div className="flex items-center space-x-2 shrink-0 self-end md:self-auto">
-                    <button
-                      onClick={() =>
-                        onStartLessonTraining(
-                          repertoire,
-                          lesson,
-                          lesson.variations.find(
-                            (v) =>
-                              lineRecordsMap.get(v.id)?.status !== 'completed' &&
-                              lineRecordsMap.get(v.id)?.status !== 'mastered'
-                          )?.id || lesson.variations[0]?.id
-                        )
-                      }
-                      className={`py-2 px-3.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
-                        lessonSummary.isCompleted
-                          ? 'bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border'
-                          : 'bg-accent hover:bg-accent-hover text-black shadow-sm'
-                      }`}
-                    >
-                      <Dumbbell size={14} />
-                      <span>
-                        {lessonSummary.isCompleted
-                          ? 'Practice Level'
-                          : lessonSummary.status === 'in_progress'
-                          ? 'Resume Level'
-                          : 'Start Level'}
-                      </span>
-                    </button>
+                    {lessonSummary.isLocked ? (
+                      <div className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-surface-elevated/60 text-slate-500 border border-surface-border text-xs font-semibold">
+                        <Lock size={13} />
+                        <span>Locked</span>
+                      </div>
+                    ) : !lessonSummary.learningStageCompleted ? (
+                      <button
+                        onClick={() =>
+                          onStartLessonTraining(
+                            repertoire,
+                            lesson,
+                            lesson.variations.find((v) => !lineRecordsMap.get(v.id)?.guidedCompleted)?.id ||
+                              lesson.variations[0]?.id,
+                            'guided',
+                            false
+                          )
+                        }
+                        className="py-2 px-3.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-accent hover:bg-accent-hover text-black shadow-sm"
+                      >
+                        <Eye size={14} />
+                        <span>Learn Lines (Guided)</span>
+                      </button>
+                    ) : !lessonSummary.recallTestPassed ? (
+                      <button
+                        onClick={() =>
+                          onStartLessonTraining(
+                            repertoire,
+                            lesson,
+                            lesson.variations[0]?.id,
+                            'recall',
+                            true
+                          )
+                        }
+                        className="py-2 px-3.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black shadow-md font-bold"
+                      >
+                        <ShieldCheck size={14} />
+                        <span>Test My Memory</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center space-x-1.5">
+                        <button
+                          onClick={() =>
+                            onStartLessonTraining(
+                              repertoire,
+                              lesson,
+                              lesson.variations[0]?.id,
+                              'guided',
+                              false
+                            )
+                          }
+                          className="py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border transition flex items-center space-x-1"
+                        >
+                          <Eye size={12} />
+                          <span>Guided</span>
+                        </button>
+                        <button
+                          onClick={() =>
+                            onStartLessonTraining(
+                              repertoire,
+                              lesson,
+                              lesson.variations[0]?.id,
+                              'recall',
+                              true
+                            )
+                          }
+                          className="py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center space-x-1"
+                        >
+                          <ShieldCheck size={12} />
+                          <span>Retest</span>
+                        </button>
+                      </div>
+                    )}
 
                     <button
                       onClick={() => toggleLessonExpanded(lesson.id)}

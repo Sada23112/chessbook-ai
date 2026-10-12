@@ -4,6 +4,7 @@ import type {
   RepertoireVariation,
   PieceColor,
   CourseLesson,
+  LearningMode,
 } from '../../types/chess';
 import { db } from '../../db/db';
 import {
@@ -32,6 +33,8 @@ export const OpeningBookView: React.FC = () => {
     undefined
   );
   const [selectedLesson, setSelectedLesson] = useState<CourseLesson | undefined>(undefined);
+  const [trainingMode, setTrainingMode] = useState<LearningMode | undefined>(undefined);
+  const [isRecallTest, setIsRecallTest] = useState<boolean>(false);
   const [deviations, setDeviations] = useState<DeviationResult[]>([]);
   const [isReseeding, setIsReseeding] = useState<boolean>(false);
 
@@ -102,20 +105,35 @@ export const OpeningBookView: React.FC = () => {
       l.variations.some((v) => v.id === targetVar?.id)
     );
     setSelectedLesson(foundLesson || course.lessons[0]);
-
+    setTrainingMode(undefined);
+    setIsRecallTest(false);
     setScreen('training');
   };
 
   const handleStartLessonTraining = (
     repertoire: OpeningRepertoire,
     lesson: CourseLesson,
-    variationId?: string
+    variationId?: string,
+    mode?: LearningMode,
+    isRecall?: boolean
   ) => {
     setSelectedRepertoireId(repertoire.id);
     setSelectedLesson(lesson);
     const targetVar =
       lesson.variations.find((v) => v.id === variationId) || lesson.variations[0];
     setSelectedVariation(targetVar);
+    setTrainingMode(mode);
+    setIsRecallTest(isRecall ?? false);
+    setScreen('training');
+  };
+
+  const handleStartRecallTest = (lesson: CourseLesson) => {
+    setSelectedLesson(lesson);
+    if (lesson.variations.length > 0) {
+      setSelectedVariation(lesson.variations[0]);
+    }
+    setTrainingMode('recall');
+    setIsRecallTest(true);
     setScreen('training');
   };
 
@@ -155,6 +173,8 @@ export const OpeningBookView: React.FC = () => {
   const handleAdvanceToNextLesson = (nextLesson: CourseLesson) => {
     setSelectedLesson(nextLesson);
     setSelectedVariation(nextLesson.variations[0]);
+    setTrainingMode('guided');
+    setIsRecallTest(false);
   };
 
   const handleImportPgn = async (repertoireId: string, pgn: string, name?: string) => {
@@ -256,9 +276,12 @@ export const OpeningBookView: React.FC = () => {
           }
           course={activeCourse}
           lesson={selectedLesson}
+          initialMode={trainingMode}
+          isRecallTest={isRecallTest}
           onExitTraining={() => setScreen('course')}
           onSelectNextVariation={handleNextVariationInTraining}
           onAdvanceToNextLesson={handleAdvanceToNextLesson}
+          onStartRecallTest={handleStartRecallTest}
         />
       )}
     </div>

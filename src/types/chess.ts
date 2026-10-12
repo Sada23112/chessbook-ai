@@ -160,6 +160,29 @@ export interface OpeningCourse {
   totalLines: number;
 }
 
+export type LearningMode = 'guided' | 'recall';
+
+export interface TrainingArrow {
+  startSquare: string; // e.g. 'g1'
+  endSquare: string; // e.g. 'f3'
+  color?: string;
+  type?: 'solution' | 'hint' | 'variation';
+}
+
+export type OpeningTrainingPhase =
+  | 'guided_learning'
+  | 'guided_move_pending'
+  | 'validating_move'
+  | 'correct_feedback'
+  | 'blind_recall'
+  | 'incorrect_feedback'
+  | 'line_completed'
+  | 'level_learning_completed'
+  | 'recall_test'
+  | 'level_passed'
+  | 'level_failed'
+  | 'course_completed';
+
 export interface CourseLineRecord {
   id: string; // `${courseId}_${lineId}`
   courseId: string;
@@ -175,6 +198,24 @@ export interface CourseLineRecord {
   accuracy: number;
   completedAt?: number;
   interruptedPly?: number;
+  guidedCompleted?: boolean;
+  recallPassed?: boolean;
+  learningMode?: LearningMode;
+}
+
+export interface CourseLessonRecord {
+  id: string; // `${courseId}_${lessonId}`
+  courseId: string;
+  lessonId: string;
+  repertoireId: string;
+  learningStageCompleted: boolean;
+  recallTestPassed: boolean;
+  recallAttemptsCount: number;
+  recallMistakesCount: number;
+  recallAccuracy: number;
+  unlocked: boolean;
+  completedAt?: number;
+  lastTestedAt?: number;
 }
 
 export interface CourseProgressSummary {
@@ -199,6 +240,8 @@ export interface LessonProgressSummary {
   percentage: number;
   isCompleted: boolean;
   isLocked: boolean;
+  learningStageCompleted?: boolean;
+  recallTestPassed?: boolean;
   status: 'not_started' | 'in_progress' | 'completed';
 }
 

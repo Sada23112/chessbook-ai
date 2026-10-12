@@ -1,11 +1,15 @@
+import { Chess } from 'chess.js';
 import type {
   OpeningRepertoire,
   RepertoireVariation,
   OpeningCourse,
   CourseLesson,
   CourseLineRecord,
+  CourseLessonRecord,
   CourseProgressSummary,
   LessonProgressSummary,
+  TrainingArrow,
+  LearningMode,
 } from '../types/chess';
 
 /**
@@ -189,11 +193,132 @@ export function buildCourseFromRepertoire(repertoire: OpeningRepertoire): Openin
 }
 
 /**
- * Calculates progress for a single lesson based on persistent line records.
+ * Derives arrow start and end squares from a FEN position and SAN/UCI move string.
+ * Supports standard moves, knight moves, and castling (O-O, O-O-O).
+ */
+export function getMoveArrow(
+  fen: string,
+  moveSanOrUci: string,
+  type: 'solution' | 'hint' | 'variation' = 'solution',
+  color?: string
+): TrainingArrow | null {
+  if (!fen || !moveSanOrUci) return null;
+  try {
+    // 1. Direct UCI move pattern check (e.g. 'e2e4', 'g1f3')
+    if (/^[a-h][1-8][a-h][1-8][qrbn]?$/i.test(moveSanOrUci)) {
+      return {
+        startSquare: moveSanOrUci.slice(0, 2).toLowerCase(),
+        endSquare: moveSanOrUci.slice(2, 4).toLowerCase(),
+        type,
+        color,
+      };
+    }
+
+    // 2. Parse SAN move using chess.js
+    const chess = new Chess(fen);
+    const move = chess.move(moveSanOrUci);
+    if (move) {
+      return {
+        startSquare: move.from,
+        endSquare: move.to,
+        type,
+        color,
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Recommends Guided Learning or Blind Recall based on the line's past learning record.
+ */
+export function determineRecommendedMode(
+  record?: CourseLineRecord
+): LearningMode {
+  if (!record || record.attemptsCount === 0 || !record.guidedCompleted) {
+    return 'guided';
+  }
+  if (record.status === 'completed' || record.status === 'mastered') {
+    return 'recall';
+  }
+  if (record.mistakesCount > record.correctCount) {
+    return 'guided';
+  }
+  return 'recall';
+}
+
+/**
+ * Evaluates the results of a level's blind recall test.
+ */
+export interface RecallTestResult {
+  totalPositions: number;
+  correctMoves: number;
+  mistakesCount: number;
+  hintsUsedCount: number;
+  accuracy: number;
+  passed: boolean;
+  failedVariationIds: string[];
+}
+
+export function evaluateRecallTest(
+  variations: RepertoireVariation[],
+  lineRecords: Map<string, CourseLineRecord>
+): RecallTestResult {
+  let totalPositions = 0;
+  let correctMoves = 0;
+  let mistakesCount = 0;
+  let hintsUsedCount = 0;
+  const failedVariationIds: string[] = [];
+
+  for (const v of variations) {
+    const rec = lineRecords.get(v.id);
+    const userMovesCount = Math.max(1, Math.ceil(v.moves.length / 2));
+    totalPositions += userMovesCount;
+
+    if (rec) {
+      correctMoves += rec.correctCount;
+      mistakesCount += rec.mistakesCount;
+      hintsUsedCount += rec.hintsUsedCount || 0;
+
+      // Fail a variation if too many mistakes or heavily hinted
+      if (rec.mistakesCount > 2 || (rec.hintsUsedCount || 0) > 2 || rec.accuracy < 60) {
+        failedVariationIds.push(v.id);
+      }
+    } else {
+      failedVariationIds.push(v.id);
+    }
+  }
+
+  const totalAttempts = correctMoves + mistakesCount;
+  const accuracy =
+    totalAttempts > 0
+      ? Math.max(0, Math.min(100, Math.round((correctMoves / totalAttempts) * 100)))
+      : 0;
+
+  const passed = failedVariationIds.length === 0 && accuracy >= 75;
+
+  return {
+    totalPositions,
+    correctMoves,
+    mistakesCount,
+    hintsUsedCount,
+    accuracy,
+    passed,
+    failedVariationIds,
+  };
+}
+
+/**
+ * Calculates progress for a single lesson based on persistent line records
+ * and optional lesson records.
  */
 export function calculateLessonProgress(
   lesson: CourseLesson,
-  lineRecordsMap: Map<string, CourseLineRecord>
+  lineRecordsMap: Map<string, CourseLineRecord>,
+  lessonRecordsMap?: Map<string, CourseLessonRecord>,
+  allLessons?: CourseLesson[]
 ): LessonProgressSummary {
   const totalLines = lesson.variations.length;
   if (totalLines === 0) {
@@ -206,11 +331,14 @@ export function calculateLessonProgress(
       percentage: 0,
       isCompleted: true,
       isLocked: false,
+      learningStageCompleted: true,
+      recallTestPassed: true,
       status: 'completed',
     };
   }
 
   let completedLines = 0;
+  let guidedDoneLines = 0;
   let attemptedLines = 0;
 
   for (const v of lesson.variations) {
@@ -219,19 +347,38 @@ export function calculateLessonProgress(
       if (record.status === 'completed' || record.status === 'mastered') {
         completedLines++;
       }
+      if (record.guidedCompleted || record.status === 'completed' || record.status === 'mastered') {
+        guidedDoneLines++;
+      }
       if (record.attemptsCount > 0) {
         attemptedLines++;
       }
     }
   }
 
+  const lessonRecord = lessonRecordsMap?.get(lesson.id);
+  const learningStageCompleted =
+    lessonRecord?.learningStageCompleted || guidedDoneLines === totalLines;
+  const recallTestPassed =
+    lessonRecord?.recallTestPassed || (completedLines === totalLines && (lessonRecord?.recallTestPassed ?? false));
+
+  // Determine lock state: Level 1 is always unlocked. Level N is unlocked if Level N-1 passed recall test.
+  let isLocked = false;
+  if (lesson.levelNumber > 1 && allLessons && lessonRecordsMap) {
+    const prevLesson = allLessons.find((l) => l.levelNumber === lesson.levelNumber - 1);
+    if (prevLesson) {
+      const prevRecord = lessonRecordsMap.get(prevLesson.id);
+      isLocked = !prevRecord?.recallTestPassed;
+    }
+  }
+
   const percentage = Math.min(100, Math.round((completedLines / totalLines) * 100));
-  const isCompleted = completedLines === totalLines;
+  const isCompleted = recallTestPassed || (completedLines === totalLines && learningStageCompleted);
 
   let status: 'not_started' | 'in_progress' | 'completed' = 'not_started';
   if (isCompleted) {
     status = 'completed';
-  } else if (attemptedLines > 0 || completedLines > 0) {
+  } else if (attemptedLines > 0 || completedLines > 0 || guidedDoneLines > 0) {
     status = 'in_progress';
   }
 
@@ -243,7 +390,9 @@ export function calculateLessonProgress(
     completedLines,
     percentage,
     isCompleted,
-    isLocked: false, // Accessible, level-based recommendation
+    isLocked,
+    learningStageCompleted,
+    recallTestPassed,
     status,
   };
 }

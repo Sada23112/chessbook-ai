@@ -7,6 +7,7 @@ import type {
   WeaknessRecord,
   UserSettings,
   CourseLineRecord,
+  CourseLessonRecord,
 } from '../types/chess';
 
 export class ChessbookDatabase extends Dexie {
@@ -17,6 +18,7 @@ export class ChessbookDatabase extends Dexie {
   weaknesses!: Table<WeaknessRecord, string>;
   settings!: Table<UserSettings, string>;
   courseLineProgress!: Table<CourseLineRecord, string>;
+  courseLessonProgress!: Table<CourseLessonRecord, string>;
 
   constructor() {
     super('ChessbookAIDB');
@@ -34,6 +36,11 @@ export class ChessbookDatabase extends Dexie {
     // Schema version 2: Level-based courses & line progress
     this.version(2).stores({
       courseLineProgress: 'id, courseId, lessonId, lineId, repertoireId, status, lastPracticed',
+    });
+
+    // Schema version 3: Two-stage level progression & recall test
+    this.version(3).stores({
+      courseLessonProgress: 'id, courseId, lessonId, repertoireId, learningStageCompleted, recallTestPassed, unlocked',
     });
   }
 
@@ -62,10 +69,47 @@ export class ChessbookDatabase extends Dexie {
     return fullRecord;
   }
 
+  async getCourseLessonsProgress(courseIdOrRepertoireId: string): Promise<CourseLessonRecord[]> {
+    const byCourse = await this.courseLessonProgress
+      .where('courseId')
+      .equals(courseIdOrRepertoireId)
+      .toArray();
+    if (byCourse.length > 0) return byCourse;
+
+    return this.courseLessonProgress
+      .where('repertoireId')
+      .equals(courseIdOrRepertoireId)
+      .toArray();
+  }
+
+  async getLessonProgress(
+    courseId: string,
+    lessonId: string
+  ): Promise<CourseLessonRecord | undefined> {
+    const id = `${courseId}_${lessonId}`;
+    return this.courseLessonProgress.get(id);
+  }
+
+  async recordLessonProgress(
+    record: Omit<CourseLessonRecord, 'id'> & { id?: string }
+  ): Promise<CourseLessonRecord> {
+    const id = record.id || `${record.courseId}_${record.lessonId}`;
+    const fullRecord: CourseLessonRecord = {
+      ...record,
+      id,
+    };
+    await this.courseLessonProgress.put(fullRecord);
+    return fullRecord;
+  }
+
   async resetCourseProgress(courseIdOrRepertoireId: string): Promise<void> {
-    const records = await this.getCourseLinesProgress(courseIdOrRepertoireId);
-    if (records.length > 0) {
-      await this.courseLineProgress.bulkDelete(records.map((r) => r.id));
+    const lineRecords = await this.getCourseLinesProgress(courseIdOrRepertoireId);
+    if (lineRecords.length > 0) {
+      await this.courseLineProgress.bulkDelete(lineRecords.map((r) => r.id));
+    }
+    const lessonRecords = await this.getCourseLessonsProgress(courseIdOrRepertoireId);
+    if (lessonRecords.length > 0) {
+      await this.courseLessonProgress.bulkDelete(lessonRecords.map((r) => r.id));
     }
   }
 

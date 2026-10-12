@@ -14,6 +14,11 @@ import {
   Award,
   Layers,
   Flame,
+  Eye,
+  EyeOff,
+  Compass,
+  AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import type {
   OpeningRepertoire,
@@ -21,18 +26,31 @@ import type {
   OpeningCourse,
   CourseLesson,
   CourseLineRecord,
+  CourseLessonRecord,
+  TrainingArrow,
+  LearningMode,
+  OpeningTrainingPhase,
 } from '../../types/chess';
 import { InteractiveChessboard } from '../common/InteractiveChessboard';
 import { db } from '../../db/db';
+import {
+  getMoveArrow,
+  determineRecommendedMode,
+  evaluateRecallTest,
+  type RecallTestResult,
+} from '../../repertoire/courseEngine';
 
 export interface OpeningTrainingViewProps {
   repertoire: OpeningRepertoire;
   variation: RepertoireVariation;
   course?: OpeningCourse;
   lesson?: CourseLesson;
+  initialMode?: LearningMode;
+  isRecallTest?: boolean;
   onExitTraining: () => void;
   onSelectNextVariation?: () => void;
   onAdvanceToNextLesson?: (nextLesson: CourseLesson) => void;
+  onStartRecallTest?: (lesson: CourseLesson) => void;
 }
 
 export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
@@ -40,22 +58,37 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
   variation,
   course,
   lesson,
+  initialMode,
+  isRecallTest = false,
   onExitTraining,
   onSelectNextVariation,
   onAdvanceToNextLesson,
+  onStartRecallTest,
 }) => {
+  const [learningMode, setLearningMode] = useState<LearningMode>(initialMode || 'guided');
+  const [phase, setPhase] = useState<OpeningTrainingPhase>('guided_learning');
+
   const [plyIndex, setPlyIndex] = useState<number>(0);
   const [trainingStatus, setTrainingStatus] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState<boolean | null>(null);
+
+  // Hint and Solution reveal state
   const [showHint, setShowHint] = useState<boolean>(false);
+  const [showSolution, setShowSolution] = useState<boolean>(false);
   const [hintsCount, setHintsCount] = useState<number>(0);
-  const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [mistakeCount, setMistakeCount] = useState<number>(0);
   const [correctCount, setCorrectCount] = useState<number>(0);
+
+  // Modals & Stage Result state
   const [showResultModal, setShowResultModal] = useState<boolean>(false);
+  const [showStage1CompleteModal, setShowStage1CompleteModal] = useState<boolean>(false);
+  const [showRecallTestModal, setShowRecallTestModal] = useState<boolean>(false);
+  const [recallTestResult, setRecallTestResult] = useState<RecallTestResult | null>(null);
   const [savedRecord, setSavedRecord] = useState<CourseLineRecord | null>(null);
 
-  // Dedicated timer ref to prevent timeout overlap, race conditions, and memory leaks
+  // Guard against rapid duplicate taps
+  const isValidatingRef = useRef<boolean>(false);
+  // Dedicated timer ref to avoid race conditions and memory leaks
   const opponentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clean up any pending timer on unmount
@@ -109,35 +142,72 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
     return undefined;
   }, [course, lesson]);
 
-  // Reset training state when variation changes
+  // Determine and initialize learning mode based on past history or props
+  useEffect(() => {
+    const initMode = async () => {
+      if (isRecallTest) {
+        setLearningMode('recall');
+        return;
+      }
+      if (initialMode) {
+        setLearningMode(initialMode);
+        return;
+      }
+      try {
+        const courseId = course?.id || `course_${repertoire.id}`;
+        const record = await db.courseLineProgress.get(`${courseId}_${variation.id}`);
+        setLearningMode(determineRecommendedMode(record));
+      } catch {
+        setLearningMode('guided');
+      }
+    };
+    initMode();
+  }, [variation.id, isRecallTest, initialMode, course?.id, repertoire.id]);
+
+  // Reset training state when variation or mode changes
   useEffect(() => {
     if (opponentTimerRef.current) {
       clearTimeout(opponentTimerRef.current);
       opponentTimerRef.current = null;
     }
+    isValidatingRef.current = false;
     setMistakeCount(0);
     setCorrectCount(0);
     setHintsCount(0);
-    setIsCompleted(false);
     setIsSuccess(null);
     setShowHint(false);
+    setShowSolution(false);
     setShowResultModal(false);
+    setShowStage1CompleteModal(false);
+    setShowRecallTestModal(false);
+    setRecallTestResult(null);
     setSavedRecord(null);
 
-    // If opening starts with opponent's move (e.g. Black vs 1.e4), auto-play White's move on start
+    const isGuided = learningMode === 'guided';
+    setPhase(isGuided ? 'guided_learning' : 'blind_recall');
+
+    // Auto-play opponent's first move if repertoire is Black and ply 0 is White
     if (repertoire.color === 'black' && variation.moves.length > 0) {
       setPlyIndex(0);
       opponentTimerRef.current = setTimeout(() => {
         setPlyIndex(1);
-        setTrainingStatus('Your turn. Play Black’s opening defense.');
+        setTrainingStatus(
+          isGuided
+            ? `Your turn (Black). Follow the guided move.`
+            : `Your turn (Black). Recall the opening defense.`
+        );
+        setPhase(isGuided ? 'guided_move_pending' : 'blind_recall');
       }, 500);
     } else {
       setPlyIndex(0);
       setTrainingStatus(
         repertoire.color === 'white'
-          ? 'Your turn (white). Find the opening move.'
+          ? isGuided
+            ? 'Your turn (White). Play the guided opening move.'
+            : 'Your turn (White). Find the opening move.'
           : 'Opponent is responding...'
       );
+      setPhase(isGuided ? 'guided_move_pending' : 'blind_recall');
     }
 
     return () => {
@@ -146,41 +216,70 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
         opponentTimerRef.current = null;
       }
     };
-  }, [variation.id, repertoire.color, variation.moves]);
+  }, [variation.id, learningMode, repertoire.color, variation.moves]);
 
-  // Save progress record when line finishes
+  // Calculate dynamic arrows based on mode, hints, and solution reveals
+  const activeArrows: TrainingArrow[] = useMemo(() => {
+    if (!isUserTurn || !expectedMoveSan || plyIndex >= variation.moves.length) {
+      return [];
+    }
+
+    // 1. In Guided Learning: always show solution arrow
+    if (learningMode === 'guided') {
+      const arrow = getMoveArrow(currentFen, expectedMoveSan, 'solution');
+      return arrow ? [arrow] : [];
+    }
+
+    // 2. In Blind Recall: only show arrow if user explicitly requested Solution or Hint
+    if (showSolution) {
+      const arrow = getMoveArrow(currentFen, expectedMoveSan, 'solution');
+      return arrow ? [arrow] : [];
+    }
+
+    if (showHint) {
+      const arrow = getMoveArrow(currentFen, expectedMoveSan, 'hint');
+      return arrow ? [arrow] : [];
+    }
+
+    return [];
+  }, [isUserTurn, expectedMoveSan, plyIndex, variation.moves.length, learningMode, currentFen, showSolution, showHint]);
+
+  // Handles completion of an entire variation line
   const handleLineFinished = useCallback(
     async (finalMistakes: number, finalCorrect: number, finalHints: number) => {
-      setIsCompleted(true);
-      setShowResultModal(true);
-
       const totalAttempts = finalCorrect + finalMistakes;
       const accuracy =
         totalAttempts > 0
           ? Math.max(0, Math.min(100, Math.round((finalCorrect / totalAttempts) * 100)))
           : 100;
 
-      const isMastered = finalMistakes === 0 && finalHints === 0;
+      const isGuided = learningMode === 'guided';
+      const isMastered = finalMistakes === 0 && finalHints === 0 && !showSolution;
       const status: 'completed' | 'mastered' = isMastered ? 'mastered' : 'completed';
 
       const courseId = course?.id || `course_${repertoire.id}`;
       const lessonId = lesson?.id || `${repertoire.id}_lvl_1`;
 
+      let updatedRecord: CourseLineRecord | null = null;
       try {
-        const record = await db.recordLineProgress({
+        const prev = await db.courseLineProgress.get(`${courseId}_${variation.id}`);
+        updatedRecord = await db.recordLineProgress({
           courseId,
           lessonId,
           lineId: variation.id,
           repertoireId: repertoire.id,
           status,
-          attemptsCount: 1,
+          attemptsCount: (prev?.attemptsCount || 0) + 1,
           mistakesCount: finalMistakes,
           correctCount: finalCorrect,
           hintsUsedCount: finalHints,
           accuracy,
           lastPracticed: Date.now(),
+          guidedCompleted: isGuided ? true : prev?.guidedCompleted ?? true,
+          recallPassed: !isGuided ? finalMistakes === 0 : prev?.recallPassed ?? false,
+          learningMode,
         });
-        setSavedRecord(record);
+        setSavedRecord(updatedRecord);
       } catch (err) {
         console.warn('Failed to save line progress:', err);
       }
@@ -190,14 +289,124 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
         spread: 70,
         origin: { y: 0.65 },
       });
+
+      // Check level-level stage progression
+      if (lesson) {
+        try {
+          const allLinesProgress = await db.getCourseLinesProgress(courseId);
+          const lineMap = new Map<string, CourseLineRecord>();
+          for (const rec of allLinesProgress) {
+            lineMap.set(rec.lineId, rec);
+          }
+          if (updatedRecord) {
+            lineMap.set(updatedRecord.lineId, updatedRecord);
+          }
+
+          // Case A: Running Recall Test and finished the last line
+          if (isRecallTest && isLastLineInLesson) {
+            const testResult = evaluateRecallTest(lesson.variations, lineMap);
+            setRecallTestResult(testResult);
+
+            if (testResult.passed) {
+              setPhase('level_passed');
+              // Record lesson progress as passed and unlock next level
+              await db.recordLessonProgress({
+                courseId,
+                lessonId: lesson.id,
+                repertoireId: repertoire.id,
+                learningStageCompleted: true,
+                recallTestPassed: true,
+                recallAttemptsCount: 1,
+                recallMistakesCount: testResult.mistakesCount,
+                recallAccuracy: testResult.accuracy,
+                unlocked: true,
+                completedAt: Date.now(),
+                lastTestedAt: Date.now(),
+              });
+
+              if (nextLessonInCourse) {
+                await db.recordLessonProgress({
+                  courseId,
+                  lessonId: nextLessonInCourse.id,
+                  repertoireId: repertoire.id,
+                  learningStageCompleted: false,
+                  recallTestPassed: false,
+                  recallAttemptsCount: 0,
+                  recallMistakesCount: 0,
+                  recallAccuracy: 0,
+                  unlocked: true,
+                });
+              } else {
+                setPhase('course_completed');
+              }
+            } else {
+              setPhase('level_failed');
+            }
+
+            setShowRecallTestModal(true);
+            return;
+          }
+
+          // Case B: Guided Learning and all lines in lesson are now learned
+          if (isGuided) {
+            const allGuidedDone = lesson.variations.every(
+              (v) => lineMap.get(v.id)?.guidedCompleted === true || v.id === variation.id
+            );
+
+            if (allGuidedDone && isLastLineInLesson) {
+              setPhase('level_learning_completed');
+              await db.recordLessonProgress({
+                courseId,
+                lessonId: lesson.id,
+                repertoireId: repertoire.id,
+                learningStageCompleted: true,
+                recallTestPassed: false,
+                recallAttemptsCount: 0,
+                recallMistakesCount: 0,
+                recallAccuracy: 0,
+                unlocked: true,
+              });
+              setShowStage1CompleteModal(true);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('Error checking stage progression:', err);
+        }
+      }
+
+      setPhase('line_completed');
+      setShowResultModal(true);
     },
-    [course?.id, lesson?.id, repertoire.id, variation.id]
+    [
+      learningMode,
+      showSolution,
+      course?.id,
+      repertoire.id,
+      lesson,
+      variation.id,
+      isRecallTest,
+      isLastLineInLesson,
+      nextLessonInCourse,
+    ]
   );
 
   // Handle user's move attempt on the interactive board
   const handleMove = useCallback(
     ({ san }: { san: string }): boolean => {
-      if (isCompleted || !isUserTurn) return false;
+      // Prevent moves if completed, not user turn, or currently validating
+      if (
+        phase === 'line_completed' ||
+        phase === 'level_passed' ||
+        phase === 'level_learning_completed' ||
+        !isUserTurn ||
+        isValidatingRef.current
+      ) {
+        return false;
+      }
+
+      isValidatingRef.current = true;
+      setPhase('validating_move');
 
       // Clear any pending opponent timer to avoid conflicting state updates
       if (opponentTimerRef.current) {
@@ -210,84 +419,123 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
         setPlyIndex(nextPly);
         setIsSuccess(true);
         setShowHint(false);
+        setShowSolution(false);
+        setPhase('correct_feedback');
         const newCorrect = correctCount + 1;
         setCorrectCount(newCorrect);
 
         if (nextPly >= variation.moves.length) {
-          // Line completed by user's move!
-          setTrainingStatus('Line completed! Excellent repertoire memory.');
+          // Line completed by user's final move
+          setTrainingStatus('Line completed! Excellent repertoire recall.');
           handleLineFinished(mistakeCount, newCorrect, hintsCount);
         } else {
-          setTrainingStatus(`✓ Correct! Played ${san}. Opponent responding...`);
-          // Schedule opponent reply safely with opponentTimerRef
+          setTrainingStatus(`✓ Correct! Played ${san}. Opponent replying...`);
+          // Schedule opponent reply safely
           opponentTimerRef.current = setTimeout(() => {
             const opponentNextPly = nextPly + 1;
             setPlyIndex(opponentNextPly);
             setIsSuccess(null);
+            isValidatingRef.current = false;
 
             if (opponentNextPly >= variation.moves.length) {
               setTrainingStatus('Line completed! You mastered this variation.');
               handleLineFinished(mistakeCount, newCorrect, hintsCount);
             } else {
+              setPhase(learningMode === 'guided' ? 'guided_move_pending' : 'blind_recall');
               setTrainingStatus(
-                `Your turn again (${repertoire.color}). Find the next repertoire move.`
+                learningMode === 'guided'
+                  ? `Your turn (${repertoire.color}). Follow the indicated move.`
+                  : `Your turn again (${repertoire.color}). Find the next repertoire move.`
               );
             }
           }, 500);
         }
         return true;
       } else {
+        // Move is INCORRECT - do NOT advance
+        isValidatingRef.current = false;
         setIsSuccess(false);
+        setPhase('incorrect_feedback');
         setMistakeCount((m) => m + 1);
-        setTrainingStatus(
-          `❌ Incorrect move (${san}). Expected repertoire move was ${expectedMoveSan}.`
-        );
+
+        if (learningMode === 'guided') {
+          setTrainingStatus(
+            `❌ Move ${san} does not match the guided move (${expectedMoveSan}). Try again!`
+          );
+        } else {
+          setTrainingStatus(
+            `❌ Incorrect move (${san}). Expected repertoire move was different. Try again or ask for a hint!`
+          );
+        }
         return false;
       }
     },
     [
-      isCompleted,
+      phase,
       isUserTurn,
       expectedMoveSan,
       plyIndex,
       variation.moves.length,
-      repertoire.color,
       correctCount,
       mistakeCount,
       hintsCount,
+      learningMode,
+      repertoire.color,
       handleLineFinished,
     ]
   );
 
+  // Restart training for the current line
   const handleRestart = () => {
     if (opponentTimerRef.current) {
       clearTimeout(opponentTimerRef.current);
       opponentTimerRef.current = null;
     }
+    isValidatingRef.current = false;
     setMistakeCount(0);
     setCorrectCount(0);
     setHintsCount(0);
-    setIsCompleted(false);
     setIsSuccess(null);
     setShowHint(false);
+    setShowSolution(false);
     setShowResultModal(false);
+    setShowStage1CompleteModal(false);
+    setShowRecallTestModal(false);
+    setRecallTestResult(null);
     setSavedRecord(null);
+
+    const isGuided = learningMode === 'guided';
+    setPhase(isGuided ? 'guided_learning' : 'blind_recall');
 
     if (repertoire.color === 'black' && variation.moves.length > 0) {
       setPlyIndex(0);
       opponentTimerRef.current = setTimeout(() => {
         setPlyIndex(1);
-        setTrainingStatus('Your turn. Play Black’s opening defense.');
+        setTrainingStatus(
+          isGuided
+            ? 'Your turn (Black). Follow the guided move.'
+            : 'Your turn (Black). Recall the opening defense.'
+        );
+        setPhase(isGuided ? 'guided_move_pending' : 'blind_recall');
       }, 500);
     } else {
       setPlyIndex(0);
-      setTrainingStatus(`Your turn (${repertoire.color}). Find the opening move.`);
+      setTrainingStatus(
+        repertoire.color === 'white'
+          ? isGuided
+            ? 'Your turn (White). Play the guided opening move.'
+            : 'Your turn (White). Find the opening move.'
+          : 'Opponent is responding...'
+      );
+      setPhase(isGuided ? 'guided_move_pending' : 'blind_recall');
     }
   };
 
   const handleRetryCurrentMove = () => {
     setIsSuccess(null);
     setShowHint(false);
+    setShowSolution(false);
+    setPhase(learningMode === 'guided' ? 'guided_move_pending' : 'blind_recall');
     setTrainingStatus(`Try again (${repertoire.color}). Find the correct move.`);
   };
 
@@ -296,21 +544,15 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
     setHintsCount((h) => h + 1);
   };
 
-  // Expected move hint details
-  const hintSquare = useMemo(() => {
-    if (!showHint || !expectedMoveSan) return [];
-    try {
-      const chess = new Chess(currentFen);
-      const moves = chess.moves({ verbose: true });
-      const target = moves.find((m) => m.san === expectedMoveSan);
-      if (target) {
-        return [target.from];
-      }
-      return [];
-    } catch {
-      return [];
-    }
-  }, [showHint, expectedMoveSan, currentFen]);
+  const handleRevealSolution = () => {
+    setShowSolution(true);
+    setShowHint(false);
+    setMistakeCount((m) => m + 1);
+  };
+
+  const handleToggleMode = (newMode: LearningMode) => {
+    setLearningMode(newMode);
+  };
 
   const progressPercentage = Math.round(
     (plyIndex / Math.max(1, variation.moves.length)) * 100
@@ -337,9 +579,32 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center space-x-1">
-                <Dumbbell size={12} />
-                <span>Opening Trainer</span>
+              {/* Learning Mode Indicator Badge */}
+              <span
+                className={`text-xs font-bold px-2 py-0.5 rounded flex items-center space-x-1.5 border ${
+                  isRecallTest
+                    ? 'bg-purple-500/15 border-purple-500/40 text-purple-300'
+                    : learningMode === 'guided'
+                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                    : 'bg-blue-500/15 border-blue-500/30 text-blue-300'
+                }`}
+              >
+                {isRecallTest ? (
+                  <>
+                    <ShieldCheck size={13} />
+                    <span>Stage 2: Blind Recall Test</span>
+                  </>
+                ) : learningMode === 'guided' ? (
+                  <>
+                    <Eye size={13} />
+                    <span>Mode: Guided Learning</span>
+                  </>
+                ) : (
+                  <>
+                    <EyeOff size={13} />
+                    <span>Mode: Blind Recall</span>
+                  </>
+                )}
               </span>
 
               {lesson && (
@@ -376,9 +641,36 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
           </div>
         </div>
 
-        {/* Progress Bar & Stats */}
-        <div className="flex items-center space-x-4 text-xs self-start sm:self-auto">
-          <div className="flex flex-col items-end">
+        {/* Right Header: Mode Switcher & Stats */}
+        <div className="flex items-center space-x-4 self-start sm:self-auto">
+          {!isRecallTest && (
+            <div className="flex items-center bg-surface-elevated p-1 rounded-xl border border-surface-border text-xs">
+              <button
+                onClick={() => handleToggleMode('guided')}
+                className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1.5 ${
+                  learningMode === 'guided'
+                    ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Compass size={13} />
+                <span>Guided</span>
+              </button>
+              <button
+                onClick={() => handleToggleMode('recall')}
+                className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1.5 ${
+                  learningMode === 'recall'
+                    ? 'bg-accent/20 text-accent font-bold border border-accent/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Sparkles size={13} />
+                <span>Blind Recall</span>
+              </button>
+            </div>
+          )}
+
+          <div className="flex flex-col items-end text-xs">
             <div className="flex items-center space-x-2">
               <span className="font-mono text-slate-300 font-bold">
                 {plyIndex} / {variation.moves.length} plies
@@ -387,7 +679,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                 {currentAccuracy}% acc
               </span>
             </div>
-            <div className="w-28 sm:w-40 h-2 bg-surface-elevated rounded-full overflow-hidden border border-surface-border mt-1">
+            <div className="w-28 sm:w-36 h-2 bg-surface-elevated rounded-full overflow-hidden border border-surface-border mt-1">
               <div
                 className="h-full bg-accent transition-all duration-300"
                 style={{ width: `${progressPercentage}%` }}
@@ -399,7 +691,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
       {/* Main Training Arena */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Interactive Board */}
+        {/* Left Column: Interactive Board with Move Arrows */}
         <div className="lg:col-span-7 flex flex-col items-center">
           {/* Turn Indicator */}
           <div className="w-full max-w-[480px] flex items-center justify-between mb-3 px-1 text-xs">
@@ -439,14 +731,14 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
             </div>
           </div>
 
-          {/* Interactive Chessboard */}
+          {/* Interactive Chessboard with dynamic SVG Move Arrow Overlay */}
           <div className="w-full max-w-[480px] bg-surface rounded-2xl p-2 sm:p-3 border border-surface-border shadow-md">
             <InteractiveChessboard
               fen={currentFen}
               boardOrientation={repertoire.color}
               onMove={handleMove}
-              disabled={!isUserTurn || isCompleted}
-              highlightSquares={hintSquare}
+              disabled={!isUserTurn || phase === 'line_completed'}
+              arrows={activeArrows}
             />
           </div>
 
@@ -457,6 +749,9 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
               const isCurrent = idx === plyIndex;
               const moveNum = Math.floor(idx / 2) + 1;
               const isWhiteMove = idx % 2 === 0;
+
+              // Hide future moves during blind recall to prevent leaking answers
+              const hideMove = learningMode === 'recall' && !isPast && !showSolution;
 
               return (
                 <span
@@ -470,21 +765,27 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                   }`}
                 >
                   {isWhiteMove && <span className="text-slate-400 mr-1">{moveNum}.</span>}
-                  {m}
+                  {hideMove ? '•••' : m}
                 </span>
               );
             })}
           </div>
         </div>
 
-        {/* Right Column: Training Feedback & Instructions */}
+        {/* Right Column: Training Guidance, Prompts & Move Notation */}
         <div className="lg:col-span-5 bg-surface rounded-2xl border border-surface-border p-5 flex flex-col justify-between min-h-[460px]">
           <div>
             {/* Header info */}
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-surface-border">
               <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
                 <BookOpen size={14} className="text-accent" />
-                <span>Trainer Guidance</span>
+                <span>
+                  {learningMode === 'guided'
+                    ? 'Guided Learning Mode'
+                    : isRecallTest
+                    ? 'Blind Recall Test'
+                    : 'Blind Recall Mode'}
+                </span>
               </span>
 
               <span className="text-xs font-mono text-slate-400">
@@ -492,10 +793,30 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
               </span>
             </div>
 
+            {/* Guided Move Spotlight (Visible only in Guided mode or when solution revealed) */}
+            {isUserTurn && expectedMoveSan && (learningMode === 'guided' || showSolution) && (
+              <div className="p-4 rounded-xl bg-accent/15 border border-accent/40 mb-4 animate-in fade-in duration-150">
+                <span className="text-[10px] uppercase font-bold text-accent block tracking-wider mb-1">
+                  {showSolution ? 'Revealed Solution' : 'Recommended Move'}
+                </span>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-xl font-bold font-mono text-slate-100">
+                    {Math.floor(plyIndex / 2) + 1}.{repertoire.color === 'black' ? '..' : ''}{' '}
+                    <span className="text-accent underline decoration-accent/60 underline-offset-4">
+                      {expectedMoveSan}
+                    </span>
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    (Follow the green arrow on the board)
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Dynamic Status / Feedback Box */}
             <div
               className={`p-4 rounded-xl border mb-5 transition-all ${
-                isCompleted
+                phase === 'line_completed'
                   ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
                   : isSuccess === true
                   ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
@@ -505,9 +826,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
               }`}
             >
               <div className="flex items-start space-x-2.5">
-                {isCompleted ? (
-                  <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
-                ) : isSuccess === true ? (
+                {phase === 'line_completed' || isSuccess === true ? (
                   <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
                 ) : isSuccess === false ? (
                   <XCircle size={18} className="text-rose-400 shrink-0 mt-0.5" />
@@ -516,22 +835,27 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                 )}
                 <div>
                   <h4 className="font-bold text-xs mb-1">
-                    {isCompleted
+                    {phase === 'line_completed'
                       ? 'Variation Complete!'
                       : isSuccess === true
                       ? 'Correct Move'
                       : isSuccess === false
-                      ? 'Incorrect Repertoire Move'
-                      : 'Find the Repertoire Move'}
+                      ? 'Incorrect Move'
+                      : learningMode === 'guided'
+                      ? 'Play the Indicated Move'
+                      : 'Recall Repertoire Move'}
                   </h4>
                   <p className="text-xs leading-relaxed text-slate-300">
-                    {trainingStatus || 'Play the standard repertoire continuation.'}
+                    {trainingStatus ||
+                      (learningMode === 'guided'
+                        ? 'Follow the green arrow and play the recommended move on the board.'
+                        : 'Play the move from memory without looking at hints.')}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Variation Description / Notes */}
+            {/* Variation Strategic Notes */}
             {variation.description && (
               <div className="p-3.5 rounded-xl bg-surface-elevated/70 border border-surface-border mb-4">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">
@@ -543,15 +867,14 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
               </div>
             )}
 
-            {/* Hint Box */}
-            {showHint && isUserTurn && !isCompleted && (
+            {/* Hint Notice */}
+            {showHint && isUserTurn && (
               <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-slate-200 mb-4 flex items-start space-x-2.5">
                 <Lightbulb size={16} className="text-amber-400 mt-0.5 shrink-0" />
                 <div>
-                  <span className="font-bold text-amber-400 block mb-0.5">Move Hint</span>
+                  <span className="font-bold text-amber-400 block mb-0.5">Move Clue</span>
                   <span className="text-slate-300">
-                    The expected move is <span className="font-mono font-bold text-accent">{expectedMoveSan}</span>.
-                    Look for the piece highlighted on the board.
+                    A dashed amber arrow has been placed on the board pointing to the target square.
                   </span>
                 </div>
               </div>
@@ -560,7 +883,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
           {/* Action Toolbar */}
           <div className="space-y-2.5 pt-4 border-t border-surface-border">
-            {isCompleted ? (
+            {phase === 'line_completed' ? (
               <div className="space-y-2">
                 {onSelectNextVariation && (
                   <button
@@ -568,7 +891,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                     className="w-full py-2.5 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow"
                   >
                     <span>
-                      {isLastLineInLesson ? 'Proceed to Next Level' : 'Continue to Next Line'}
+                      {isLastLineInLesson ? 'Finish Level Lesson' : 'Continue to Next Line'}
                     </span>
                     <ArrowRight size={16} />
                   </button>
@@ -590,24 +913,49 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                   <RotateCcw size={15} />
                   <span>Retry Move</span>
                 </button>
-                <button
-                  onClick={handleRequestHint}
-                  className="flex-1 py-2.5 px-3 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5"
-                >
-                  <Lightbulb size={15} />
-                  <span>Show Hint</span>
-                </button>
+                {learningMode === 'recall' && (
+                  <>
+                    <button
+                      onClick={handleRequestHint}
+                      className="flex-1 py-2.5 px-3 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5"
+                    >
+                      <Lightbulb size={15} />
+                      <span>Show Hint</span>
+                    </button>
+                    <button
+                      onClick={handleRevealSolution}
+                      className="py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white rounded-xl text-xs border border-surface-border transition flex items-center justify-center space-x-1"
+                      title="Reveal solution arrow"
+                    >
+                      <Eye size={14} />
+                      <span>Reveal</span>
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="flex gap-2">
-                <button
-                  onClick={handleRequestHint}
-                  disabled={showHint}
-                  className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border disabled:opacity-40 text-slate-300 rounded-xl text-xs font-semibold border border-surface-border transition flex items-center justify-center space-x-1.5"
-                >
-                  <Lightbulb size={15} className="text-amber-400" />
-                  <span>Need a Hint?</span>
-                </button>
+                {learningMode === 'recall' && (
+                  <button
+                    onClick={handleRequestHint}
+                    disabled={showHint || showSolution}
+                    className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border disabled:opacity-40 text-slate-300 rounded-xl text-xs font-semibold border border-surface-border transition flex items-center justify-center space-x-1.5"
+                  >
+                    <Lightbulb size={15} className="text-amber-400" />
+                    <span>Need a Hint?</span>
+                  </button>
+                )}
+                {learningMode === 'recall' && (
+                  <button
+                    onClick={handleRevealSolution}
+                    disabled={showSolution}
+                    className="py-2.5 px-3 bg-surface-elevated hover:bg-surface-border disabled:opacity-40 text-slate-400 hover:text-white rounded-xl text-xs border border-surface-border transition flex items-center space-x-1"
+                    title="Reveal expected move arrow"
+                  >
+                    <Eye size={14} />
+                    <span>Reveal</span>
+                  </button>
+                )}
                 <button
                   onClick={handleRestart}
                   className="py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-400 hover:text-slate-200 rounded-xl text-xs border border-surface-border transition"
@@ -621,26 +969,30 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
         </div>
       </div>
 
-      {/* Line Completion Result Modal */}
+      {/* Modal 1: Standard Line Result Modal */}
       {showResultModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-surface border border-surface-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <div className="text-center mb-5">
               <div
                 className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-3 border ${
-                  mistakeCount === 0
+                  mistakeCount === 0 && hintsCount === 0
                     ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
                     : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
                 }`}
               >
-                {mistakeCount === 0 ? <Award size={32} /> : <CheckCircle2 size={32} />}
+                {mistakeCount === 0 && hintsCount === 0 ? <Award size={32} /> : <CheckCircle2 size={32} />}
               </div>
 
               <span className="text-[11px] font-bold uppercase tracking-wider text-accent block mb-1">
                 {lesson ? `Level ${lesson.levelNumber}: ${lesson.title}` : 'Opening Repertoire'}
               </span>
               <h3 className="text-xl font-bold text-slate-100">
-                {mistakeCount === 0 ? 'Line Mastered! 🌟' : 'Line Completed! 🎉'}
+                {learningMode === 'guided'
+                  ? 'Line Guided Practice Complete!'
+                  : mistakeCount === 0
+                  ? 'Line Mastered from Memory! 🌟'
+                  : 'Line Recall Finished! 🎉'}
               </h3>
               <p className="text-xs text-slate-400 mt-1">{variation.name}</p>
             </div>
@@ -657,7 +1009,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
               </div>
               <div className="bg-surface-elevated border border-surface-border rounded-xl p-3 text-center">
                 <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                  Correct Moves
+                  Correct
                 </span>
                 <span className="text-lg font-bold font-mono text-slate-100">
                   {correctCount}
@@ -677,31 +1029,9 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
               </div>
             </div>
 
-            {/* Lesson Completion Notice if last line */}
-            {isLastLineInLesson && (
-              <div className="p-3 rounded-xl bg-accent/15 border border-accent/30 text-xs text-slate-200 mb-5 flex items-center space-x-2.5">
-                <Award size={18} className="text-accent shrink-0" />
-                <span>
-                  <strong className="text-accent block">Level {lesson?.levelNumber} Finished!</strong>
-                  You completed all lines in this lesson. Ready to level up!
-                </span>
-              </div>
-            )}
-
-            {/* Action Buttons */}
+            {/* Actions */}
             <div className="space-y-2.5">
-              {isLastLineInLesson && nextLessonInCourse && onAdvanceToNextLesson ? (
-                <button
-                  onClick={() => {
-                    setShowResultModal(false);
-                    onAdvanceToNextLesson(nextLessonInCourse);
-                  }}
-                  className="w-full py-3 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-md"
-                >
-                  <span>Proceed to Level {nextLessonInCourse.levelNumber}</span>
-                  <ArrowRight size={16} />
-                </button>
-              ) : onSelectNextVariation ? (
+              {onSelectNextVariation ? (
                 <button
                   onClick={() => {
                     setShowResultModal(false);
@@ -723,7 +1053,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                   className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-200 font-semibold rounded-xl text-xs border border-surface-border transition flex items-center justify-center space-x-1.5"
                 >
                   <RotateCcw size={14} />
-                  <span>Retry This Line</span>
+                  <span>Retry Line</span>
                 </button>
 
                 <button
@@ -736,6 +1066,164 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                   <span>Return to Course</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Stage 1 Learning Completed Modal (Prompt to Test Memory) */}
+      {showStage1CompleteModal && lesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-surface border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-center">
+            <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-3 border bg-emerald-500/20 border-emerald-500/40 text-emerald-400">
+              <CheckCircle2 size={36} />
+            </div>
+
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 block mb-1">
+              Stage 1 Complete
+            </span>
+            <h3 className="text-xl font-bold text-slate-100">
+              Level {lesson.levelNumber} Lines Learned!
+            </h3>
+            <p className="text-xs text-slate-300 mt-2 mb-6 leading-relaxed">
+              You have studied all {lesson.variations.length} variations in{' '}
+              <strong>{lesson.title}</strong> with guided move arrows.
+              To unlock the next level, you must pass the <strong>Blind Recall Test</strong> without hints.
+            </p>
+
+            <div className="space-y-2.5">
+              <button
+                onClick={() => {
+                  setShowStage1CompleteModal(false);
+                  if (onStartRecallTest) {
+                    onStartRecallTest(lesson);
+                  } else {
+                    setLearningMode('recall');
+                    handleRestart();
+                  }
+                }}
+                className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg"
+              >
+                <ShieldCheck size={16} />
+                <span>Test My Memory (Start Blind Recall)</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowStage1CompleteModal(false);
+                  onExitTraining();
+                }}
+                className="w-full py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white font-semibold rounded-xl text-xs border border-surface-border transition"
+              >
+                Return to Course Overview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Stage 2 Blind Recall Test Result Modal (Pass / Fail) */}
+      {showRecallTestModal && recallTestResult && lesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-surface border border-surface-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-center">
+            <div
+              className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-3 border ${
+                recallTestResult.passed
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                  : 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+              }`}
+            >
+              {recallTestResult.passed ? <Award size={36} /> : <AlertCircle size={36} />}
+            </div>
+
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wider block mb-1 ${
+                recallTestResult.passed ? 'text-emerald-400' : 'text-rose-400'
+              }`}
+            >
+              {recallTestResult.passed ? 'Level Passed!' : 'Needs More Practice'}
+            </span>
+            <h3 className="text-xl font-bold text-slate-100">
+              {recallTestResult.passed
+                ? `Level ${lesson.levelNumber} Mastered!`
+                : `Recall Test Not Passed`}
+            </h3>
+            <p className="text-xs text-slate-300 mt-2 mb-5 leading-relaxed">
+              {recallTestResult.passed
+                ? nextLessonInCourse
+                  ? `Congratulations! You scored ${recallTestResult.accuracy}% recall accuracy. Level ${nextLessonInCourse.levelNumber} is now unlocked!`
+                  : `Masterclass! You completed and recalled all levels in this course!`
+                : `You scored ${recallTestResult.accuracy}% recall accuracy with ${recallTestResult.mistakesCount} mistake(s). Review the difficult lines in guided mode before testing again.`}
+            </p>
+
+            {/* Test Stats */}
+            <div className="grid grid-cols-3 gap-2.5 mb-6 text-center">
+              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                  Accuracy
+                </span>
+                <span
+                  className={`text-lg font-bold font-mono ${
+                    recallTestResult.passed ? 'text-emerald-400' : 'text-rose-400'
+                  }`}
+                >
+                  {recallTestResult.accuracy}%
+                </span>
+              </div>
+              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                  Correct
+                </span>
+                <span className="text-lg font-bold font-mono text-slate-100">
+                  {recallTestResult.correctMoves}
+                </span>
+              </div>
+              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                  Mistakes
+                </span>
+                <span className="text-lg font-bold font-mono text-rose-400">
+                  {recallTestResult.mistakesCount}
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2.5">
+              {recallTestResult.passed && nextLessonInCourse && onAdvanceToNextLesson ? (
+                <button
+                  onClick={() => {
+                    setShowRecallTestModal(false);
+                    onAdvanceToNextLesson(nextLessonInCourse);
+                  }}
+                  className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg"
+                >
+                  <span>Continue to Level {nextLessonInCourse.levelNumber}</span>
+                  <ArrowRight size={16} />
+                </button>
+              ) : !recallTestResult.passed ? (
+                <button
+                  onClick={() => {
+                    setShowRecallTestModal(false);
+                    setLearningMode('guided');
+                    handleRestart();
+                  }}
+                  className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg"
+                >
+                  <RotateCcw size={15} />
+                  <span>Review Lines in Guided Mode</span>
+                </button>
+              ) : null}
+
+              <button
+                onClick={() => {
+                  setShowRecallTestModal(false);
+                  onExitTraining();
+                }}
+                className="w-full py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white font-semibold rounded-xl text-xs border border-surface-border transition"
+              >
+                Return to Course Curriculum
+              </button>
             </div>
           </div>
         </div>

@@ -6,6 +6,8 @@ import type {
   PieceDropHandlerArgs,
   SquareHandlerArgs,
 } from 'react-chessboard';
+import type { TrainingArrow } from '../../types/chess';
+import { BoardArrowOverlay } from './BoardArrowOverlay';
 
 export interface SquareAnnotation {
   square: string;
@@ -39,8 +41,8 @@ export interface InteractiveChessboardProps {
   lastMove?: { from: string; to: string } | null;
   /** Move-quality annotation badge on board (e.g. !!, ★, ?, ??) */
   moveAnnotation?: SquareAnnotation | null;
-  /** Arrows to display on the board (e.g. engine best move) */
-  arrows?: Arrow[];
+  /** Arrows to display on the board (e.g. engine best move, guided learning) */
+  arrows?: (Arrow | TrainingArrow)[];
   /** Custom extra square styles to overlay */
   customSquareStyles?: Record<string, React.CSSProperties>;
   /** External highlighted squares (e.g. for training hints) */
@@ -96,6 +98,17 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 }) => {
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const handledByBoardRef = useRef<boolean>(false);
+
+  // Normalize arrows for rendering via custom SVG overlay
+  const normalizedArrows: TrainingArrow[] = useMemo(() => {
+    if (!arrows || arrows.length === 0) return [];
+    return arrows.map((a) => ({
+      startSquare: a.startSquare,
+      endSquare: a.endSquare,
+      color: a.color,
+      type: 'type' in a && a.type ? a.type : 'solution',
+    }));
+  }, [arrows]);
 
   // Clear piece selection and reset touch refs whenever position FEN changes
   useEffect(() => {
@@ -485,7 +498,6 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       onPieceDrop: handlePieceDrop,
       onSquareClick: handleSquareClick,
       squareRenderer: moveAnnotation ? squareRenderer : undefined,
-      arrows,
       squareStyles,
       darkSquareStyle: { backgroundColor: activeColors.dark },
       lightSquareStyle: { backgroundColor: activeColors.light },
@@ -507,7 +519,6 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       handleSquareClick,
       squareRenderer,
       moveAnnotation,
-      arrows,
       squareStyles,
       activeColors,
     ]
@@ -515,7 +526,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   return (
     <div
-      className={`w-full aspect-square select-none rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated transition-all ${className}`}
+      className={`w-full aspect-square select-none rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated transition-all relative ${className}`}
       style={{
         maxWidth,
         touchAction: 'manipulation',
@@ -528,6 +539,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       onTouchCancel={handleTouchCancel}
     >
       <Chessboard options={chessboardOptions} />
+      <BoardArrowOverlay arrows={normalizedArrows} boardOrientation={boardOrientation} />
     </div>
   );
 };
