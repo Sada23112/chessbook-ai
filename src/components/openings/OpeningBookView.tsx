@@ -14,6 +14,7 @@ import {
 import {
   createDefaultRepertoire,
   addLineToRepertoire,
+  copyVariationToRepertoire,
   detectGameDeviations,
   type DeviationResult,
 } from '../../repertoire/repertoireEngine';
@@ -22,8 +23,9 @@ import { OpeningLibraryView } from './OpeningLibraryView';
 import { OpeningCourseView } from './OpeningCourseView';
 import { OpeningDetailsView } from './OpeningDetailsView';
 import { OpeningTrainingView } from './OpeningTrainingView';
+import { AntiOpeningTrainerView } from './AntiOpeningTrainerView';
 
-export type OpeningBookScreen = 'library' | 'course' | 'details' | 'training';
+export type OpeningBookScreen = 'library' | 'course' | 'details' | 'training' | 'anti_opening';
 
 export const OpeningBookView: React.FC = () => {
   const [screen, setScreen] = useState<OpeningBookScreen>('library');
@@ -35,6 +37,7 @@ export const OpeningBookView: React.FC = () => {
   const [selectedLesson, setSelectedLesson] = useState<CourseLesson | undefined>(undefined);
   const [trainingMode, setTrainingMode] = useState<LearningMode | undefined>(undefined);
   const [isRecallTest, setIsRecallTest] = useState<boolean>(false);
+  const [antiOpeningTargetId, setAntiOpeningTargetId] = useState<string | undefined>(undefined);
   const [deviations, setDeviations] = useState<DeviationResult[]>([]);
   const [isReseeding, setIsReseeding] = useState<boolean>(false);
 
@@ -225,6 +228,19 @@ export const OpeningBookView: React.FC = () => {
     setScreen('course');
   };
 
+  const handleOpenAntiOpeningTrainer = (openingId?: string) => {
+    setAntiOpeningTargetId(openingId);
+    setScreen('anti_opening');
+  };
+
+  const handleCopyToRepertoire = async (targetRepId: string, variation: RepertoireVariation) => {
+    const target = repertoires.find((r) => r.id === targetRepId);
+    if (!target) return;
+    const updated = copyVariationToRepertoire(target, variation);
+    await db.repertoires.put(updated);
+    await loadRepertoires(false);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-background">
       {screen === 'library' && (
@@ -235,6 +251,8 @@ export const OpeningBookView: React.FC = () => {
           onReseedMasterOpenings={() => loadRepertoires(true)}
           onImportPgn={handleImportPgn}
           onCreateRepertoire={handleCreateRepertoire}
+          onOpenAntiOpeningTrainer={handleOpenAntiOpeningTrainer}
+          onCopyToRepertoire={handleCopyToRepertoire}
           isReseeding={isReseeding}
         />
       )}
@@ -282,6 +300,13 @@ export const OpeningBookView: React.FC = () => {
           onSelectNextVariation={handleNextVariationInTraining}
           onAdvanceToNextLesson={handleAdvanceToNextLesson}
           onStartRecallTest={handleStartRecallTest}
+        />
+      )}
+
+      {screen === 'anti_opening' && (
+        <AntiOpeningTrainerView
+          initialOpeningId={antiOpeningTargetId}
+          onExit={() => setScreen('library')}
         />
       )}
     </div>

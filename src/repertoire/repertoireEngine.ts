@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js';
-import type { OpeningRepertoire, RepertoireMove, PieceColor, GameRecord } from '../types/chess';
+import type { OpeningRepertoire, RepertoireMove, PieceColor, GameRecord, RepertoireVariation } from '../types/chess';
 
 export interface DeviationResult {
   repertoireId: string;
@@ -173,4 +173,28 @@ export function detectGameDeviations(
   }
 
   return deviations;
+}
+
+/**
+ * Copies a catalogue variation or line into an existing personal repertoire.
+ */
+export function copyVariationToRepertoire(
+  targetRepertoire: OpeningRepertoire,
+  variation: RepertoireVariation
+): OpeningRepertoire {
+  let updated = addLineToRepertoire(targetRepertoire, variation.moves, variation.name);
+  const existingVariations = updated.variations || [];
+  const alreadyExists = existingVariations.some(
+    (v) => v.id === variation.id || (v.name === variation.name && v.moves.join(' ') === variation.moves.join(' '))
+  );
+
+  if (!alreadyExists) {
+    updated = {
+      ...updated,
+      variations: [...existingVariations, { ...variation, id: `custom_${Date.now()}_${variation.id}` }],
+      updatedAt: Date.now(),
+    };
+  }
+
+  return updated;
 }

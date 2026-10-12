@@ -14,6 +14,11 @@ import {
   CheckCircle2,
   Clock,
   Award,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  Flame,
+  Copy,
 } from 'lucide-react';
 import type {
   OpeningRepertoire,
@@ -27,6 +32,7 @@ import {
   calculateCourseProgress,
 } from '../../repertoire/courseEngine';
 import { CompactBoardPreview } from '../common/CompactBoardPreview';
+import { findAntiOpeningGuide } from '../../repertoire/data/catalogueIndex';
 
 export interface OpeningLibraryViewProps {
   repertoires: OpeningRepertoire[];
@@ -39,10 +45,21 @@ export interface OpeningLibraryViewProps {
     color: PieceColor,
     sideAgainst?: 'e4' | 'd4' | 'other'
   ) => Promise<void>;
+  onOpenAntiOpeningTrainer?: (openingId?: string) => void;
+  onCopyToRepertoire?: (targetRepId: string, variation: RepertoireVariation) => Promise<void>;
   isReseeding?: boolean;
 }
 
-type TabSection = 'all' | 'white' | 'black_e4' | 'black_d4' | 'flank';
+type TabSection =
+  | 'all'
+  | 'popular'
+  | 'gambits'
+  | 'traps'
+  | 'anti_openings'
+  | 'white'
+  | 'black_e4'
+  | 'black_d4'
+  | 'flank';
 type SortOption = 'default' | 'name' | 'moves' | 'eco';
 type LibraryViewMode = 'courses' | 'variations';
 
@@ -53,6 +70,8 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
   onReseedMasterOpenings,
   onImportPgn,
   onCreateRepertoire,
+  onOpenAntiOpeningTrainer,
+  onCopyToRepertoire,
   isReseeding = false,
 }) => {
   const [activeTab, setActiveTab] = useState<TabSection>('all');
@@ -64,6 +83,9 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
   // Modals state
   const [showImportModal, setShowImportModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [selectedCopyVariation, setSelectedCopyVariation] = useState<RepertoireVariation | null>(null);
+  const [copyTargetRepId, setCopyTargetRepId] = useState(repertoires[0]?.id || '');
   const [importPgnText, setImportPgnText] = useState('');
   const [importLineName, setImportLineName] = useState('');
   const [targetRepId, setTargetRepId] = useState(repertoires[0]?.id || '');
@@ -146,7 +168,27 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
   // Filter courses
   const filteredCourses = useMemo(() => {
     return repertoireCourseData.filter(({ repertoire, course, primaryVariation }) => {
-      if (activeTab === 'white' && repertoire.color !== 'white') return false;
+      if (activeTab === 'popular') {
+        const isPop =
+          repertoire.id === 'rep_white_e4' ||
+          repertoire.id === 'rep_white_d4' ||
+          repertoire.id === 'rep_black_e4';
+        if (!isPop) return false;
+      }
+      if (activeTab === 'gambits') {
+        const isGambit =
+          repertoire.id === 'rep_gambits_traps' ||
+          repertoire.name.toLowerCase().includes('gambit') ||
+          repertoire.variations?.some((v) => v.name.toLowerCase().includes('gambit'));
+        if (!isGambit) return false;
+      }
+      if (activeTab === 'traps') {
+        if (repertoire.id !== 'rep_gambits_traps') return false;
+      }
+      if (activeTab === 'anti_openings') {
+        if (repertoire.id !== 'rep_anti_openings') return false;
+      }
+      if (activeTab === 'white' && (repertoire.color !== 'white' || repertoire.sideAgainst === 'other')) return false;
       if (
         activeTab === 'black_e4' &&
         (repertoire.color !== 'black' || repertoire.sideAgainst !== 'e4')
@@ -170,7 +212,7 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
         const matchesDesc = course.description.toLowerCase().includes(q);
         const matchesEco = primaryVariation?.eco?.toLowerCase().includes(q);
         const matchesAnyVar = repertoire.variations?.some((v) =>
-          v.name.toLowerCase().includes(q)
+          v.name.toLowerCase().includes(q) || v.moves.join(' ').toLowerCase().includes(q)
         );
         if (!matchesName && !matchesDesc && !matchesEco && !matchesAnyVar) {
           return false;
@@ -199,7 +241,26 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
   // Filter individual entries
   const filteredEntries = useMemo(() => {
     return allOpeningEntries.filter(({ repertoire, variation }) => {
-      if (activeTab === 'white' && repertoire.color !== 'white') return false;
+      const vName = variation.name.toLowerCase();
+
+      if (activeTab === 'popular') {
+        const isPop =
+          repertoire.id === 'rep_white_e4' ||
+          repertoire.id === 'rep_white_d4' ||
+          repertoire.id === 'rep_black_e4';
+        if (!isPop) return false;
+      }
+      if (activeTab === 'gambits') {
+        if (!vName.includes('gambit')) return false;
+      }
+      if (activeTab === 'traps') {
+        if (!vName.includes('trap') && !variation.id.includes('trap') && !vName.includes('mate')) return false;
+      }
+      if (activeTab === 'anti_openings') {
+        const hasAntiGuide = Boolean(findAntiOpeningGuide(variation.name));
+        if (!vName.includes('anti') && !variation.id.includes('anti_') && !hasAntiGuide) return false;
+      }
+      if (activeTab === 'white' && (repertoire.color !== 'white' || repertoire.sideAgainst === 'other')) return false;
       if (
         activeTab === 'black_e4' &&
         (repertoire.color !== 'black' || repertoire.sideAgainst !== 'e4')
@@ -250,6 +311,20 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
   const counts = useMemo(() => {
     return {
       all: repertoireCourseData.length,
+      popular: repertoireCourseData.filter(
+        (e) =>
+          e.repertoire.id === 'rep_white_e4' ||
+          e.repertoire.id === 'rep_white_d4' ||
+          e.repertoire.id === 'rep_black_e4'
+      ).length,
+      gambits: repertoireCourseData.filter(
+        (e) =>
+          e.repertoire.id === 'rep_gambits_traps' ||
+          e.repertoire.name.toLowerCase().includes('gambit') ||
+          e.repertoire.variations?.some((v) => v.name.toLowerCase().includes('gambit'))
+      ).length,
+      traps: repertoireCourseData.filter((e) => e.repertoire.id === 'rep_gambits_traps').length,
+      anti_openings: repertoireCourseData.filter((e) => e.repertoire.id === 'rep_anti_openings').length,
       white: repertoireCourseData.filter(
         (e) => e.repertoire.color === 'white' && e.repertoire.sideAgainst !== 'other'
       ).length,
@@ -340,6 +415,16 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {onOpenAntiOpeningTrainer && (
+            <button
+              onClick={() => onOpenAntiOpeningTrainer()}
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md"
+            >
+              <ShieldCheck size={14} />
+              <span>Anti-Opening Trainer</span>
+            </button>
+          )}
+
           <button
             onClick={() => setShowImportModal(true)}
             className="px-3 py-2 bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border rounded-xl text-xs font-semibold transition flex items-center space-x-1.5"
@@ -386,6 +471,64 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('popular')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+              activeTab === 'popular'
+                ? 'bg-accent text-black font-bold shadow-sm'
+                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+            }`}
+          >
+            <Flame size={12} className={activeTab === 'popular' ? 'text-black' : 'text-amber-400'} />
+            <span>Popular</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+              {counts.popular}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('gambits')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+              activeTab === 'gambits'
+                ? 'bg-accent text-black font-bold shadow-sm'
+                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+            }`}
+          >
+            <span>Gambits</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+              {counts.gambits}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('traps')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+              activeTab === 'traps'
+                ? 'bg-accent text-black font-bold shadow-sm'
+                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+            }`}
+          >
+            <span>Traps</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+              {counts.traps}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('anti_openings')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+              activeTab === 'anti_openings'
+                ? 'bg-amber-500 text-black font-bold shadow-sm'
+                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+            }`}
+          >
+            <ShieldCheck size={12} className={activeTab === 'anti_openings' ? 'text-black' : 'text-amber-400'} />
+            <span>Anti-Openings</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+              {counts.anti_openings}
+            </span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('white')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
               activeTab === 'white'
@@ -393,7 +536,7 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
                 : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
             }`}
           >
-            <span>White Repertoire</span>
+            <span>White (1.e4 / 1.d4)</span>
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
               {counts.white}
             </span>
@@ -770,22 +913,52 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
                   </div>
 
                   {/* Card Actions: Study Details & Start Training */}
-                  <div className="flex items-center gap-2 pt-3 border-t border-surface-border/60">
+                  <div className="flex items-center gap-1.5 pt-3 border-t border-surface-border/60">
                     <button
                       onClick={() => onSelectOpening(repertoire, variation)}
-                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border transition flex items-center justify-center space-x-1.5"
+                      className="flex-1 py-2 px-2 rounded-lg text-xs font-semibold bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border transition flex items-center justify-center space-x-1"
                     >
-                      <Compass size={14} className="text-accent" />
-                      <span>Inspect Line</span>
+                      <Compass size={13} className="text-accent" />
+                      <span>Inspect</span>
                     </button>
 
                     <button
                       onClick={() => onStartTraining(repertoire, variation)}
-                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-accent/20 hover:bg-accent text-accent hover:text-black border border-accent/40 transition flex items-center justify-center space-x-1.5"
+                      className="flex-1 py-2 px-2 rounded-lg text-xs font-semibold bg-accent/20 hover:bg-accent text-accent hover:text-black border border-accent/40 transition flex items-center justify-center space-x-1"
                     >
-                      <Dumbbell size={14} />
-                      <span>Train Line</span>
+                      <Dumbbell size={13} />
+                      <span>Train</span>
                     </button>
+
+                    {onOpenAntiOpeningTrainer &&
+                      (findAntiOpeningGuide(variation.name) ||
+                        variation.id.includes('anti_') ||
+                        variation.name.toLowerCase().includes('gambit')) && (
+                        <button
+                          onClick={() => {
+                            const guideMatch = findAntiOpeningGuide(variation.name);
+                            onOpenAntiOpeningTrainer(guideMatch?.id || variation.id);
+                          }}
+                          className="py-2 px-2.5 rounded-lg text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition flex items-center justify-center space-x-1"
+                          title="Learn how to play against and defend this opening"
+                        >
+                          <Shield size={13} />
+                          <span className="hidden sm:inline">Defend</span>
+                        </button>
+                      )}
+
+                    {onCopyToRepertoire && (
+                      <button
+                        onClick={() => {
+                          setSelectedCopyVariation(variation);
+                          setShowCopyModal(true);
+                        }}
+                        className="p-2 rounded-lg bg-surface-elevated hover:bg-surface-border text-slate-400 hover:text-slate-200 border border-surface-border transition"
+                        title="Copy to personal repertoire"
+                      >
+                        <Copy size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -941,6 +1114,61 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Copy Variation to Personal Repertoire Modal */}
+      {showCopyModal && selectedCopyVariation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-surface border border-surface-border rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-slate-100 mb-1">
+              Add to My Repertoire
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">
+              Copy <span className="text-accent font-semibold">{selectedCopyVariation.name}</span> into your personal opening repertoire.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  Target Repertoire
+                </label>
+                <select
+                  value={copyTargetRepId}
+                  onChange={(e) => setCopyTargetRepId(e.target.value)}
+                  className="w-full bg-surface-elevated border border-surface-border rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-accent"
+                >
+                  {repertoires.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} ({r.color})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCopyModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-surface-elevated hover:bg-surface-border text-slate-300 border border-surface-border transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (onCopyToRepertoire && selectedCopyVariation) {
+                      await onCopyToRepertoire(copyTargetRepId || repertoires[0]?.id, selectedCopyVariation);
+                      setShowCopyModal(false);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-accent hover:bg-accent-hover text-black transition"
+                >
+                  Save to Repertoire
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
