@@ -33,11 +33,12 @@ import {
 } from '../../repertoire/courseEngine';
 import { CompactBoardPreview } from '../common/CompactBoardPreview';
 import { findAntiOpeningGuide } from '../../repertoire/data/catalogueIndex';
+import { RecommendedOpeningsView } from './RecommendedOpeningsView';
 
 export interface OpeningLibraryViewProps {
   repertoires: OpeningRepertoire[];
   onSelectOpening: (repertoire: OpeningRepertoire, variation?: RepertoireVariation) => void;
-  onStartTraining: (repertoire: OpeningRepertoire, variation?: RepertoireVariation) => void;
+  onStartTraining: (repertoire: OpeningRepertoire, variation?: RepertoireVariation, mistakeFen?: string) => void;
   onReseedMasterOpenings: () => Promise<void>;
   onImportPgn: (repertoireId: string, pgn: string, name?: string) => Promise<void>;
   onCreateRepertoire: (
@@ -47,10 +48,14 @@ export interface OpeningLibraryViewProps {
   ) => Promise<void>;
   onOpenAntiOpeningTrainer?: (openingId?: string) => void;
   onCopyToRepertoire?: (targetRepId: string, variation: RepertoireVariation) => Promise<void>;
+  onReviewGame?: (gameId: string, ply?: number) => void;
+  onNavigateToGames?: () => void;
+  onNavigateToAnalysis?: () => void;
   isReseeding?: boolean;
 }
 
 type TabSection =
+  | 'recommended'
   | 'all'
   | 'popular'
   | 'gambits'
@@ -72,6 +77,9 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
   onCreateRepertoire,
   onOpenAntiOpeningTrainer,
   onCopyToRepertoire,
+  onReviewGame,
+  onNavigateToGames,
+  onNavigateToAnalysis,
   isReseeding = false,
 }) => {
   const [activeTab, setActiveTab] = useState<TabSection>('all');
@@ -457,6 +465,18 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
         {/* Repertoire Category Tabs */}
         <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
           <button
+            onClick={() => setActiveTab('recommended')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+              activeTab === 'recommended'
+                ? 'bg-gradient-to-r from-accent to-emerald-400 text-black font-bold shadow-md'
+                : 'bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30'
+            }`}
+          >
+            <Sparkles size={13} className={activeTab === 'recommended' ? 'text-black' : 'text-accent'} />
+            <span>Recommended for You</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('all')}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
               activeTab === 'all'
@@ -612,8 +632,59 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
         </div>
       </div>
 
-      {/* Search & Sort Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-surface p-3 rounded-2xl border border-surface-border">
+      {activeTab === 'recommended' ? (
+        <RecommendedOpeningsView
+          onStartCourse={(repertoireId, variationId, mistakeFen) => {
+            const rep = repertoires.find((r) => r.id === repertoireId) || repertoires[0];
+            const targetVar = rep.variations?.find((v) => v.id === variationId) || rep.variations?.[0];
+            onStartTraining(rep, targetVar, mistakeFen);
+          }}
+          onReviewGame={(gameId, ply) => {
+            onReviewGame?.(gameId, ply);
+          }}
+          onAddToRepertoire={async (variation, side) => {
+            const targetRep =
+              repertoires.find((r) => r.color === side && !r.id.startsWith('rep_')) ||
+              repertoires.find((r) => r.color === side) ||
+              repertoires[0];
+            if (targetRep && onCopyToRepertoire) {
+              await onCopyToRepertoire(targetRep.id, variation);
+            }
+          }}
+          onNavigateToGames={onNavigateToGames}
+          onNavigateToAnalysis={onNavigateToAnalysis}
+        />
+      ) : (
+        <>
+          {/* Top Recommended Spotlight Banner */}
+          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-accent/15 via-surface-elevated to-surface-dark border border-accent/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent shrink-0">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
+                  <span>Recommended for You</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-accent/20 text-accent uppercase">
+                    AI Coach
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Personalized opening courses based on your games, mistakes, and playing style.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('recommended')}
+              className="shrink-0 px-4 py-2 bg-accent hover:bg-accent-hover text-black rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm"
+            >
+              <span>View Recommendations</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          {/* Search & Sort Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-surface p-3 rounded-2xl border border-surface-border">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -966,6 +1037,8 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
           </div>
         )
       )}
+    </>
+  )}
 
       {/* Import PGN Modal */}
       {showImportModal && (

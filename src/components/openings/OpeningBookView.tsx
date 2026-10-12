@@ -24,6 +24,7 @@ import { OpeningCourseView } from './OpeningCourseView';
 import { OpeningDetailsView } from './OpeningDetailsView';
 import { OpeningTrainingView } from './OpeningTrainingView';
 import { AntiOpeningTrainerView } from './AntiOpeningTrainerView';
+import { useAppStore } from '../../store/useAppStore';
 
 export type OpeningBookScreen = 'library' | 'course' | 'details' | 'training' | 'anti_opening';
 
@@ -96,7 +97,8 @@ export const OpeningBookView: React.FC = () => {
 
   const handleStartTraining = (
     repertoire: OpeningRepertoire,
-    variation?: RepertoireVariation
+    variation?: RepertoireVariation,
+    _mistakeFen?: string
   ) => {
     setSelectedRepertoireId(repertoire.id);
     const targetVar = variation || repertoire.variations?.[0];
@@ -111,6 +113,21 @@ export const OpeningBookView: React.FC = () => {
     setTrainingMode(undefined);
     setIsRecallTest(false);
     setScreen('training');
+  };
+
+  const handleReviewGame = (gameId: string, ply?: number) => {
+    useAppStore.getState().setActiveGame(gameId, 'opening_coach');
+    if (ply !== undefined) {
+      useAppStore.getState().setCurrentPly(ply);
+    }
+  };
+
+  const handleNavigateToGames = () => {
+    useAppStore.getState().setTab('my-games');
+  };
+
+  const handleNavigateToAnalysis = () => {
+    useAppStore.getState().setTab('analysis');
   };
 
   const handleStartLessonTraining = (
@@ -253,6 +270,9 @@ export const OpeningBookView: React.FC = () => {
           onCreateRepertoire={handleCreateRepertoire}
           onOpenAntiOpeningTrainer={handleOpenAntiOpeningTrainer}
           onCopyToRepertoire={handleCopyToRepertoire}
+          onReviewGame={handleReviewGame}
+          onNavigateToGames={handleNavigateToGames}
+          onNavigateToAnalysis={handleNavigateToAnalysis}
           isReseeding={isReseeding}
         />
       )}

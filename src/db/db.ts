@@ -8,6 +8,8 @@ import type {
   UserSettings,
   CourseLineRecord,
   CourseLessonRecord,
+  RecommendationRecord,
+  RecommendationStatus,
 } from '../types/chess';
 
 export class ChessbookDatabase extends Dexie {
@@ -19,6 +21,7 @@ export class ChessbookDatabase extends Dexie {
   settings!: Table<UserSettings, string>;
   courseLineProgress!: Table<CourseLineRecord, string>;
   courseLessonProgress!: Table<CourseLessonRecord, string>;
+  recommendationRecords!: Table<RecommendationRecord, string>;
 
   constructor() {
     super('ChessbookAIDB');
@@ -41,6 +44,11 @@ export class ChessbookDatabase extends Dexie {
     // Schema version 3: Two-stage level progression & recall test
     this.version(3).stores({
       courseLessonProgress: 'id, courseId, lessonId, repertoireId, learningStageCompleted, recallTestPassed, unlocked',
+    });
+
+    // Schema version 4: Personalized opening recommendation tracking
+    this.version(4).stores({
+      recommendationRecords: 'id, recommendationId, status, dismissed, completedAt, updatedAt',
     });
   }
 
@@ -111,6 +119,50 @@ export class ChessbookDatabase extends Dexie {
     if (lessonRecords.length > 0) {
       await this.courseLessonProgress.bulkDelete(lessonRecords.map((r) => r.id));
     }
+  }
+
+  async getRecommendationRecords(): Promise<RecommendationRecord[]> {
+    return this.recommendationRecords.toArray();
+  }
+
+  async getRecommendationRecord(id: string): Promise<RecommendationRecord | undefined> {
+    return this.recommendationRecords.get(id);
+  }
+
+  async saveRecommendationRecord(record: RecommendationRecord): Promise<void> {
+    await this.recommendationRecords.put(record);
+  }
+
+  async updateRecommendationStatus(
+    recommendationId: string,
+    status: RecommendationStatus,
+    dismissed: boolean = false
+  ): Promise<void> {
+    const existing = await this.recommendationRecords.get(recommendationId);
+    const now = Date.now();
+    await this.recommendationRecords.put({
+      id: recommendationId,
+      recommendationId,
+      status,
+      dismissed,
+      completedAt: status === 'completed' ? (existing?.completedAt || now) : existing?.completedAt,
+      lastPracticed: status === 'in_progress' || status === 'completed' ? now : existing?.lastPracticed,
+      updatedAt: now,
+    });
+  }
+
+  async setRecommendationDismissed(recommendationId: string, dismissed: boolean): Promise<void> {
+    const existing = await this.recommendationRecords.get(recommendationId);
+    const now = Date.now();
+    await this.recommendationRecords.put({
+      id: recommendationId,
+      recommendationId,
+      status: existing?.status || 'not_started',
+      dismissed,
+      completedAt: existing?.completedAt,
+      lastPracticed: existing?.lastPracticed,
+      updatedAt: now,
+    });
   }
 
   async getSettings(): Promise<UserSettings> {

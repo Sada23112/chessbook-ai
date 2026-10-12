@@ -309,3 +309,114 @@ export interface UserSettings {
     inaccuracyThreshold: number; // e.g. 40 cpl
   };
 }
+
+export type RecommendationType =
+  | 'fix_mistake'
+  | 'anti_gambit_trap'
+  | 'repertoire_expansion'
+  | 'new_opening'
+  | 'starter';
+
+export type RecommendationPriority = 'high' | 'medium' | 'low';
+
+export type RecommendationStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'completed'
+  | 'needs_revision';
+
+export interface RecommendationEvidence {
+  gameId: string;
+  gameTitle: string;
+  date: string;
+  ply: number;
+  moveNumber: number;
+  playedSan: string;
+  bestMoveSan: string;
+  fen: string;
+  cpl?: number;
+  motif?: string;
+  consequence?: string;
+}
+
+export interface OpeningPerformanceStats {
+  gamesCount: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winRate: number;
+  avgCpl?: number;
+}
+
+export interface OpeningRecommendation {
+  id: string;
+  type: RecommendationType;
+  title: string;
+  openingName: string;
+  variationName: string;
+  eco?: string;
+  side: PieceColor;
+  sideAgainst?: 'e4' | 'd4' | 'other';
+  reason: string;
+  recurringMistake: string;
+  gamesCount: number;
+  analyzedGamesCount: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winRate: number;
+  avgCpl?: number;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  estimatedMinutes: number;
+  priority: RecommendationPriority;
+  priorityReason: string;
+  status: RecommendationStatus;
+  dismissed: boolean;
+  catalogueId?: string;
+  repertoireId?: string;
+  variationId?: string;
+  moves: string[];
+  mistakeFen?: string;
+  mistakePly?: number;
+  evidence: RecommendationEvidence[];
+  strategicPlan?: string;
+  tacticalMotifs?: string[];
+  antiOpeningGuideId?: string;
+}
+
+export interface RecommendationRecord {
+  id: string; // matches recommendation id
+  recommendationId: string;
+  status: RecommendationStatus;
+  dismissed: boolean;
+  completedAt?: number;
+  lastPracticed?: number;
+  updatedAt: number;
+}
+
+export interface FirstMovePerformance {
+  againstE4: OpeningPerformanceStats;
+  againstD4: OpeningPerformanceStats;
+  againstOther: OpeningPerformanceStats;
+}
+
+export interface OpeningPerformanceReport {
+  totalGames: number;
+  gamesAsWhite: number;
+  gamesAsBlack: number;
+  analyzedGamesCount: number;
+  whiteStats: OpeningPerformanceStats;
+  blackStats: OpeningPerformanceStats;
+  blackAgainstFirstMove: FirstMovePerformance;
+  whiteFirstMove: {
+    withE4: OpeningPerformanceStats;
+    withD4: OpeningPerformanceStats;
+    withOther: OpeningPerformanceStats;
+  };
+  topWeaknesses: Array<{
+    name: string;
+    mistakeCount: number;
+    avgCpl: number;
+    side: PieceColor;
+  }>;
+}
