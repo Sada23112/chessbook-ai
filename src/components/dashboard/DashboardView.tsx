@@ -10,11 +10,23 @@ import {
   Layers,
   Sparkles,
   BookOpen,
+  ArrowRight,
+  CheckCircle2,
 } from 'lucide-react';
 import { db } from '../../db/db';
-import type { GameRecord, GameAnalysis, TrainingCard, WeaknessRecord } from '../../types/chess';
+import type {
+  GameRecord,
+  GameAnalysis,
+  TrainingCard,
+  WeaknessRecord,
+  CourseLineRecord,
+} from '../../types/chess';
 import { useAppStore } from '../../store/useAppStore';
 import { getGameOutcome } from '../../utils/gameOutcome';
+import {
+  buildCourseFromRepertoire,
+  calculateCourseProgress,
+} from '../../repertoire/courseEngine';
 
 export const DashboardView: React.FC = () => {
   const { setTab, setActiveGame, settings } = useAppStore();
@@ -22,6 +34,28 @@ export const DashboardView: React.FC = () => {
   const [analyses, setAnalyses] = useState<GameAnalysis[]>([]);
   const [dueCardsCount, setDueCardsCount] = useState(0);
   const [weaknesses, setWeaknesses] = useState<WeaknessRecord[]>([]);
+  const [courseMastery, setCourseMastery] = useState<{
+    totalCourses: number;
+    totalLines: number;
+    completedLines: number;
+    masteredLines: number;
+    percentage: number;
+    recentCourses: Array<{
+      id: string;
+      name: string;
+      color: string;
+      completedLines: number;
+      totalLines: number;
+      percentage: number;
+    }>;
+  }>({
+    totalCourses: 0,
+    totalLines: 0,
+    completedLines: 0,
+    masteredLines: 0,
+    percentage: 0,
+    recentCourses: [],
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,6 +69,71 @@ export const DashboardView: React.FC = () => {
       setAnalyses(a);
       setWeaknesses(w);
       setDueCardsCount(dueCards);
+
+      try {
+        const reps = await db.repertoires.toArray();
+        const progressRecords = await db.courseLineProgress.toArray();
+        const recMap = new Map<string, CourseLineRecord>();
+        for (const r of progressRecords) {
+          recMap.set(r.lineId, r);
+        }
+
+        let totalLines = 0;
+        let completedLines = 0;
+        let masteredLines = 0;
+        const recentList: Array<{
+          id: string;
+          name: string;
+          color: string;
+          completedLines: number;
+          totalLines: number;
+          percentage: number;
+          lastPracticed: number;
+        }> = [];
+
+        for (const rep of reps) {
+          const course = buildCourseFromRepertoire(rep);
+          const cp = calculateCourseProgress(course, recMap);
+          totalLines += cp.totalLines;
+          completedLines += cp.completedLines;
+          masteredLines += cp.masteredLines;
+
+          let latestPractice = 0;
+          for (const v of rep.variations || []) {
+            const rec = recMap.get(v.id);
+            if (rec?.lastPracticed && rec.lastPracticed > latestPractice) {
+              latestPractice = rec.lastPracticed;
+            }
+          }
+          if (latestPractice > 0) {
+            recentList.push({
+              id: rep.id,
+              name: rep.name,
+              color: rep.color,
+              completedLines: cp.completedLines,
+              totalLines: cp.totalLines,
+              percentage: cp.percentage,
+              lastPracticed: latestPractice,
+            });
+          }
+        }
+
+        recentList.sort((a, b) => b.lastPracticed - a.lastPracticed);
+
+        const percentage =
+          totalLines > 0 ? Math.min(100, Math.round((completedLines / totalLines) * 100)) : 0;
+
+        setCourseMastery({
+          totalCourses: reps.length,
+          totalLines,
+          completedLines,
+          masteredLines,
+          percentage,
+          recentCourses: recentList.slice(0, 3),
+        });
+      } catch (err) {
+        console.warn('Error loading course mastery on dashboard:', err);
+      }
     };
 
     fetchData();
@@ -296,6 +395,101 @@ export const DashboardView: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Repertoire Courses Mastery & Training */}
+          <div className="bg-surface rounded-xl border border-surface-border p-5 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 className="font-semibold text-slate-200 text-sm flex items-center space-x-2">
+                  <Layers size={16} className="text-accent" />
+                  <span>Opening Repertoire Courses Mastery</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Track your theoretical coverage across all opening lessons and practiced lines.
+                </p>
+              </div>
+              <button
+                onClick={() => setTab('opening-book')}
+                className="px-3 py-1.5 bg-accent hover:bg-accent-hover text-black rounded-lg text-xs font-bold transition flex items-center space-x-1.5 self-start sm:self-auto"
+              >
+                <span>Browse Repertoires</span>
+                <ArrowRight size={13} />
+              </button>
+            </div>
+
+            {/* Overall Progress Bar */}
+            <div className="bg-surface-elevated/70 border border-surface-border rounded-xl p-4 mb-4">
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className="font-semibold text-slate-300">Overall Repertoire Coverage</span>
+                <span className="font-mono text-accent font-bold">
+                  {courseMastery.completedLines} of {courseMastery.totalLines} lines completed ·{' '}
+                  {courseMastery.percentage}%
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-surface rounded-full overflow-hidden border border-surface-border">
+                <div
+                  className={`h-full transition-all duration-500 rounded-full ${
+                    courseMastery.percentage === 100
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                      : 'bg-accent'
+                  }`}
+                  style={{ width: `${courseMastery.percentage}%` }}
+                />
+              </div>
+
+              {/* Quick Metrics */}
+              <div className="grid grid-cols-3 gap-2.5 mt-3 text-center text-xs">
+                <div className="p-2 rounded-lg bg-surface border border-surface-border">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Courses</span>
+                  <span className="font-mono font-bold text-slate-200">{courseMastery.totalCourses}</span>
+                </div>
+                <div className="p-2 rounded-lg bg-surface border border-surface-border">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Completed</span>
+                  <span className="font-mono font-bold text-slate-200">{courseMastery.completedLines}</span>
+                </div>
+                <div className="p-2 rounded-lg bg-surface border border-surface-border">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Mastered</span>
+                  <span className="font-mono font-bold text-emerald-400">{courseMastery.masteredLines}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Recently Practiced Courses */}
+            {courseMastery.recentCourses.length > 0 && (
+              <div>
+                <span className="text-[11px] uppercase font-bold text-slate-400 block mb-2 tracking-wide">
+                  Recently Practiced Courses
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {courseMastery.recentCourses.map((rc) => (
+                    <div
+                      key={rc.id}
+                      onClick={() => setTab('opening-book')}
+                      className="p-3 rounded-lg bg-surface-elevated border border-surface-border hover:border-accent/40 cursor-pointer transition flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-surface border border-surface-border text-slate-300">
+                            {rc.color}
+                          </span>
+                          <span className="text-[10px] font-mono text-accent font-bold">
+                            {rc.percentage}%
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-200 truncate mb-2">{rc.name}</h4>
+                      </div>
+                      <div className="w-full bg-surface h-1.5 rounded-full overflow-hidden border border-surface-border">
+                        <div
+                          className="bg-accent h-full"
+                          style={{ width: `${rc.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Opening Performance Section */}

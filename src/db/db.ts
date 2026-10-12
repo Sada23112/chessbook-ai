@@ -6,6 +6,7 @@ import type {
   TrainingCard,
   WeaknessRecord,
   UserSettings,
+  CourseLineRecord,
 } from '../types/chess';
 
 export class ChessbookDatabase extends Dexie {
@@ -15,6 +16,7 @@ export class ChessbookDatabase extends Dexie {
   trainingCards!: Table<TrainingCard, string>;
   weaknesses!: Table<WeaknessRecord, string>;
   settings!: Table<UserSettings, string>;
+  courseLineProgress!: Table<CourseLineRecord, string>;
 
   constructor() {
     super('ChessbookAIDB');
@@ -28,6 +30,43 @@ export class ChessbookDatabase extends Dexie {
       weaknesses: 'id, pattern, occurrences, lastSeen, priority',
       settings: 'id',
     });
+
+    // Schema version 2: Level-based courses & line progress
+    this.version(2).stores({
+      courseLineProgress: 'id, courseId, lessonId, lineId, repertoireId, status, lastPracticed',
+    });
+  }
+
+  async getCourseLinesProgress(courseIdOrRepertoireId: string): Promise<CourseLineRecord[]> {
+    const byCourse = await this.courseLineProgress
+      .where('courseId')
+      .equals(courseIdOrRepertoireId)
+      .toArray();
+    if (byCourse.length > 0) return byCourse;
+
+    return this.courseLineProgress
+      .where('repertoireId')
+      .equals(courseIdOrRepertoireId)
+      .toArray();
+  }
+
+  async recordLineProgress(
+    record: Omit<CourseLineRecord, 'id'> & { id?: string }
+  ): Promise<CourseLineRecord> {
+    const id = record.id || `${record.courseId}_${record.lineId}`;
+    const fullRecord: CourseLineRecord = {
+      ...record,
+      id,
+    };
+    await this.courseLineProgress.put(fullRecord);
+    return fullRecord;
+  }
+
+  async resetCourseProgress(courseIdOrRepertoireId: string): Promise<void> {
+    const records = await this.getCourseLinesProgress(courseIdOrRepertoireId);
+    if (records.length > 0) {
+      await this.courseLineProgress.bulkDelete(records.map((r) => r.id));
+    }
   }
 
   async getSettings(): Promise<UserSettings> {

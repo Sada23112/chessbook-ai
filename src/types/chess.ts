@@ -139,6 +139,69 @@ export interface OpeningRepertoire {
   updatedAt: number;
 }
 
+export interface CourseLesson {
+  id: string;
+  levelNumber: number;
+  title: string;
+  description: string;
+  variationIds: string[];
+  variations: RepertoireVariation[];
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
+export interface OpeningCourse {
+  id: string;
+  repertoireId: string;
+  name: string;
+  color: PieceColor;
+  eco?: string;
+  description: string;
+  lessons: CourseLesson[];
+  totalLines: number;
+}
+
+export interface CourseLineRecord {
+  id: string; // `${courseId}_${lineId}`
+  courseId: string;
+  lessonId: string;
+  lineId: string;
+  repertoireId: string;
+  status: 'not_started' | 'in_progress' | 'completed' | 'mastered';
+  attemptsCount: number;
+  correctCount: number;
+  mistakesCount: number;
+  hintsUsedCount?: number;
+  lastPracticed: number;
+  accuracy: number;
+  completedAt?: number;
+  interruptedPly?: number;
+}
+
+export interface CourseProgressSummary {
+  courseId: string;
+  totalLines: number;
+  completedLines: number;
+  masteredLines: number;
+  difficultLines: number;
+  percentage: number;
+  status: 'not_started' | 'in_progress' | 'completed' | 'mastered';
+  nextRecommendedLessonId?: string;
+  nextRecommendedVariationId?: string;
+  estimatedMinutesRemaining: number;
+}
+
+export interface LessonProgressSummary {
+  lessonId: string;
+  levelNumber: number;
+  title: string;
+  totalLines: number;
+  completedLines: number;
+  percentage: number;
+  isCompleted: boolean;
+  isLocked: boolean;
+  status: 'not_started' | 'in_progress' | 'completed';
+}
+
 export interface TrainingCard {
   id: string;
   gameId?: string;
