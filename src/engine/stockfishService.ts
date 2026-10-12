@@ -383,7 +383,7 @@ class StockfishManager {
     game: GameRecord,
     options: {
       depth: number;
-      onProgress?: (currentPly: number, totalPlies: number) => void;
+      onProgress?: (currentPly: number, totalPlies: number, latestPosition?: PositionAnalysis) => void;
       onStageChange?: (stage: AnalysisLifecycleState) => void;
       shouldCancel?: () => boolean;
     }
@@ -450,9 +450,6 @@ class StockfishManager {
           engineResult = this.fallbackEvaluate(item.fen, options.depth);
         }
 
-        // Report progress increment after completing position i
-        options.onProgress?.(i + 1, totalPositions);
-
       // Determine turn from FEN
       const currentTurn = item.fen.split(' ')[1] as 'w' | 'b';
       const whiteScore = normalizeScoreToWhite(engineResult.scoreCp, engineResult.mate, currentTurn);
@@ -485,7 +482,7 @@ class StockfishManager {
         // fallback
       }
 
-      analyzedPositions.push({
+      const posAnalysis: PositionAnalysis = {
         ply: item.ply,
         fen: item.fen,
         move: item.move
@@ -506,7 +503,15 @@ class StockfishManager {
         pv: engineResult.pv,
         pvSan,
         depth: options.depth,
-      });
+      };
+
+      analyzedPositions.push(posAnalysis);
+
+      // Report progress with newly evaluated position for live Chess.com board replay
+      options.onProgress?.(i + 1, totalPositions, posAnalysis);
+
+      // Smooth visual pacing between moves so user can watch pieces move on the board
+      await new Promise((resolve) => setTimeout(resolve, 60));
     }
 
     // Guarantee 100% progress before finalizing

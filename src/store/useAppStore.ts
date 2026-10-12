@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameRecord, GameAnalysis, TrainingCard, UserSettings, PieceColor } from '../types/chess';
+import type { GameRecord, GameAnalysis, PositionAnalysis, TrainingCard, UserSettings, PieceColor } from '../types/chess';
 import { db } from '../db/db';
 import { stockfishService, type AnalysisLifecycleState } from '../engine/stockfishService';
 import { calculateNextReview } from '../training/srsEngine';
@@ -21,6 +21,7 @@ interface AppState {
   activeGameId: string | null;
   activeGame: GameRecord | null;
   activeAnalysis: GameAnalysis | null;
+  livePositions: PositionAnalysis[];
   currentPly: number;
   boardOrientation: PieceColor;
   isAnalyzing: boolean;
@@ -64,6 +65,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeGameId: null,
   activeGame: null,
   activeAnalysis: null,
+  livePositions: [],
   currentPly: 0,
   boardOrientation: 'white',
   isAnalyzing: false,
@@ -102,6 +104,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeGameId: gameId,
       activeGame: game,
       activeAnalysis: analysis,
+      livePositions: [],
       currentPly: 0,
       boardOrientation: game.userColor || 'white',
       analysisStage: initialStage,
@@ -155,16 +158,24 @@ export const useAppStore = create<AppState>((set, get) => ({
       analysisLifecycle: 'initializing',
       analysisError: null,
       analysisProgress: { current: 0, total: activeGame.movesCount + 1 },
+      currentPly: 0,
+      livePositions: [],
     });
 
     try {
       const analysis = await stockfishService.analyzeGame(activeGame, {
         depth: targetDepth,
-        onProgress: (current, total) => {
-          set({
+        onProgress: (current, total, latestPosition) => {
+          // Live Chess.com-style synchronization: step the board to the ply being analyzed
+          const activePly = latestPosition?.ply ?? Math.min(activeGame.movesCount, Math.max(0, current - 1));
+          set((state) => ({
             analysisProgress: { current, total },
             analysisLifecycle: current >= total ? 'finalizing' : 'analyzing',
-          });
+            currentPly: activePly,
+            livePositions: latestPosition
+              ? [...state.livePositions, latestPosition]
+              : state.livePositions,
+          }));
         },
         onStageChange: (stage) => {
           set({ analysisLifecycle: stage });
@@ -179,6 +190,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         isAnalyzing: false,
         analysisLifecycle: 'completed',
         analysisError: null,
+        currentPly: 0, // Reset to ply 0 so user can review the game from the beginning
+        livePositions: [],
       });
     } catch (err) {
       console.warn('Game analysis error:', err);
@@ -187,13 +200,14 @@ export const useAppStore = create<AppState>((set, get) => ({
         isAnalyzing: false,
         analysisLifecycle: isCancelled ? 'cancelled' : 'failed',
         analysisError: err instanceof Error ? err.message : 'Analysis failed',
+        livePositions: [],
       });
     }
   },
 
   stopAnalysis: () => {
     stockfishService.stop();
-    set({ isAnalyzing: false, analysisLifecycle: 'cancelled' });
+    set({ isAnalyzing: false, analysisLifecycle: 'cancelled', livePositions: [] });
   },
 
   setTrainingFilter: (filter) => {

@@ -55,6 +55,7 @@ export const AnalysisView: React.FC = () => {
   const {
     activeGame,
     activeAnalysis,
+    livePositions,
     currentPly,
     boardOrientation,
     isAnalyzing,
@@ -120,8 +121,10 @@ export const AnalysisView: React.FC = () => {
   const currentFen = currentPosData ? currentPosData.fen : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
   const displayFen = exploredFen || currentFen;
 
-  // Analysis position data
-  const currentAnalysisPos = activeAnalysis?.positions[currentPly];
+  // Analysis position data (supports real-time live positions during active review)
+  const currentAnalysisPos =
+    activeAnalysis?.positions[currentPly] ||
+    livePositions.find((p) => p.ply === currentPly);
   const evalScore = currentAnalysisPos?.score ?? 0;
   const evalMate = currentAnalysisPos?.mate;
 
@@ -491,7 +494,7 @@ export const AnalysisView: React.FC = () => {
             <InteractiveChessboard
               fen={displayFen}
               boardOrientation={boardOrientation}
-              allowMoves={true}
+              allowMoves={!isAnalyzing}
               onMove={(move) => {
                 const nextMove = gamePositions[currentPly + 1];
                 if (nextMove && nextMove.san === move.san) {
@@ -540,7 +543,7 @@ export const AnalysisView: React.FC = () => {
           <div className="flex items-center space-x-1">
             <button
               onClick={firstPly}
-              disabled={currentPly === 0}
+              disabled={isAnalyzing || currentPly === 0}
               className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
               title="First move (Up Arrow)"
             >
@@ -548,7 +551,7 @@ export const AnalysisView: React.FC = () => {
             </button>
             <button
               onClick={prevPly}
-              disabled={currentPly === 0}
+              disabled={isAnalyzing || currentPly === 0}
               className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
               title="Previous move (Left Arrow)"
             >
@@ -556,14 +559,15 @@ export const AnalysisView: React.FC = () => {
             </button>
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-accent hover:bg-accent/15 rounded-lg transition"
+              disabled={isAnalyzing}
+              className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-accent hover:bg-accent/15 rounded-lg transition disabled:opacity-30"
               title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
             >
               {isPlaying ? <Pause size={20} /> : <Play size={20} />}
             </button>
             <button
               onClick={nextPly}
-              disabled={currentPly >= gamePositions.length - 1}
+              disabled={isAnalyzing || currentPly >= gamePositions.length - 1}
               className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
               title="Next move (Right Arrow)"
             >
@@ -571,7 +575,7 @@ export const AnalysisView: React.FC = () => {
             </button>
             <button
               onClick={lastPly}
-              disabled={currentPly >= gamePositions.length - 1}
+              disabled={isAnalyzing || currentPly >= gamePositions.length - 1}
               className="p-2.5 sm:p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 hover:bg-surface-border rounded-lg transition"
               title="Last move (Down Arrow)"
             >
@@ -739,7 +743,75 @@ export const AnalysisView: React.FC = () => {
         {/* Tab 1: Game Review (Chess.com style) */}
         {sidebarTab === 'review' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {!summary ? (
+            {isAnalyzing ? (
+              <div className="p-4 bg-surface-elevated rounded-xl border border-surface-border space-y-4 shadow-sm">
+                <div className="flex items-center space-x-2 text-accent font-semibold text-xs uppercase tracking-wider">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
+                  </span>
+                  <span>Reviewing Game in Real-Time</span>
+                </div>
+
+                {currentPosData && currentPosData.ply > 0 ? (
+                  <div className="p-3 bg-surface rounded-lg border border-surface-border flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                        Move Replaying on Board
+                      </span>
+                      <span className="text-base font-bold text-white font-mono">
+                        {Math.ceil(currentPosData.ply / 2)}
+                        {currentPosData.ply % 2 === 1 ? '.' : '...'} {currentPosData.san}
+                      </span>
+                    </div>
+                    {currentAnalysisPos?.bestMoveSan && (
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                          Stockfish Recommends
+                        </span>
+                        <span className="text-sm font-bold text-emerald-400 font-mono">
+                          {currentAnalysisPos.bestMoveSan}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-surface rounded-lg border border-surface-border text-center text-xs text-slate-400">
+                    Evaluating initial board position...
+                  </div>
+                )}
+
+                <div className="p-3 bg-surface rounded-lg border border-surface-border flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                      Live Engine Eval
+                    </span>
+                    <span className="font-mono font-bold text-slate-200">
+                      {evalMate !== undefined
+                        ? evalMate > 0
+                          ? `+M${evalMate}`
+                          : `-M${Math.abs(evalMate)}`
+                        : `${evalScore >= 0 ? '+' : ''}${(evalScore / 100).toFixed(1)}`}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                      Engine Progress
+                    </span>
+                    <span className="font-mono font-bold text-accent">
+                      {analysisProgress.current} / {analysisProgress.total} plies
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-surface border border-surface-border text-slate-400 text-[11px] leading-relaxed flex items-start space-x-2">
+                  <Sparkles size={14} className="text-accent flex-shrink-0 mt-0.5" />
+                  <span>
+                    The chessboard is actively stepping through each move while Stockfish calculates move accuracy, tags blunders, and produces your Chess.com-style Game Review.
+                  </span>
+                </div>
+              </div>
+            ) : !summary ? (
               <div className="p-8 text-center text-slate-400 text-xs">
                 <BarChart3 size={28} className="mx-auto mb-2 text-slate-500" />
                 <p className="font-semibold text-slate-300 mb-1">Game Review Not Yet Generated</p>
