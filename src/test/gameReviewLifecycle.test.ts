@@ -123,4 +123,51 @@ describe('Game Review Analysis Lifecycle and Timeout Resilience', () => {
     expect(stockfishService.getStatus()).toBe('uninitialized');
     expect(stockfishService.getLifecycleState()).toBe('idle');
   });
+
+  it('recovers from position timeouts using bounded Promise.race and never hangs on position evaluation', async () => {
+    const fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    // Test with tiny maxWaitMs to verify instant fallback resolution
+    const start = Date.now();
+    const result = await stockfishService.analyzePosition(fen, 14, 50);
+    const elapsed = Date.now() - start;
+
+    expect(result).toBeDefined();
+    expect(result.bestMove).toBeDefined();
+    expect(result.bestMove.length).toBeGreaterThan(0);
+    expect(elapsed).toBeLessThan(1000); // Guarantees it didn't block or hang
+  });
+
+  it('completes long 28-position game review to 100% without stalling at 96% (27 of 28)', async () => {
+    // 27 plies (positionsData length = 28)
+    const pgn27 = '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Bd2 Bxd2+ 8. Nbxd2 d5 9. exd5 Nxd5 10. Qb3 Nce7 11. O-O O-O 12. Rfe1 c6 13. a4 Qb6 14. a5 1-0';
+    const longGame: GameRecord = {
+      id: 'test_game_27_plies',
+      date: '2026-10-12',
+      white: 'Hero',
+      black: 'Opponent',
+      result: '1-0',
+      userColor: 'white',
+      movesCount: 27,
+      pgn: pgn27,
+      fingerprint: 'fp_27_plies',
+      source: 'paste',
+      createdAt: Date.now(),
+    };
+
+    await db.games.put(longGame);
+
+    let finalProgress = { current: 0, total: 0 };
+    const analysis = await stockfishService.analyzeGame(longGame, {
+      depth: 8,
+      onProgress: (current, total) => {
+        finalProgress = { current, total };
+      },
+    });
+
+    expect(stockfishService.getLifecycleState()).toBe('completed');
+    expect(finalProgress.total).toBe(28);
+    expect(finalProgress.current).toBe(28); // Crucial: Reaches 28 of 28 (100%), NOT 27 of 28 (96%)
+    expect(analysis.positions.length).toBe(28);
+    expect(analysis.summary.accuracyWhite).toBeGreaterThan(0);
+  });
 });

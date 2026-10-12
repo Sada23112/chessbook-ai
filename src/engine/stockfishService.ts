@@ -126,9 +126,13 @@ class StockfishManager {
 
         this.worker!.onerror = (err) => {
           console.warn('Stockfish worker error:', err);
+          if (this.currentRejecter) {
+            this.currentRejecter(new Error('Worker error'));
+          }
           clearTimeout(timeout);
           this.setStatus('ready'); // allow graceful fallback
           resolve(true);
+          this.restartWorker();
         };
 
         this.worker!.postMessage('uci');
@@ -191,8 +195,8 @@ class StockfishManager {
     }
   }
 
-  // Analyze single position with terminal state detection and bounded timeout
-  async analyzePosition(fen: string, depth = 12): Promise<EngineParsedInfo> {
+  // Analyze single position with terminal state detection and guaranteed bounded timeout
+  async analyzePosition(fen: string, depth = 12, maxWaitMs = 2500): Promise<EngineParsedInfo> {
     // 1. Immediately handle terminal positions without querying Stockfish (which hangs on 0 root moves)
     try {
       const chess = new Chess(fen);
@@ -221,50 +225,70 @@ class StockfishManager {
       // ignore
     }
 
-    await this.init();
+    try {
+      await this.init();
+    } catch {
+      return this.fallbackEvaluate(fen, depth);
+    }
 
     // Fallback if worker not available
     if (!this.worker) {
       return this.fallbackEvaluate(fen, depth);
     }
 
-    return new Promise<EngineParsedInfo>((resolve) => {
+    let isSettled = false;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const workerPromise = new Promise<EngineParsedInfo>((resolve, reject) => {
       const reqId = ++this.requestCounter;
       this.currentRequestId = reqId;
       this.latestInfo = { depth: 0, pv: [] };
 
-      // Bounded safety timeout (4500ms max per position): Never let a position hang indefinitely!
-      const timeoutId = setTimeout(() => {
-        if (this.currentRequestId === reqId && this.currentResolver) {
-          console.warn(`[Stockfish] Position analysis timed out for FEN: ${fen.slice(0, 30)}..., using fallback`);
-          const fallback = this.fallbackEvaluate(fen, depth);
-          const res = this.currentResolver;
-          this.currentResolver = null;
-          this.currentRejecter = null;
-          res(fallback);
-        }
-      }, 4500);
-
       this.currentResolver = (info: EngineParsedInfo) => {
-        clearTimeout(timeoutId);
+        if (isSettled) return;
+        isSettled = true;
         resolve(info);
       };
 
       this.currentRejecter = (err: Error) => {
-        clearTimeout(timeoutId);
-        console.warn('[Stockfish] Rejection during position evaluation:', err);
-        resolve(this.fallbackEvaluate(fen, depth));
+        if (isSettled) return;
+        isSettled = true;
+        reject(err);
       };
 
       try {
-        this.worker!.postMessage('stop');
         this.worker!.postMessage(`position fen ${fen}`);
         this.worker!.postMessage(`go depth ${depth}`);
       } catch (err) {
-        clearTimeout(timeoutId);
-        resolve(this.fallbackEvaluate(fen, depth));
+        if (isSettled) return;
+        isSettled = true;
+        reject(err);
       }
     });
+
+    const timeoutPromise = new Promise<EngineParsedInfo>((resolve) => {
+      timerId = setTimeout(() => {
+        if (isSettled) return;
+        isSettled = true;
+        console.warn(`[Stockfish] Position analysis timed out after ${maxWaitMs}ms, using fallback evaluation`);
+        this.restartWorker();
+        resolve(this.fallbackEvaluate(fen, depth));
+      }, maxWaitMs);
+    });
+
+    try {
+      const result = await Promise.race([workerPromise, timeoutPromise]);
+      return result;
+    } catch (err) {
+      console.warn('[Stockfish] Evaluation error caught, falling back:', err);
+      return this.fallbackEvaluate(fen, depth);
+    } finally {
+      if (timerId) {
+        clearTimeout(timerId);
+      }
+      this.currentResolver = null;
+      this.currentRejecter = null;
+    }
   }
 
   stop() {
@@ -290,7 +314,7 @@ class StockfishManager {
     this.setStatus('ready');
   }
 
-  terminate() {
+  restartWorker() {
     if (this.worker) {
       try {
         this.worker.terminate();
@@ -302,6 +326,10 @@ class StockfishManager {
     this.currentResolver = null;
     this.currentRejecter = null;
     this.setStatus('uninitialized');
+  }
+
+  terminate() {
+    this.restartWorker();
     this.setLifecycleState('idle');
   }
 
@@ -373,13 +401,26 @@ class StockfishManager {
 
       // Build list of FENs for each position: ply 0 (initial) up to ply N
       const replayChess = new Chess();
+      const fenHeaderMatch = game.pgn.match(/\[FEN\s+"([^"]+)"\]/i);
+      if (fenHeaderMatch && fenHeaderMatch[1]) {
+        try {
+          replayChess.load(fenHeaderMatch[1]);
+        } catch {
+          // ignore
+        }
+      }
+
       const positionsData: Array<{ ply: number; fen: string; move?: (typeof historyVerbose)[0] }> = [
         { ply: 0, fen: replayChess.fen() },
       ];
 
       for (let i = 0; i < historyVerbose.length; i++) {
         const m = historyVerbose[i];
-        replayChess.move(m);
+        try {
+          replayChess.move(m);
+        } catch {
+          // ignore
+        }
         positionsData.push({ ply: i + 1, fen: replayChess.fen(), move: m });
       }
 
@@ -401,7 +442,13 @@ class StockfishManager {
         }
 
         const item = positionsData[i];
-        const engineResult = await this.analyzePosition(item.fen, options.depth);
+        let engineResult: EngineParsedInfo;
+        try {
+          engineResult = await this.analyzePosition(item.fen, options.depth, 2500);
+        } catch (posErr) {
+          console.warn(`[Stockfish] Fallback on position ${i} (ply ${item.ply}):`, posErr);
+          engineResult = this.fallbackEvaluate(item.fen, options.depth);
+        }
 
         // Report progress increment after completing position i
         options.onProgress?.(i + 1, totalPositions);
@@ -461,6 +508,9 @@ class StockfishManager {
         depth: options.depth,
       });
     }
+
+    // Guarantee 100% progress before finalizing
+    options.onProgress?.(totalPositions, totalPositions);
 
     // All positions analyzed — transition to finalizing phase
     this.setLifecycleState('finalizing');
@@ -610,19 +660,23 @@ class StockfishManager {
           !game.userColor; // Default to saving if user color not specified
 
         if (isUserMistake && ['mistake', 'blunder', 'missedWin'].includes(classification)) {
-          const card = createTrainingCardFromMistake({
-            gameId: game.id,
-            fen: posBefore.fen,
-            turn: moverColor,
-            playedMoveSan: posCurrent.move.san,
-            bestMoveSan: posBefore.bestMoveSan || posBefore.bestMove,
-            bestMoveUci: posBefore.bestMove,
-            pvSan: posBefore.pvSan,
-            pvUci: posBefore.pv,
-            lesson: explanation.beginnerLesson,
-            motif: explanation.motif || 'Tactics',
-          });
-          await db.trainingCards.put(card);
+          try {
+            const card = createTrainingCardFromMistake({
+              gameId: game.id,
+              fen: posBefore.fen,
+              turn: moverColor,
+              playedMoveSan: posCurrent.move.san,
+              bestMoveSan: posBefore.bestMoveSan || posBefore.bestMove,
+              bestMoveUci: posBefore.bestMove,
+              pvSan: posBefore.pvSan,
+              pvUci: posBefore.pv,
+              lesson: explanation.beginnerLesson,
+              motif: explanation.motif || 'Tactics',
+            });
+            await db.trainingCards.put(card);
+          } catch (cardErr) {
+            console.warn('[Stockfish] Optional training card save ignored:', cardErr);
+          }
         }
       }
     }
@@ -664,18 +718,22 @@ class StockfishManager {
     };
 
     // 1. Confirm analysis record write
-    await db.analyses.put(analysisRecord);
-    await db.games.update(game.id, {
-      analyzedAt: Date.now(),
-      analysisDepth: options.depth,
-      summary,
-    });
-
-    // 2. Verify persistence before declaring completed
-    const verified = await db.analyses.get(game.id);
-    if (!verified) {
-      console.warn('[Stockfish] Re-writing analysis record to ensure persistence...');
+    try {
       await db.analyses.put(analysisRecord);
+      await db.games.update(game.id, {
+        analyzedAt: Date.now(),
+        analysisDepth: options.depth,
+        summary,
+      });
+
+      // 2. Verify persistence before declaring completed
+      const verified = await db.analyses.get(game.id);
+      if (!verified) {
+        console.warn('[Stockfish] Re-writing analysis record to ensure persistence...');
+        await db.analyses.put(analysisRecord);
+      }
+    } catch (dbErr) {
+      console.warn('[Stockfish] DB persistence warning:', dbErr);
     }
 
     // 3. Refresh aggregated personal weaknesses in a non-blocking safe block
