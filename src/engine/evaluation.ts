@@ -169,7 +169,9 @@ export function estimatePerformanceElo(
       delta = -350 + acc * 5;
     }
     const cplPenalty = Math.min(100, avgCpl * 0.6);
-    const estimated = Math.round(playerElo + delta - cplPenalty);
+    const rawRating = playerElo + delta - cplPenalty;
+    // Round to nearest 50 like Chess.com Game Review (e.g. 950, 1400)
+    const estimated = Math.round(rawRating / 50) * 50;
     return Math.max(400, Math.min(3000, estimated));
   }
 
@@ -190,7 +192,8 @@ export function estimatePerformanceElo(
   }
 
   const cplDeduction = Math.min(180, avgCpl * 1.1);
-  const estimated = Math.round(baseElo - cplDeduction);
+  const rawRating = baseElo - cplDeduction;
+  const estimated = Math.round(rawRating / 50) * 50;
   return Math.max(400, Math.min(2900, estimated));
 }
 

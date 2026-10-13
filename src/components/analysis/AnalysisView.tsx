@@ -391,9 +391,9 @@ export const AnalysisView: React.FC = () => {
                 </div>
               </div>
               <div className="pt-3 border-t border-surface-border/60 flex items-center justify-between text-xs text-slate-400">
-                <span>Estimated Performance Rating:</span>
-                <span className="font-mono font-bold text-amber-300">
-                  ~{summary.estimatedEloWhite || 1500}
+                <span>Game Rating:</span>
+                <span className="font-mono font-bold text-amber-300 text-sm">
+                  {summary.estimatedEloWhite || 1500}
                 </span>
               </div>
             </div>
@@ -420,9 +420,9 @@ export const AnalysisView: React.FC = () => {
                 </div>
               </div>
               <div className="pt-3 border-t border-surface-border/60 flex items-center justify-between text-xs text-slate-400">
-                <span>Estimated Performance Rating:</span>
-                <span className="font-mono font-bold text-amber-300">
-                  ~{summary.estimatedEloBlack || 1500}
+                <span>Game Rating:</span>
+                <span className="font-mono font-bold text-amber-300 text-sm">
+                  {summary.estimatedEloBlack || 1500}
                 </span>
               </div>
             </div>
@@ -840,9 +840,9 @@ export const AnalysisView: React.FC = () => {
                       </span>
                     </div>
                     <div className="pt-2 border-t border-surface-border text-[11px] text-slate-300 flex items-center justify-between">
-                      <span className="text-slate-400">Performance Elo:</span>
+                      <span className="text-slate-400">Game Rating:</span>
                       <span className="font-mono font-bold text-amber-300">
-                        ~{summary.estimatedEloWhite || 1500}
+                        {summary.estimatedEloWhite || 1500}
                       </span>
                     </div>
                   </div>
@@ -864,9 +864,9 @@ export const AnalysisView: React.FC = () => {
                       </span>
                     </div>
                     <div className="pt-2 border-t border-surface-border text-[11px] text-slate-300 flex items-center justify-between">
-                      <span className="text-slate-400">Performance Elo:</span>
+                      <span className="text-slate-400">Game Rating:</span>
                       <span className="font-mono font-bold text-amber-300">
-                        ~{summary.estimatedEloBlack || 1500}
+                        {summary.estimatedEloBlack || 1500}
                       </span>
                     </div>
                   </div>
