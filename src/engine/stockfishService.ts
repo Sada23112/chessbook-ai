@@ -577,19 +577,50 @@ class StockfishManager {
       const playedUci = `${posCurrent.move.from}${posCurrent.move.to}${posCurrent.move.promotion || ''}`;
       const isBestMove = playedUci === posBefore.bestMove || posCurrent.move.san === posBefore.bestMoveSan;
 
-      // Check for piece sacrifice
+      // Piece values in centipawns for sacrifice calculation
+      const PIECE_VALUES: Record<string, number> = {
+        p: 100,
+        n: 300,
+        b: 300,
+        r: 500,
+        q: 900,
+        k: 10000,
+      };
+
+      // Check for piece sacrifice (including captures like Nxe3 or sacrifice moves into enemy attack)
       let isPieceSacrifice = false;
       const pieceType = posCurrent.move.piece.toLowerCase();
       if (['n', 'b', 'r', 'q'].includes(pieceType)) {
         try {
           const testChess = new Chess(posCurrent.fen);
-          // Check if opponent can capture the piece on this square
+          // Check if opponent can capture the piece on its arrival square
           const capturesOfTarget = testChess.moves({ verbose: true }).filter(m => m.to === posCurrent.move!.to);
-          if (capturesOfTarget.length > 0 && !posCurrent.move.captured) {
-            isPieceSacrifice = true;
+          if (capturesOfTarget.length > 0) {
+            const pieceVal = PIECE_VALUES[pieceType] || 300;
+            const capturedVal = posCurrent.move.captured
+              ? (PIECE_VALUES[posCurrent.move.captured.toLowerCase()] || 100)
+              : 0;
+            // A sacrifice occurs if net material offered >= 150 (e.g. Knight/Bishop takes Pawn or empty square,
+            // Rook takes minor/pawn/empty, Queen takes minor/pawn/rook/empty)
+            if (pieceVal - capturedVal >= 150) {
+              isPieceSacrifice = true;
+            }
           }
         } catch {
           // ignore
+        }
+      }
+
+      // Check for Great Move (!):
+      // Best move that finds a critical tactical resource or expands lead when contested
+      let isGreatMove = false;
+      if (isBestMove && !isPieceSacrifice && !posCurrent.move.san.includes('O-O')) {
+        const isTactical = posCurrent.move.san.includes('+') || !!posCurrent.move.captured;
+        const evalDiff = moverEvalAfter - moverEvalBefore;
+        if (isTactical && evalDiff >= 60 && moverEvalBefore >= -200 && moverEvalBefore <= 400) {
+          isGreatMove = true;
+        } else if (moverEvalBefore <= -40 && moverEvalAfter >= 40) {
+          isGreatMove = true;
         }
       }
 
@@ -599,13 +630,14 @@ class StockfishManager {
         evalAfter: moverEvalAfter,
         isBestMove,
         isPieceSacrifice,
+        isGreatMove,
         customThresholds: settings.customClassifications,
       });
 
       posCurrent.classification = classification;
       posCurrent.cpl = cpl;
 
-      const accuracy = calculateMoveAccuracy(cpl);
+      const accuracy = calculateMoveAccuracy(cpl, moverEvalBefore, moverEvalAfter);
 
       if (isWhite) {
         whiteTotalCpl += cpl;
@@ -634,6 +666,24 @@ class StockfishManager {
         };
         if (!identifiedMotifs.includes('Brilliant Sacrifice')) {
           identifiedMotifs.push('Brilliant Sacrifice');
+        }
+      }
+
+      // Coach Explanation for great moves
+      if (classification === 'great') {
+        posCurrent.explanation = {
+          playedSan: posCurrent.move.san,
+          bestMoveSan: posBefore.bestMoveSan || posBefore.bestMove,
+          evalBefore: moverEvalBefore,
+          evalAfter: moverEvalAfter,
+          evalDiff: 0,
+          motif: 'Great Tactical Find',
+          consequence: `Great move! You found ${posCurrent.move.san}, a crucial tactical move that tightens your grip on the position.`,
+          beginnerLesson: 'Finding critical tactical moves in contested positions turns equal games into clear wins.',
+          practicalAdvice: 'Always calculate forcing checks and captures to find game-winning tactical resources.',
+        };
+        if (!identifiedMotifs.includes('Great Tactical Find')) {
+          identifiedMotifs.push('Great Tactical Find');
         }
       }
 

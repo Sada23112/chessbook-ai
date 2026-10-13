@@ -114,6 +114,39 @@ describe('Chess Evaluation & Move Classification', () => {
     });
     expect(brilliant.classification).toBe('brilliant');
     expect(brilliant.cpl).toBe(0);
+
+    // Capturing sacrifice like Nxe3!! (-2.33 on Chess.com)
+    const nxe3Brilliant = classifyMove({
+      evalBefore: 180,
+      evalAfter: 233,
+      isBestMove: true,
+      isPieceSacrifice: true,
+    });
+    expect(nxe3Brilliant.classification).toBe('brilliant');
+    expect(nxe3Brilliant.cpl).toBe(0);
+  });
+
+  it('classifies great moves when critical tactical resource is found', () => {
+    const great = classifyMove({
+      evalBefore: 20,
+      evalAfter: 120,
+      isBestMove: true,
+      isGreatMove: true,
+    });
+    expect(great.classification).toBe('great');
+    expect(great.cpl).toBe(0);
+  });
+
+  it('preserves winning advantage without false mistakes (Chess.com CAPS2 rule)', () => {
+    // If player is comfortably winning (+350) and plays a solid simplifying move (+240),
+    // it dropped 110 cpl, but player is still totally winning: classify as 'good', not 'mistake'
+    const winningSimplification = classifyMove({
+      evalBefore: 350,
+      evalAfter: 240,
+      isBestMove: false,
+    });
+    expect(winningSimplification.classification).toBe('good');
+    expect(winningSimplification.cpl).toBe(110);
   });
 
   it('does not classify sacrifices as brilliant if advantage is lost or negative', () => {

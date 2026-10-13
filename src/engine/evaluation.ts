@@ -31,9 +31,13 @@ export function centipawnsToWinProbability(cp: number): number {
   return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
 }
 
-// Calculate move accuracy (0 to 100) based on centipawn loss
-export function calculateMoveAccuracy(cpl: number): number {
+// Calculate move accuracy (0 to 100) based on centipawn loss and game context (Chess.com CAPS2 aligned)
+export function calculateMoveAccuracy(cpl: number, evalBefore?: number, evalAfter?: number): number {
   if (cpl <= 0) return 100;
+  // If comfortably winning and maintained advantage, award high accuracy (Chess.com CAPS2 model)
+  if (evalBefore !== undefined && evalAfter !== undefined && evalBefore >= 200 && evalAfter >= 130) {
+    return Math.max(88, Math.min(100, Math.round(100 - cpl * 0.06)));
+  }
   const acc = 103.1668 * Math.exp(-0.04354 * (cpl / 10)) - 3.1669;
   return Math.max(0, Math.min(100, Math.round(acc)));
 }
@@ -77,8 +81,8 @@ export function classifyMove({
   const rawLoss = evalBefore - evalAfter;
   const cpl = Math.max(0, Math.round(rawLoss));
 
-  // 3. Brilliant move: Piece sacrifice that is the top engine move and maintains a decisive winning advantage
-  if ((isBestMove || cpl <= 5) && isPieceSacrifice && evalAfter >= 100 && evalBefore < 1000) {
+  // 3. Brilliant move: Piece sacrifice that is top engine move or near-best and maintains a decisive winning advantage
+  if ((isBestMove || cpl <= 10) && isPieceSacrifice && evalAfter >= 70 && evalBefore < 1000) {
     return { classification: 'brilliant', cpl: 0 };
   }
 
@@ -101,32 +105,40 @@ export function classifyMove({
     return { classification: 'missedWin', cpl };
   }
 
-  // Overwhelmingly winning positions: If eval is +600 and still +450, avoid labeling as blunder
-  if (evalBefore >= 600 && evalAfter >= 450) {
+  // 7. Preserving winning advantage (Chess.com CAPS2 rule):
+  // If mover was already clearly winning (>= 200 cp) and remains decisively winning (>= 130 cp),
+  // do not penalize simplifying or solid moves as mistakes or blunders!
+  if (evalBefore >= 200 && evalAfter >= 130) {
+    if (cpl <= 50) return { classification: 'excellent', cpl };
     return { classification: 'good', cpl };
   }
 
-  // 7. Blunder
+  // Overwhelmingly winning positions: If eval is +500 and still +300, it's good
+  if (evalBefore >= 500 && evalAfter >= 300) {
+    return { classification: 'good', cpl };
+  }
+
+  // 8. Blunder
   if (cpl >= blunderThresh) {
     return { classification: 'blunder', cpl };
   }
 
-  // 8. Mistake
+  // 9. Mistake
   if (cpl >= mistakeThresh) {
     return { classification: 'mistake', cpl };
   }
 
-  // 9. Inaccuracy
+  // 10. Inaccuracy
   if (cpl >= inaccuracyThresh) {
     return { classification: 'inaccuracy', cpl };
   }
 
-  // 10. Excellent move (near optimal, <= 15 CPL)
+  // 11. Excellent move (near optimal, <= 15 CPL)
   if (cpl <= 15) {
     return { classification: 'excellent', cpl };
   }
 
-  // 11. Good move
+  // 12. Good move
   return { classification: 'good', cpl };
 }
 
