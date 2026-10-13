@@ -34,9 +34,10 @@ export function centipawnsToWinProbability(cp: number): number {
 // Calculate move accuracy (0 to 100) based on centipawn loss and game context (Chess.com CAPS2 aligned)
 export function calculateMoveAccuracy(cpl: number, evalBefore?: number, evalAfter?: number): number {
   if (cpl <= 0) return 100;
-  // If comfortably winning and maintained advantage, award high accuracy (Chess.com CAPS2 model)
+  // If comfortably winning and maintained advantage, award soft decay without harsh drop
   if (evalBefore !== undefined && evalAfter !== undefined && evalBefore >= 200 && evalAfter >= 130) {
-    return Math.max(88, Math.min(100, Math.round(100 - cpl * 0.06)));
+    const winningAcc = 100 * Math.exp(-0.0035 * cpl);
+    return Math.max(40, Math.min(100, Math.round(winningAcc)));
   }
   const acc = 103.1668 * Math.exp(-0.04354 * (cpl / 10)) - 3.1669;
   return Math.max(0, Math.min(100, Math.round(acc)));
@@ -142,11 +143,54 @@ export function classifyMove({
   return { classification: 'good', cpl };
 }
 
-// Estimate performance rating based on game accuracy and average centipawn loss
-export function estimatePerformanceElo(accuracy: number, avgCpl: number): number {
-  const base = 400 + Math.pow(Math.max(0, accuracy) / 100, 2.3) * 2350;
-  const cplDeduction = Math.min(350, avgCpl * 2.2);
-  const estimated = Math.round(base - cplDeduction);
+// Estimate performance rating based on game accuracy, average centipawn loss, and player baseline (Chess.com aligned)
+export function estimatePerformanceElo(
+  accuracy: number,
+  avgCpl: number,
+  playerElo?: number
+): number {
+  const acc = Math.max(0, Math.min(100, accuracy));
+
+  if (playerElo && playerElo >= 400 && playerElo <= 2800) {
+    // Chess.com Game Rating model anchored to player's official rating
+    // E.g. for a 730 player: 69.5% accuracy -> ~950, 83.3% accuracy -> ~1400
+    let delta = 0;
+    if (acc >= 95) {
+      delta = 1050 + (acc - 95) * 70;
+    } else if (acc >= 85) {
+      delta = 725 + (acc - 85) * 32.5;
+    } else if (acc >= 80) {
+      delta = 600 + (acc - 80) * 25;
+    } else if (acc >= 65) {
+      delta = 180 + (acc - 65) * 20;
+    } else if (acc >= 50) {
+      delta = -100 + (acc - 50) * 18;
+    } else {
+      delta = -350 + acc * 5;
+    }
+    const cplPenalty = Math.min(100, avgCpl * 0.6);
+    const estimated = Math.round(playerElo + delta - cplPenalty);
+    return Math.max(400, Math.min(3000, estimated));
+  }
+
+  // Absolute estimation calibrated to Chess.com Game Ratings
+  let baseElo = 400;
+  if (acc >= 95) {
+    baseElo = 1950 + (acc - 95) * 150;
+  } else if (acc >= 85) {
+    baseElo = 1480 + (acc - 85) * 47;
+  } else if (acc >= 75) {
+    baseElo = 1150 + (acc - 75) * 33;
+  } else if (acc >= 65) {
+    baseElo = 880 + (acc - 65) * 27;
+  } else if (acc >= 50) {
+    baseElo = 620 + (acc - 50) * 17;
+  } else {
+    baseElo = 400 + acc * 4.4;
+  }
+
+  const cplDeduction = Math.min(180, avgCpl * 1.1);
+  const estimated = Math.round(baseElo - cplDeduction);
   return Math.max(400, Math.min(2900, estimated));
 }
 

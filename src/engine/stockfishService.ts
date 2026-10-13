@@ -741,8 +741,8 @@ class StockfishManager {
     const whiteCPL = whiteCount > 0 ? Math.round(whiteTotalCpl / whiteCount) : 0;
     const blackCPL = blackCount > 0 ? Math.round(blackTotalCpl / blackCount) : 0;
 
-    const estimatedEloWhite = estimatePerformanceElo(accuracyWhite, whiteCPL);
-    const estimatedEloBlack = estimatePerformanceElo(accuracyBlack, blackCPL);
+    const estimatedEloWhite = estimatePerformanceElo(accuracyWhite, whiteCPL, game.whiteElo);
+    const estimatedEloBlack = estimatePerformanceElo(accuracyBlack, blackCPL, game.blackElo);
     const gameReviewVerdict = generateGameVerdict(
       accuracyWhite,
       accuracyBlack,

@@ -160,20 +160,30 @@ describe('Chess Evaluation & Move Classification', () => {
     expect(badSac.classification).toBe('blunder');
   });
 
-  it('estimates performance Elo correctly across skill ranges', () => {
+  it('estimates performance Elo correctly across skill ranges and matches Chess.com Game Ratings', () => {
+    // 737 Elo player playing at 83.3% accuracy -> ~1400 (exactly Chess.com)
+    const blackGameRating = estimatePerformanceElo(83.3, 35, 737);
+    expect(blackGameRating).toBeGreaterThanOrEqual(1350);
+    expect(blackGameRating).toBeLessThanOrEqual(1450);
+
+    // 722 Elo player playing at 69.5% accuracy -> ~950 (exactly Chess.com)
+    const whiteGameRating = estimatePerformanceElo(69.5, 65, 722);
+    expect(whiteGameRating).toBeGreaterThanOrEqual(900);
+    expect(whiteGameRating).toBeLessThanOrEqual(1000);
+
     // Grandmaster level precision
     const gmElo = estimatePerformanceElo(98, 12);
-    expect(gmElo).toBeGreaterThan(2400);
+    expect(gmElo).toBeGreaterThan(2300);
 
     // Intermediate club level
     const clubElo = estimatePerformanceElo(75, 45);
-    expect(clubElo).toBeGreaterThan(1200);
-    expect(clubElo).toBeLessThan(1900);
+    expect(clubElo).toBeGreaterThan(1050);
+    expect(clubElo).toBeLessThan(1450);
 
     // Beginner level
     const beginnerElo = estimatePerformanceElo(35, 120);
     expect(beginnerElo).toBeGreaterThanOrEqual(400);
-    expect(beginnerElo).toBeLessThan(1000);
+    expect(beginnerElo).toBeLessThan(800);
   });
 
   it('generates coach game verdicts based on player accuracy', () => {
