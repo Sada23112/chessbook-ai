@@ -266,7 +266,7 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto bg-background">
+    <div className="flex-1 flex flex-col p-3 sm:p-6 pb-24 md:pb-6 overflow-y-auto bg-background">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-surface-border pb-4">
         <div>
@@ -321,7 +321,7 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
             </span>
           </div>
 
-          <div className="w-full max-w-[min(100vw-2rem,480px)] aspect-square flex items-center justify-center">
+          <div className="w-full max-w-[min(100vw-2rem,38dvh,480px)] aspect-square flex items-center justify-center">
             <InteractiveChessboard
               fen={boardFen}
               boardOrientation={activeMistake.moverColor}

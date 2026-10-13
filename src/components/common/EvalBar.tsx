@@ -5,9 +5,10 @@ interface EvalBarProps {
   score: number; // White-relative centipawns (+ is white advantage)
   mate?: number; // In plies to mate (+ is white mates)
   orientation: PieceColor;
+  className?: string;
 }
 
-export const EvalBar: React.FC<EvalBarProps> = ({ score, mate, orientation }) => {
+export const EvalBar: React.FC<EvalBarProps> = ({ score, mate, orientation, className = 'w-5 sm:w-7' }) => {
   // Convert score to percentage for white advantage (0% to 100%)
   // Range: -800 to +800 covers typical non-mate advantage
   let whitePercent: number;
@@ -34,7 +35,7 @@ export const EvalBar: React.FC<EvalBarProps> = ({ score, mate, orientation }) =>
   const isAdvantageBottom = isWhiteBottom ? score >= 0 : score <= 0;
 
   return (
-    <div className="relative flex flex-col h-full w-7 bg-surface-elevated rounded-md overflow-hidden border border-surface-border shadow-inner select-none">
+    <div className={`relative flex flex-col h-full ${className} bg-surface-elevated rounded-md overflow-hidden border border-surface-border shadow-inner select-none`}>
       {/* Top section (opponent color) */}
       <div
         className="w-full bg-[#1e2328] transition-all duration-300 ease-out flex items-start justify-center pt-1"
