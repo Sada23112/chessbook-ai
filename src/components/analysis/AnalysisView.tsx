@@ -172,6 +172,19 @@ export const AnalysisView: React.FC = () => {
     setExploredSan(null);
   }, [currentPly]);
 
+  // Responsive desktop detection so only one active board is mounted at any time
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Play authentic Chess.com move sounds on navigation
   const prevPlyRef = React.useRef(currentPly);
   useEffect(() => {
@@ -1013,10 +1026,10 @@ export const AnalysisView: React.FC = () => {
   );
 
   // STAGE C: FULL-GAME REVIEW (Responsive Desktop + Mobile Experience)
-  return (
-    <>
-      {/* DESKTOP LAYOUT (visible on lg and larger) */}
-      <div className="hidden lg:flex flex-1 flex-row h-full overflow-hidden bg-background">
+  if (isDesktop) {
+    return (
+      /* DESKTOP LAYOUT */
+      <div className="flex flex-1 flex-row h-full overflow-hidden bg-background">
         {/* Left Column: Board, EvalBar, Nav Controls, EvalGraph */}
         <div className="flex-1 flex flex-col p-4 lg:p-6 overflow-y-auto items-center">
           {/* Chess.com Action Header */}
@@ -1424,9 +1437,12 @@ export const AnalysisView: React.FC = () => {
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* MOBILE LAYOUT (visible on screens smaller than lg) */}
-      <div className="flex lg:hidden flex-1 flex-col h-full overflow-hidden bg-background select-none">
+  // MOBILE LAYOUT (active on screens smaller than lg)
+  return (
+    <div className="flex flex-1 flex-col h-full overflow-hidden bg-background select-none">
         {/* 1. Mobile Compact Top Header */}
         <div className="px-3 py-2 border-b border-[#383531] bg-[#262421] flex items-center justify-between text-xs shrink-0">
           <div className="flex items-center space-x-1.5">
@@ -1681,6 +1697,5 @@ export const AnalysisView: React.FC = () => {
           {sidebarTab === 'graph' && renderGraphTab()}
         </div>
       </div>
-    </>
   );
 };

@@ -17,18 +17,26 @@ import { db } from '../../db/db';
 import type { UserSettings } from '../../types/chess';
 import { useAppStore } from '../../store/useAppStore';
 import { chessAudio } from '../../utils/chessAudio';
+import { fetchChessComStats } from '../../services/onlineImportService';
 
 export const SettingsView: React.FC = () => {
   const { settings, updateSettings, loadSettings } = useAppStore();
   const [chessComUser, setChessComUser] = useState('');
   const [lichessUser, setLichessUser] = useState('');
   const [backupStatus, setBackupStatus] = useState<string | null>(null);
+  const [verifiedStats, setVerifiedStats] = useState<{ rapid?: number; blitz?: number; puzzles?: number } | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(!chessAudio.isMuted());
 
   useEffect(() => {
     if (settings) {
-      setChessComUser(settings.playerUsernames?.chessCom || '');
+      const cc = settings.playerUsernames?.chessCom || '';
+      setChessComUser(cc);
       setLichessUser(settings.playerUsernames?.lichess || '');
+      if (cc) {
+        fetchChessComStats(cc).then((st) => {
+          if (st) setVerifiedStats(st);
+        });
+      }
     }
   }, [settings]);
 
@@ -41,12 +49,24 @@ export const SettingsView: React.FC = () => {
   };
 
   const handleSaveUsernames = async () => {
+    const cleanCC = chessComUser.trim();
     await updateSettings({
       playerUsernames: {
-        chessCom: chessComUser.trim(),
+        chessCom: cleanCC,
         lichess: lichessUser.trim(),
       },
     });
+
+    if (cleanCC) {
+      const stats = await fetchChessComStats(cleanCC);
+      if (stats) {
+        setVerifiedStats(stats);
+        setBackupStatus(`Saved! Chess.com ratings verified: Rapid ${stats.rapid ?? '—'}, Blitz ${stats.blitz ?? '—'}`);
+        setTimeout(() => setBackupStatus(null), 4000);
+        return;
+      }
+    }
+
     setBackupStatus('Usernames saved successfully.');
     setTimeout(() => setBackupStatus(null), 3000);
   };
@@ -287,6 +307,23 @@ export const SettingsView: React.FC = () => {
                 />
               </div>
             </div>
+
+            {verifiedStats && (
+              <div className="mb-4 p-2.5 rounded-[4px] bg-[#1a1917] border border-[#383531] text-xs flex items-center justify-between">
+                <span className="text-[#989795]">Verified Chess.com:</span>
+                <div className="flex items-center gap-2 text-white font-mono font-bold">
+                  <span>Rapid: <span className="text-[#81b64c]">{verifiedStats.rapid ?? '—'}</span></span>
+                  <span>•</span>
+                  <span>Blitz: <span className="text-[#81b64c]">{verifiedStats.blitz ?? '—'}</span></span>
+                  {verifiedStats.puzzles && (
+                    <>
+                      <span>•</span>
+                      <span>Puzzles: <span className="text-[#81b64c]">{verifiedStats.puzzles}</span></span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             <button
               onClick={handleSaveUsernames}

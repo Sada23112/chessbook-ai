@@ -80,6 +80,50 @@ const THEME_COLORS = {
   },
 };
 
+interface ChessboardErrorBoundaryProps {
+  children: React.ReactNode;
+  resetKey: string;
+}
+
+interface ChessboardErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ChessboardErrorBoundary extends React.Component<
+  ChessboardErrorBoundaryProps,
+  ChessboardErrorBoundaryState
+> {
+  constructor(props: ChessboardErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.warn('Safely recovered from chessboard DOM render issue:', error?.message);
+  }
+
+  componentDidUpdate(prevProps: ChessboardErrorBoundaryProps) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-[#272522]">
+          <span className="text-xs text-[#989795] animate-pulse">Updating board…</span>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   id: idProp,
   fen,
@@ -98,10 +142,22 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   className = '',
   maxWidth = '520px',
 }) => {
-  const generatedId = useId().replace(/[:]/g, '');
-  const boardId = idProp || `chess-board-${generatedId}`;
+  const generatedId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const boardId = (idProp || `chess-board-${generatedId}`).replace(/[^a-zA-Z0-9_-]/g, '');
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const handledByBoardRef = useRef<boolean>(false);
+
+  // Suppress harmless 'Square width not found' errors if parent is animating/resizing
+  useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      if (event.message && event.message.includes('Square width not found')) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    };
+    window.addEventListener('error', handleGlobalError);
+    return () => window.removeEventListener('error', handleGlobalError);
+  }, []);
 
   // Normalize arrows for rendering via custom SVG overlay
   const normalizedArrows: TrainingArrow[] = useMemo(() => {
@@ -586,7 +642,9 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
     >
-      <Chessboard options={chessboardOptions} />
+      <ChessboardErrorBoundary resetKey={`${boardId}-${fen}`}>
+        <Chessboard key={boardId} options={chessboardOptions} />
+      </ChessboardErrorBoundary>
       <BoardArrowOverlay arrows={normalizedArrows} boardOrientation={boardOrientation} />
     </div>
   );

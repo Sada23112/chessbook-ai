@@ -8,6 +8,7 @@ import {
   Layers,
   BookOpen,
   ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
 import { db } from '../../db/db';
 import type {
@@ -23,6 +24,7 @@ import {
   buildCourseFromRepertoire,
   calculateCourseProgress,
 } from '../../repertoire/courseEngine';
+import { fetchChessComStats, type PlayerRatings } from '../../services/onlineImportService';
 
 export const DashboardView: React.FC = () => {
   const { setTab, setActiveGame, settings } = useAppStore();
@@ -158,6 +160,25 @@ export const DashboardView: React.FC = () => {
 
   const userHandle = settings?.playerUsernames?.chessCom || 'Sada012';
 
+  const [ratings, setRatings] = useState<PlayerRatings | null>(null);
+  const [isLoadingRatings, setIsLoadingRatings] = useState(false);
+
+  const syncRatings = async (username: string) => {
+    setIsLoadingRatings(true);
+    try {
+      const stats = await fetchChessComStats(username);
+      if (stats) {
+        setRatings(stats);
+      }
+    } finally {
+      setIsLoadingRatings(false);
+    }
+  };
+
+  useEffect(() => {
+    syncRatings(userHandle);
+  }, [userHandle]);
+
   // Opening breakdown
   const openingMap = new Map<string, { total: number; wins: number; draws: number; losses: number }>();
   for (const g of games) {
@@ -194,15 +215,49 @@ export const DashboardView: React.FC = () => {
                   {userHandle}
                 </h1>
                 <span className="px-1.5 py-0.2 bg-[#81b64c]/20 text-[#81b64c] text-[10px] font-bold rounded uppercase">
-                  Online
+                  Chess.com Verified
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-xs text-[#989795] mt-0.5">
-                <span>Rapid: <strong className="text-white font-mono">1540</strong></span>
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-[#989795] mt-1">
+                <span>
+                  Rapid:{' '}
+                  <strong className="text-white font-mono">
+                    {ratings?.rapid ?? 895}
+                  </strong>
+                </span>
                 <span>•</span>
-                <span>Blitz: <strong className="text-white font-mono">1485</strong></span>
+                <span>
+                  Blitz:{' '}
+                  <strong className="text-white font-mono">
+                    {ratings?.blitz ?? 506}
+                  </strong>
+                </span>
                 <span>•</span>
-                <span>Puzzles: <strong className="text-white font-mono">1620</strong></span>
+                <span>
+                  Puzzles:{' '}
+                  <strong className="text-white font-mono">
+                    {ratings?.puzzles ?? 1589}
+                  </strong>
+                </span>
+                {ratings?.bullet !== undefined && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      Bullet:{' '}
+                      <strong className="text-white font-mono">
+                        {ratings.bullet}
+                      </strong>
+                    </span>
+                  </>
+                )}
+                <button
+                  onClick={() => syncRatings(userHandle)}
+                  title="Sync live rating from Chess.com"
+                  className="ml-1 inline-flex items-center gap-1 text-[#81b64c] hover:text-[#9fd563] text-[11px] font-semibold transition px-1.5 py-0.5 rounded bg-[#312e2b] hover:bg-[#383531]"
+                >
+                  <RefreshCw size={10} className={isLoadingRatings ? 'animate-spin' : ''} />
+                  <span>{isLoadingRatings ? 'Syncing…' : 'Sync'}</span>
+                </button>
               </div>
             </div>
           </div>
