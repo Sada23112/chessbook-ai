@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useId } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import type {
@@ -9,6 +9,7 @@ import type {
 } from 'react-chessboard';
 import type { TrainingArrow } from '../../types/chess';
 import { BoardArrowOverlay } from './BoardArrowOverlay';
+import { chessAudio } from '../../utils/chessAudio';
 
 export interface SquareAnnotation {
   square: string;
@@ -62,16 +63,16 @@ export interface InteractiveChessboardProps {
 
 const THEME_COLORS = {
   emerald: {
-    dark: '#2e3a44',
-    light: '#5c6d7c',
+    dark: '#779952',
+    light: '#edeed1',
   },
   standard: {
-    dark: '#769656',
-    light: '#eeeed2',
+    dark: '#779952',
+    light: '#edeed1',
   },
   midnight: {
-    dark: '#1e293b',
-    light: '#475569',
+    dark: '#414856',
+    light: '#7988a1',
   },
   wood: {
     dark: '#b58863',
@@ -97,6 +98,8 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   className = '',
   maxWidth = '520px',
 }) => {
+  const generatedId = useId().replace(/[:]/g, '');
+  const boardId = idProp || `chess-board-${generatedId}`;
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const handledByBoardRef = useRef<boolean>(false);
 
@@ -170,6 +173,17 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
         // Always clear selected square after completing an attempted move
         setSelectedSquare(null);
+
+        // Play authentic Chess.com move sound
+        if (moveResult.captured) {
+          chessAudio.playCapture();
+        } else if (moveResult.san.includes('O-O')) {
+          chessAudio.playCastle();
+        } else if (moveResult.san.includes('+') || moveResult.san.includes('#')) {
+          chessAudio.playCheck();
+        } else {
+          chessAudio.playMove();
+        }
 
         if (onMove) {
           const accepted = onMove({
@@ -405,64 +419,63 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
     handledByBoardRef.current = false;
   }, []);
 
-  // Compose dynamic square styles
+  // Compose dynamic square styles matching Chess.com
   const squareStyles = useMemo(() => {
     const styles: Record<string, React.CSSProperties> = {};
 
-    // 1. Last move highlights (warm amber glow)
+    // 1. Last move highlights (iconic Chess.com yellow-green)
     if (lastMove?.from) {
       styles[lastMove.from] = {
-        backgroundColor: 'rgba(234, 179, 8, 0.22)',
+        backgroundColor: 'rgba(235, 236, 116, 0.55)',
       };
     }
     if (lastMove?.to) {
       styles[lastMove.to] = {
-        backgroundColor: 'rgba(234, 179, 8, 0.28)',
+        backgroundColor: 'rgba(235, 236, 116, 0.55)',
       };
     }
 
-    // 2. King in check highlight (red radiant aura)
+    // 2. King in check highlight (Chess.com red radial check alert)
     if (checkSquare) {
       styles[checkSquare] = {
         background:
-          'radial-gradient(circle, rgba(239, 68, 68, 0.85) 0%, rgba(239, 68, 68, 0.35) 60%, transparent 72%)',
+          'radial-gradient(circle, rgba(235, 97, 80, 0.95) 0%, rgba(235, 97, 80, 0.4) 60%, transparent 75%)',
       };
     }
 
     // 3. External hint highlight squares (e.g. piece or target zone)
     for (const hSquare of highlightSquares) {
       styles[hSquare] = {
-        backgroundColor: 'rgba(56, 189, 248, 0.35)', // sky blue aura
-        boxShadow: 'inset 0 0 0 3px rgba(56, 189, 248, 0.8)',
+        backgroundColor: 'rgba(64, 169, 255, 0.35)',
+        boxShadow: 'inset 0 0 0 3px rgba(64, 169, 255, 0.85)',
       };
     }
 
     // 4. Custom user styles (e.g. blunder/brilliant badges)
     Object.assign(styles, customSquareStyles);
 
-    // 5. Selected square highlight (emerald green glow)
+    // 5. Selected square highlight (Chess.com yellow-green highlight)
     if (selectedSquare) {
       styles[selectedSquare] = {
-        backgroundColor: 'rgba(34, 197, 94, 0.35)',
-        boxShadow: 'inset 0 0 0 3px #22c55e',
+        backgroundColor: 'rgba(235, 236, 116, 0.65)',
+        boxShadow: 'inset 0 0 0 3px rgba(186, 202, 68, 0.9)',
       };
 
-      // 6. Legal destination indicators
+      // 6. Legal destination indicators (Chess.com subtle dots & capture target rings)
       for (const move of legalDestinations) {
         const isCapture = Boolean(move.captured);
         if (isCapture) {
           // Distinct capture ring indicator
           styles[move.to] = {
             background:
-              'radial-gradient(circle, transparent 66%, rgba(239, 68, 68, 0.6) 67%)',
-            boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.75)',
+              'radial-gradient(circle, transparent 52%, rgba(0, 0, 0, 0.22) 53%, rgba(0, 0, 0, 0.22) 68%, transparent 69%)',
             cursor: 'pointer',
           };
         } else {
           // Subtle legal move dot on empty squares
           styles[move.to] = {
             background:
-              'radial-gradient(circle, rgba(34, 197, 94, 0.65) 24%, transparent 25%)',
+              'radial-gradient(circle, rgba(0, 0, 0, 0.18) 22%, transparent 23%)',
             cursor: 'pointer',
           };
         }
@@ -495,16 +508,19 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
                 right: '4%',
                 zIndex: 30,
                 pointerEvents: 'none',
-                borderRadius: '9999px',
-                padding: '1px 5px',
-                fontSize: '11px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: moveAnnotation.label.length > 1 ? '11px' : '12px',
                 fontWeight: 800,
-                fontFamily: 'monospace',
-                lineHeight: '1.2',
-                backgroundColor: moveAnnotation.bg || '#22c55e',
-                color: moveAnnotation.color || '#000000',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                border: '1.5px solid rgba(255,255,255,0.7)',
+                lineHeight: '1',
+                backgroundColor: moveAnnotation.bg || '#81b64c',
+                color: moveAnnotation.color || '#ffffff',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.45)',
+                border: '1.5px solid rgba(255,255,255,0.85)',
               }}
             >
               {moveAnnotation.label}
@@ -519,7 +535,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
   // Memoize chessboard options to prevent unneeded sensor re-initialization and board re-renders
   const chessboardOptions = useMemo(
     () => ({
-      id: idProp || 'chessbook-board',
+      id: boardId,
       position: fen,
       boardOrientation,
       allowDragging: allowMoves && !disabled,
@@ -533,14 +549,14 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
       darkSquareStyle: { backgroundColor: activeColors.dark },
       lightSquareStyle: { backgroundColor: activeColors.light },
       boardStyle: {
-        borderRadius: '10px',
+        borderRadius: '4px',
         touchAction: 'manipulation',
       },
-      animationDurationInMs: 200,
-      showAnimations: true,
+      animationDurationInMs: 0,
+      showAnimations: false,
     }),
     [
-      idProp,
+      boardId,
       fen,
       boardOrientation,
       allowMoves,
@@ -558,7 +574,7 @@ export const InteractiveChessboard: React.FC<InteractiveChessboardProps> = ({
 
   return (
     <div
-      className={`w-full aspect-square select-none rounded-xl overflow-hidden shadow-2xl border border-surface-border bg-surface-elevated transition-all relative ${className}`}
+      className={`w-full aspect-square select-none rounded-[6px] overflow-hidden shadow-2xl border border-[#3d3a34] bg-[#272522] transition-all relative ${className}`}
       style={{
         maxWidth,
         touchAction: 'manipulation',

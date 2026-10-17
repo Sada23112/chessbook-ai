@@ -323,6 +323,7 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
 
           <div className="w-full max-w-[min(100vw-2rem,38dvh,480px)] aspect-square flex items-center justify-center">
             <InteractiveChessboard
+              id="opening-mistake-coach-board"
               fen={boardFen}
               boardOrientation={activeMistake.moverColor}
               turn={isDemonstrating ? undefined : activeMistake.turn}

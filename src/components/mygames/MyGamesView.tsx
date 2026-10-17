@@ -456,47 +456,47 @@ export const MyGamesView: React.FC = () => {
                 <div
                   key={game.id}
                   onClick={() => setActiveGame(game.id)}
-                  className="bg-surface hover:bg-surface-elevated rounded-2xl p-5 transition cursor-pointer flex flex-col justify-between group"
+                  className="bg-[#262421] hover:bg-[#312e2b] border border-[#383531] rounded-[6px] p-4 transition cursor-pointer flex flex-col justify-between group shadow-sm"
                 >
                   <div>
                     {/* Date & Outcome */}
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-slate-500 font-mono">{game.date}</span>
+                      <span className="text-xs text-[#989795] font-mono">{game.date}</span>
                       <span
-                        className={`text-xs font-mono font-semibold px-2 py-0.5 rounded-lg ${
+                        className={`text-[11px] font-sans font-bold px-2 py-0.5 rounded-[4px] shadow-sm ${
                           outcome.isWin
-                            ? 'bg-emerald-500/10 text-emerald-400'
+                            ? 'bg-[#81b64c] text-white'
                             : outcome.isLoss
-                            ? 'bg-rose-500/10 text-rose-400'
-                            : 'bg-slate-500/10 text-slate-400'
+                            ? 'bg-[#ca3431] text-white'
+                            : 'bg-[#65625a] text-white'
                         }`}
                       >
-                        {game.result}
+                        {outcome.isWin ? 'Win' : outcome.isLoss ? 'Loss' : 'Draw'} ({game.result})
                       </span>
                     </div>
 
                     {/* Players */}
-                    <div className="space-y-1 mb-3">
-                      <div className="flex items-center justify-between text-sm text-slate-200">
+                    <div className="space-y-1.5 mb-3 bg-[#1f1e1b] p-2.5 rounded-[4px] border border-[#383531]">
+                      <div className="flex items-center justify-between text-xs text-white">
                         <div className="flex items-center gap-2 truncate">
-                          <span className="w-2 h-2 rounded-full bg-slate-100 shrink-0" />
-                          <span className="font-medium truncate">{game.white}</span>
+                          <span className="w-2.5 h-2.5 rounded-full bg-white shrink-0 shadow-sm" />
+                          <span className="font-bold truncate">{game.white}</span>
                         </div>
                         {game.whiteElo && (
-                          <span className="text-xs text-slate-500 font-mono shrink-0 ml-2">
-                            {game.whiteElo}
+                          <span className="text-[11px] text-[#989795] font-mono font-semibold shrink-0 ml-2">
+                            ({game.whiteElo})
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between text-sm text-slate-200">
+                      <div className="flex items-center justify-between text-xs text-white">
                         <div className="flex items-center gap-2 truncate">
-                          <span className="w-2 h-2 rounded-full bg-slate-700 shrink-0" />
-                          <span className="font-medium truncate">{game.black}</span>
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#181715] border border-[#524e47] shrink-0 shadow-sm" />
+                          <span className="font-bold truncate">{game.black}</span>
                         </div>
                         {game.blackElo && (
-                          <span className="text-xs text-slate-500 font-mono shrink-0 ml-2">
-                            {game.blackElo}
+                          <span className="text-[11px] text-[#989795] font-mono font-semibold shrink-0 ml-2">
+                            ({game.blackElo})
                           </span>
                         )}
                       </div>
@@ -504,16 +504,20 @@ export const MyGamesView: React.FC = () => {
 
                     {/* Opening */}
                     {game.opening && (
-                      <p className="text-xs text-slate-500 truncate mb-4">
-                        {game.eco && <span className="font-mono text-slate-600 mr-1.5">{game.eco}</span>}
-                        {game.opening}
+                      <p className="text-xs text-[#989795] truncate mb-3">
+                        {game.eco && (
+                          <span className="font-mono text-white font-bold bg-[#383531] px-1 py-0.5 rounded text-[10px] mr-1.5">
+                            {game.eco}
+                          </span>
+                        )}
+                        <span>{game.opening}</span>
                       </p>
                     )}
                   </div>
 
                   {/* Card footer */}
-                  <div className="pt-3 border-t border-surface-elevated flex items-center justify-between text-xs">
-                    <span className="text-slate-500">{game.movesCount} plies</span>
+                  <div className="pt-2.5 border-t border-[#383531] flex items-center justify-between text-xs">
+                    <span className="text-[#989795] font-mono">{game.movesCount} plies</span>
 
                     <div className="flex items-center gap-1.5">
                       <button
@@ -521,7 +525,7 @@ export const MyGamesView: React.FC = () => {
                           e.stopPropagation();
                           setActiveGame(game.id, 'opening_coach');
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-surface-elevated hover:bg-surface-hover text-slate-300 font-medium text-xs transition"
+                        className="chess-btn-secondary px-2.5 py-1 rounded-[4px] text-xs font-bold"
                       >
                         Coach
                       </button>
@@ -530,13 +534,13 @@ export const MyGamesView: React.FC = () => {
                           e.stopPropagation();
                           setActiveGame(game.id, 'full_game');
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-accent/15 hover:bg-accent text-accent hover:text-black font-semibold text-xs transition"
+                        className="chess-btn-primary px-3 py-1 rounded-[4px] text-xs font-bold shadow"
                       >
-                        Analysis
+                        Review
                       </button>
                       <button
                         onClick={(e) => handleDelete(game.id, e)}
-                        className="p-1 text-slate-600 hover:text-rose-400 transition ml-1"
+                        className="p-1 text-[#65625a] hover:text-[#ca3431] transition ml-1"
                         title="Delete game"
                       >
                         <Trash2 size={13} />

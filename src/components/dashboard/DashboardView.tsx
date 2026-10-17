@@ -179,137 +179,237 @@ export const DashboardView: React.FC = () => {
     .slice(0, 4);
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-background">
-      <div className="max-w-5xl w-full mx-auto px-5 md:px-8 py-7 md:py-10">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-background select-none">
+      <div className="max-w-5xl w-full mx-auto px-4 md:px-8 py-6 md:py-8">
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-10">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-100 tracking-tight">
-              Good morning
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">
-              Here's where your chess stands today.
-            </p>
+        {/* Chess.com Welcome Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-7 bg-[#262421] p-5 rounded-[6px] border border-[#383531]">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-[6px] bg-[#81b64c] text-white font-black text-xl flex items-center justify-center shadow-md shrink-0">
+              {userHandle.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-white tracking-tight">
+                  {userHandle}
+                </h1>
+                <span className="px-1.5 py-0.2 bg-[#81b64c]/20 text-[#81b64c] text-[10px] font-bold rounded uppercase">
+                  Online
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-[#989795] mt-0.5">
+                <span>Rapid: <strong className="text-white font-mono">1540</strong></span>
+                <span>•</span>
+                <span>Blitz: <strong className="text-white font-mono">1485</strong></span>
+                <span>•</span>
+                <span>Puzzles: <strong className="text-white font-mono">1620</strong></span>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setTab('my-games')}
-              className="px-3.5 py-2 bg-surface-elevated hover:bg-surface-hover text-slate-300 border border-surface-border/70 text-sm font-medium rounded-xl transition flex items-center gap-2"
+              className="chess-btn-secondary px-4 py-2 text-xs font-bold rounded-[6px] flex items-center gap-2"
             >
-              <Upload size={14} className="text-slate-400" />
-              Import Games
+              <Upload size={14} />
+              <span>Import PGN</span>
             </button>
             <button
               onClick={() => setTab('training')}
-              className="px-3.5 py-2 bg-accent hover:bg-accent-hover text-black text-sm font-semibold rounded-xl shadow-sm transition flex items-center gap-2"
+              className="chess-btn-primary px-4 py-2 text-xs font-bold rounded-[6px] flex items-center gap-2 shadow"
             >
               <Dumbbell size={14} />
-              Train ({dueCardsCount})
+              <span>Train Puzzles ({dueCardsCount})</span>
             </button>
+          </div>
+        </div>
+
+        {/* Quick Action Tiles (Chess.com Style) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mb-7">
+          <div
+            onClick={() => {
+              if (games.length > 0) {
+                setActiveGame(games[0].id);
+                setTab('analysis');
+              } else {
+                setTab('my-games');
+              }
+            }}
+            className="bg-[#262421] hover:bg-[#312e2b] p-4 rounded-[6px] border border-[#383531] cursor-pointer transition flex items-center gap-3.5 group shadow-sm"
+          >
+            <div className="w-10 h-10 rounded-[6px] bg-[#81b64c]/15 text-[#81b64c] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Activity size={20} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-white group-hover:text-[#81b64c] transition-colors">
+                Game Review
+              </h3>
+              <p className="text-xs text-[#989795] truncate">
+                Analyze games with Stockfish & coach
+              </p>
+            </div>
+          </div>
+
+          <div
+            onClick={() => setTab('training')}
+            className="bg-[#262421] hover:bg-[#312e2b] p-4 rounded-[6px] border border-[#383531] cursor-pointer transition flex items-center gap-3.5 group shadow-sm"
+          >
+            <div className="w-10 h-10 rounded-[6px] bg-[#e58f2a]/15 text-[#e58f2a] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Dumbbell size={20} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-white group-hover:text-[#e58f2a] transition-colors">
+                Tactics & Puzzles
+              </h3>
+              <p className="text-xs text-[#989795] truncate">
+                {dueCardsCount > 0 ? `${dueCardsCount} exercises due today` : 'Daily puzzle training'}
+              </p>
+            </div>
+          </div>
+
+          <div
+            onClick={() => setTab('opening-book')}
+            className="bg-[#262421] hover:bg-[#312e2b] p-4 rounded-[6px] border border-[#383531] cursor-pointer transition flex items-center gap-3.5 group shadow-sm"
+          >
+            <div className="w-10 h-10 rounded-[6px] bg-[#1baca6]/15 text-[#1baca6] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <BookOpen size={20} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-white group-hover:text-[#1baca6] transition-colors">
+                Openings Explorer
+              </h3>
+              <p className="text-xs text-[#989795] truncate">
+                Master opening repertoires & traps
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Empty state */}
         {games.length === 0 ? (
-          <div className="py-20 flex flex-col items-center text-center">
-            <div className="w-14 h-14 rounded-2xl bg-surface-elevated flex items-center justify-center text-2xl mb-5 text-slate-500">
+          <div className="py-16 flex flex-col items-center text-center bg-[#262421] rounded-[6px] border border-[#383531] p-8">
+            <div className="w-14 h-14 rounded-[8px] bg-[#383531] flex items-center justify-center text-2xl mb-4 text-[#81b64c]">
               ♟
             </div>
-            <h2 className="text-lg font-semibold text-slate-200 mb-2">No games yet</h2>
-            <p className="text-slate-500 text-sm leading-relaxed max-w-sm mb-7">
-              Import your games and we'll analyze them with Stockfish, track your opening mistakes, and build a personalized training queue.
+            <h2 className="text-base font-bold text-white mb-1.5">No Games Imported Yet</h2>
+            <p className="text-[#989795] text-xs leading-relaxed max-w-sm mb-6">
+              Paste a PGN or import from Chess.com to get instant Stockfish game reviews, accuracy scores, and coach blunder explanations.
             </p>
             <button
               onClick={() => setTab('my-games')}
-              className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-sm transition shadow flex items-center gap-2"
+              className="chess-btn-primary px-5 py-2.5 rounded-[6px] text-xs font-bold transition flex items-center gap-2"
             >
-              <Upload size={15} />
-              Import Your First Game
+              <Upload size={14} />
+              <span>Import Your First Game</span>
             </button>
           </div>
         ) : (
           <>
-            {/* Stats row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-              <div className="bg-surface rounded-2xl p-5">
-                <p className="text-slate-500 text-xs mb-3">Games analyzed</p>
-                <p className="text-2xl font-bold text-slate-100 font-mono">{analyzedGamesCount}</p>
-                <p className="text-slate-600 text-xs mt-1">of {games.length} total</p>
+            {/* Stats row (Chess.com Style) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
+              <div className="bg-[#262421] rounded-[6px] p-4 border border-[#383531]">
+                <p className="text-[#989795] text-xs font-semibold mb-2">Games Analyzed</p>
+                <p className="text-2xl font-black text-white font-sans">{analyzedGamesCount}</p>
+                <p className="text-[#6b6967] text-[11px] mt-1">of {games.length} total games</p>
               </div>
 
-              <div className="bg-surface rounded-2xl p-5">
-                <p className="text-slate-500 text-xs mb-3">Avg CPL</p>
-                <p className="text-2xl font-bold text-slate-100 font-mono">
-                  {avgCpl !== null ? avgCpl : '—'}
+              <div className="bg-[#262421] rounded-[6px] p-4 border border-[#383531]">
+                <p className="text-[#989795] text-xs font-semibold mb-2">Avg Accuracy</p>
+                <p className="text-2xl font-black text-[#81b64c] font-sans">
+                  {analyses.length > 0
+                    ? `${Math.round(
+                        analyses.reduce((acc, a) => acc + (a.summary.accuracyWhite + a.summary.accuracyBlack) / 2, 0) /
+                          analyses.length
+                      )}%`
+                    : '—'}
                 </p>
-                <p className="text-slate-600 text-xs mt-1">centipawn loss</p>
+                <p className="text-[#6b6967] text-[11px] mt-1">across review history</p>
               </div>
 
-              <div className="bg-surface rounded-2xl p-5">
-                <p className="text-slate-500 text-xs mb-3">Blunders</p>
-                <p className="text-2xl font-bold text-rose-400 font-mono">{totals.blunders}</p>
-                <p className="text-slate-600 text-xs mt-1">{totals.mistakes} mistakes</p>
+              <div className="bg-[#262421] rounded-[6px] p-4 border border-[#383531]">
+                <p className="text-[#989795] text-xs font-semibold mb-2">Blunders Caught</p>
+                <p className="text-2xl font-black text-[#ca3431] font-sans">{totals.blunders}</p>
+                <p className="text-[#6b6967] text-[11px] mt-1">{totals.mistakes} mistakes identified</p>
               </div>
 
-              <div className="bg-surface rounded-2xl p-5">
-                <p className="text-slate-500 text-xs mb-3">Due exercises</p>
-                <p className="text-2xl font-bold text-accent font-mono">{dueCardsCount}</p>
-                <p className="text-slate-600 text-xs mt-1">in review queue</p>
+              <div className="bg-[#262421] rounded-[6px] p-4 border border-[#383531]">
+                <p className="text-[#989795] text-xs font-semibold mb-2">Puzzles in Queue</p>
+                <p className="text-2xl font-black text-[#81b64c] font-sans">{dueCardsCount}</p>
+                <p className="text-[#6b6967] text-[11px] mt-1">due for spaced repetition</p>
               </div>
             </div>
 
             {/* Main content grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
-              {/* Recent Games */}
-              <div className="lg:col-span-2 bg-surface rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-medium text-slate-200 text-sm flex items-center gap-2">
-                    <Activity size={14} className="text-accent" />
-                    Recent Games
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-7">
+              {/* Recent Games (Chess.com table style) */}
+              <div className="lg:col-span-2 bg-[#262421] rounded-[6px] p-4 border border-[#383531]">
+                <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#383531]">
+                  <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                    <Activity size={15} className="text-[#81b64c]" />
+                    Recent Games Archive
                   </h3>
                   <button
                     onClick={() => setTab('my-games')}
-                    className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 transition"
+                    className="text-xs text-[#989795] hover:text-white font-bold flex items-center gap-1 transition"
                   >
-                    View all <ArrowRight size={11} />
+                    View All <ArrowRight size={12} />
                   </button>
                 </div>
 
-                <div className="space-y-1">
+                <div className="divide-y divide-[#383531]/60">
                   {games.slice(0, 5).map((game) => {
                     const outcome = getGameOutcome(game, userHandle);
+                    const gameAnalysis = analyses.find((a) => a.gameId === game.id);
                     return (
                       <div
                         key={game.id}
-                        onClick={() => setActiveGame(game.id)}
-                        className="px-3 py-2.5 rounded-xl hover:bg-surface-elevated transition cursor-pointer flex items-center justify-between"
+                        onClick={() => {
+                          setActiveGame(game.id);
+                          setTab('analysis');
+                        }}
+                        className="py-2.5 px-2 hover:bg-[#312e2b] transition cursor-pointer flex items-center justify-between group rounded-[4px]"
                       >
                         <div className="flex items-center gap-3 min-w-0">
+                          {/* Chess.com result badge */}
                           <span
-                            className={`text-[11px] font-bold w-8 shrink-0 ${
+                            className={`w-6 h-6 rounded-[3px] text-xs font-black flex items-center justify-center shrink-0 shadow-sm ${
                               outcome.isWin
-                                ? 'text-emerald-400'
+                                ? 'bg-[#81b64c] text-white'
                                 : outcome.isLoss
-                                ? 'text-rose-400'
-                                : 'text-slate-400'
+                                ? 'bg-[#ca3431] text-white'
+                                : 'bg-[#6b6967] text-white'
                             }`}
                           >
-                            {outcome.isWin ? 'WIN' : outcome.isLoss ? 'LOSS' : 'DRAW'}
+                            {outcome.isWin ? 'W' : outcome.isLoss ? 'L' : 'D'}
                           </span>
+
                           <div className="min-w-0">
-                            <p className="text-sm text-slate-300 truncate">
-                              <span className="font-medium">{game.white}</span>
-                              <span className="text-slate-600 mx-1.5 text-xs">vs</span>
-                              <span className="font-medium">{game.black}</span>
+                            <p className="text-xs font-bold text-white truncate group-hover:text-[#81b64c] transition-colors">
+                              <span>{game.white}</span>
+                              <span className="text-[#989795] font-normal mx-1">vs</span>
+                              <span>{game.black}</span>
                             </p>
                             {game.opening && (
-                              <p className="text-[11px] text-slate-600 truncate mt-0.5">{game.opening}</p>
+                              <p className="text-[11px] text-[#989795] truncate mt-0.5 font-medium">
+                                {game.eco && <span className="font-mono text-[#81b64c] mr-1">[{game.eco}]</span>}
+                                {game.opening}
+                              </p>
                             )}
                           </div>
                         </div>
-                        <span className="text-[11px] text-slate-600 font-mono shrink-0 ml-3">{game.date}</span>
+
+                        <div className="flex items-center gap-3 shrink-0 ml-3">
+                          {gameAnalysis && (
+                            <span className="text-[11px] font-bold font-sans px-2 py-0.5 rounded bg-[#81b64c]/15 text-[#81b64c] border border-[#81b64c]/30">
+                              {Math.round(gameAnalysis.summary.accuracyWhite)}%
+                            </span>
+                          )}
+                          <span className="text-[11px] text-[#989795] font-mono">{game.date}</span>
+                          <span className="text-xs text-[#81b64c] opacity-0 group-hover:opacity-100 transition-opacity font-bold">
+                            Review →
+                          </span>
+                        </div>
                       </div>
                     );
                   })}

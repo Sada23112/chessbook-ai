@@ -706,25 +706,25 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
               return (
                 <div
                   key={course.id}
-                  className="bg-surface hover:bg-surface-elevated rounded-2xl p-5 transition duration-200 flex flex-col justify-between group"
+                  className="bg-[#262421] hover:bg-[#312e2b] border border-[#383531] rounded-[6px] p-4 transition duration-200 flex flex-col justify-between group shadow-sm"
                 >
                   <div>
                     {/* Top Header: ECO, Color & Status */}
                     <div className="flex items-center justify-between mb-2.5">
                       <div className="flex items-center gap-1.5">
                         {primaryVariation?.eco && (
-                          <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-surface-elevated text-slate-400">
+                          <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-[#1f1e1b] text-[#989795] border border-[#383531]">
                             {primaryVariation.eco}
                           </span>
                         )}
-                        <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                        <span className="text-[10px] font-bold text-[#81b64c] uppercase tracking-wide">
                           {repertoire.color}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         {renderStatusBadge(progress.status)}
-                        <span className="text-[11px] font-mono text-slate-500">
+                        <span className="text-[11px] font-mono text-[#989795] font-semibold">
                           {course.totalLines} lines
                         </span>
                       </div>
@@ -733,39 +733,39 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
                     {/* Course Title & Description */}
                     <h3
                       onClick={() => onSelectOpening(repertoire, primaryVariation)}
-                      className="text-sm font-semibold text-slate-100 group-hover:text-accent transition truncate mb-1 cursor-pointer"
+                      className="text-sm font-bold text-white group-hover:text-[#81b64c] transition truncate mb-1 cursor-pointer"
                     >
                       {course.name}
                     </h3>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4 min-h-[32px]">
+                    <p className="text-xs text-[#989795] line-clamp-2 leading-relaxed mb-4 min-h-[32px]">
                       {course.description}
                     </p>
 
                     {/* Board Preview & Key Position */}
                     {primaryVariation && (
-                      <div className="flex gap-3 items-center mb-4 p-2.5 rounded-xl bg-surface-elevated/70">
+                      <div className="flex gap-3 items-center mb-4 p-2 rounded-[4px] bg-[#1f1e1b] border border-[#383531]">
                         <CompactBoardPreview
                           moves={primaryVariation.moves}
                           targetPly={previewPly}
                           boardOrientation={repertoire.color}
-                          size={105}
+                          size={100}
                           className="shrink-0"
                         />
 
                         <div className="flex-1 min-w-0 flex flex-col justify-between text-xs space-y-1">
                           <div>
-                            <span className="text-[10px] text-slate-500 block uppercase tracking-wide">
+                            <span className="text-[10px] text-[#989795] block uppercase font-bold tracking-wide">
                               Main Line
                             </span>
-                            <span className="text-xs font-medium text-slate-300 truncate block">
+                            <span className="text-xs font-bold text-[#e2e1de] truncate block">
                               {primaryVariation.name}
                             </span>
-                            <span className="text-[11px] font-mono text-emerald-400/90 truncate block">
+                            <span className="text-[11px] font-mono text-[#81b64c] font-bold truncate block">
                               Move {Math.floor(previewPly / 2) + 1}
                             </span>
                           </div>
 
-                          <div className="text-[11px] font-mono text-slate-500 truncate bg-surface px-2 py-0.5 rounded-lg">
+                          <div className="text-[11px] font-mono text-[#989795] truncate bg-[#262421] px-2 py-0.5 rounded border border-[#383531]">
                             {primaryVariation.moves.slice(0, 4).join(' ')}…
                           </div>
                         </div>
@@ -775,19 +775,19 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
                     {/* Progress Bar */}
                     <div className="mb-4">
                       <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-slate-500">Progress</span>
-                        <span className="font-mono text-slate-400">
+                        <span className="text-[#989795]">Mastery</span>
+                        <span className="font-mono text-[#c3c2bf]">
                           {progress.completedLines}/{progress.totalLines} ·{' '}
-                          <span className="text-accent font-semibold">{progress.percentage}%</span>
+                          <span className="text-[#81b64c] font-bold">{progress.percentage}%</span>
                         </span>
                       </div>
-                      <div className="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-[#1f1e1b] rounded-full overflow-hidden border border-[#383531]">
                         <div
                           className={`h-full transition-all duration-300 rounded-full ${
                             progress.percentage === 100
-                              ? 'bg-emerald-400'
+                              ? 'bg-[#81b64c]'
                               : progress.percentage > 0
-                              ? 'bg-accent'
+                              ? 'bg-[#81b64c]'
                               : 'bg-transparent'
                           }`}
                           style={{ width: `${progress.percentage}%` }}
@@ -797,17 +797,17 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
                   </div>
 
                   {/* Card Actions */}
-                  <div className="flex items-center gap-2 pt-3 border-t border-surface-elevated">
+                  <div className="flex items-center gap-2 pt-3 border-t border-[#383531]">
                     <button
                       onClick={() => onSelectOpening(repertoire, primaryVariation)}
-                      className="flex-1 py-2 px-3 rounded-xl text-xs font-medium bg-surface-elevated hover:bg-surface-hover text-slate-200 transition flex items-center justify-center gap-1.5"
+                      className="chess-btn-secondary flex-1 py-1.5 px-3 rounded-[6px] text-xs font-bold flex items-center justify-center gap-1.5"
                     >
-                      <Layers size={13} className="text-accent" />
-                      <span>Course Levels</span>
+                      <Layers size={13} className="text-[#81b64c]" />
+                      <span>Explore</span>
                     </button>
                     <button
                       onClick={() => onStartTraining(repertoire, primaryVariation)}
-                      className="py-2 px-3 rounded-xl text-xs font-semibold bg-accent hover:bg-accent-hover text-black transition flex items-center justify-center gap-1"
+                      className="chess-btn-primary py-1.5 px-3 rounded-[6px] text-xs font-bold flex items-center justify-center gap-1 shadow"
                     >
                       <Dumbbell size={13} />
                       <span>Train</span>

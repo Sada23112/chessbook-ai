@@ -8,31 +8,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0b0f14',
+        background: '#312e2b',
         surface: {
-          DEFAULT: '#111720',
-          muted: '#0e1319',
-          elevated: '#18202c',
-          border: '#212d3d',
-          hover: '#1e2a38'
+          DEFAULT: '#272522',
+          muted: '#21201d',
+          elevated: '#21201d',
+          card: '#262421',
+          border: '#3d3a34',
+          hover: '#383531',
         },
         accent: {
-          DEFAULT: '#22c55e',
-          hover: '#16a34a',
-          dark: '#15803d',
-          subtle: '#22c55e18'
+          DEFAULT: '#81b64c',
+          hover: '#95c95d',
+          dark: '#588c32',
+          subtle: '#81b64c20',
         },
         chess: {
-          best: '#22c55e',
-          excellent: '#84cc16',
-          good: '#a3e635',
-          inaccuracy: '#eab308',
-          mistake: '#f97316',
-          blunder: '#ef4444',
-          missedWin: '#ec4899',
-          forced: '#06b6d4',
-          book: '#8b5cf6'
-        }
+          brilliant: '#1baca6',
+          great: '#5c8bb0',
+          best: '#81b64c',
+          excellent: '#81b64c',
+          good: '#96bc4b',
+          book: '#d5a47d',
+          inaccuracy: '#f0c15c',
+          mistake: '#e58f2a',
+          blunder: '#ca3431',
+          missedWin: '#db4542',
+          forced: '#96bc4b',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],

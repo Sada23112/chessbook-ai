@@ -4,28 +4,68 @@
 
 @layer base {
   body {
-    background-color: #0b0f14;
-    color: #cbd5e1;
+    background-color: #312e2b;
+    color: #c3c2bf;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Helvetica, Arial, sans-serif;
   }
 }
 
-/* Refined scrollbar */
+/* Chess.com 3D tactile buttons */
+.chess-btn-primary {
+  background-color: #81b64c;
+  color: #ffffff;
+  font-weight: 700;
+  border-bottom: 3.5px solid #588c32;
+  transition: all 0.1s ease-in-out;
+}
+.chess-btn-primary:hover:not(:disabled) {
+  background-color: #95c95d;
+}
+.chess-btn-primary:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 1.5px;
+}
+.chess-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chess-btn-secondary {
+  background-color: #3d3a34;
+  color: #ffffff;
+  font-weight: 600;
+  border-bottom: 3.5px solid #2b2824;
+  transition: all 0.1s ease-in-out;
+}
+.chess-btn-secondary:hover:not(:disabled) {
+  background-color: #4a463f;
+}
+.chess-btn-secondary:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 1.5px;
+}
+.chess-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Chess.com dark scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #262421;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #212d3d;
-  border-radius: 99px;
+  background: #3d3a34;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2d3f55;
+  background: #524e47;
 }

@@ -33,22 +33,71 @@ import { db } from '../../db/db';
 import type { MoveClassification, OpeningRepertoire } from '../../types/chess';
 import { OpeningMistakeCoach } from './OpeningMistakeCoach';
 import { findOpeningMistakes, detectOpeningBoundary } from '../../coach/openingCoachService';
+import { chessAudio } from '../../utils/chessAudio';
+
+function getCapturedPiecesAndMaterial(fen: string) {
+  const pieces = fen.split(' ')[0] || '';
+  const initial = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+  const currentWhite = { p: 0, n: 0, b: 0, r: 0, q: 0 };
+  const currentBlack = { p: 0, n: 0, b: 0, r: 0, q: 0 };
+
+  for (const char of pieces) {
+    const lower = char.toLowerCase() as keyof typeof initial;
+    if (initial[lower] !== undefined) {
+      if (char === char.toUpperCase()) {
+        currentWhite[lower]++;
+      } else {
+        currentBlack[lower]++;
+      }
+    }
+  }
+
+  const pieceValues: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+  let whiteMaterial = 0;
+  let blackMaterial = 0;
+
+  const blackCapturedByWhite: Array<{ type: string; symbol: string; count: number }> = [];
+  const whiteCapturedByBlack: Array<{ type: string; symbol: string; count: number }> = [];
+
+  const symbols: Record<string, string> = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' };
+
+  (['q', 'r', 'b', 'n', 'p'] as const).forEach((t) => {
+    const wCap = Math.max(0, initial[t] - currentBlack[t]);
+    if (wCap > 0) blackCapturedByWhite.push({ type: t, symbol: symbols[t], count: wCap });
+
+    const bCap = Math.max(0, initial[t] - currentWhite[t]);
+    if (bCap > 0) whiteCapturedByBlack.push({ type: t, symbol: symbols[t], count: bCap });
+
+    whiteMaterial += currentWhite[t] * pieceValues[t];
+    blackMaterial += currentBlack[t] * pieceValues[t];
+  });
+
+  const whiteDiff = whiteMaterial - blackMaterial;
+  const blackDiff = blackMaterial - whiteMaterial;
+
+  return {
+    whiteAdvantage: whiteDiff > 0 ? `+${whiteDiff}` : null,
+    blackAdvantage: blackDiff > 0 ? `+${blackDiff}` : null,
+    blackCapturedByWhite,
+    whiteCapturedByBlack,
+  };
+}
 
 export const CLASSIFICATION_BADGES: Record<
   MoveClassification,
-  { label: string; bg: string; text: string; icon: string }
+  { label: string; bg: string; text: string; icon: string; hex: string }
 > = {
-  brilliant: { label: 'Brilliant', bg: 'bg-cyan-500/20 border-cyan-500/40', text: 'text-cyan-300', icon: '!!' },
-  great: { label: 'Great', bg: 'bg-blue-500/20 border-blue-500/40', text: 'text-blue-300', icon: '!' },
-  best: { label: 'Best', bg: 'bg-emerald-500/15 border-emerald-500/30', text: 'text-emerald-400', icon: '★' },
-  excellent: { label: 'Excellent', bg: 'bg-lime-500/15 border-lime-500/30', text: 'text-lime-400', icon: '✓' },
-  good: { label: 'Good', bg: 'bg-slate-500/15 border-slate-500/30', text: 'text-slate-300', icon: '•' },
-  inaccuracy: { label: 'Inaccuracy', bg: 'bg-yellow-500/15 border-yellow-500/30', text: 'text-yellow-400', icon: '?!' },
-  mistake: { label: 'Mistake', bg: 'bg-orange-500/15 border-orange-500/30', text: 'text-orange-400', icon: '?' },
-  blunder: { label: 'Blunder', bg: 'bg-rose-500/15 border-rose-500/30', text: 'text-rose-400', icon: '??' },
-  missedWin: { label: 'Missed Win', bg: 'bg-fuchsia-500/15 border-fuchsia-500/30', text: 'text-fuchsia-400', icon: '⚡' },
-  forced: { label: 'Forced', bg: 'bg-cyan-500/15 border-cyan-500/30', text: 'text-cyan-400', icon: '□' },
-  book: { label: 'Book', bg: 'bg-purple-500/15 border-purple-500/30', text: 'text-purple-400', icon: '📖' },
+  brilliant: { label: 'Brilliant', bg: 'bg-[#1baca6]/20 border-[#1baca6]', text: 'text-[#1baca6]', icon: '!!', hex: '#1baca6' },
+  great: { label: 'Great', bg: 'bg-[#5c8bb0]/20 border-[#5c8bb0]', text: 'text-[#5c8bb0]', icon: '!', hex: '#5c8bb0' },
+  best: { label: 'Best', bg: 'bg-[#81b64c]/20 border-[#81b64c]', text: 'text-[#81b64c]', icon: '★', hex: '#81b64c' },
+  excellent: { label: 'Excellent', bg: 'bg-[#81b64c]/15 border-[#81b64c]/50', text: 'text-[#95c95d]', icon: '✓', hex: '#81b64c' },
+  good: { label: 'Good', bg: 'bg-[#96bc4b]/15 border-[#96bc4b]/40', text: 'text-[#96bc4b]', icon: '•', hex: '#96bc4b' },
+  inaccuracy: { label: 'Inaccuracy', bg: 'bg-[#f0c15c]/20 border-[#f0c15c]', text: 'text-[#f0c15c]', icon: '?!', hex: '#f0c15c' },
+  mistake: { label: 'Mistake', bg: 'bg-[#e58f2a]/20 border-[#e58f2a]', text: 'text-[#e58f2a]', icon: '?', hex: '#e58f2a' },
+  blunder: { label: 'Blunder', bg: 'bg-[#ca3431]/20 border-[#ca3431]', text: 'text-[#ca3431]', icon: '??', hex: '#ca3431' },
+  missedWin: { label: 'Missed Win', bg: 'bg-[#db4542]/20 border-[#db4542]', text: 'text-[#db4542]', icon: '⚡', hex: '#db4542' },
+  forced: { label: 'Forced', bg: 'bg-[#96bc4b]/15 border-[#96bc4b]', text: 'text-[#96bc4b]', icon: '□', hex: '#96bc4b' },
+  book: { label: 'Book', bg: 'bg-[#d5a47d]/20 border-[#d5a47d]', text: 'text-[#d5a47d]', icon: '📖', hex: '#d5a47d' },
 };
 
 export const AnalysisView: React.FC = () => {
@@ -123,9 +172,51 @@ export const AnalysisView: React.FC = () => {
     setExploredSan(null);
   }, [currentPly]);
 
+  // Play authentic Chess.com move sounds on navigation
+  const prevPlyRef = React.useRef(currentPly);
+  useEffect(() => {
+    if (prevPlyRef.current !== currentPly && currentPly > 0) {
+      const pos = gamePositions[currentPly];
+      if (pos?.san) {
+        if (pos.san.includes('x')) {
+          chessAudio.playCapture();
+        } else if (pos.san.includes('O-O')) {
+          chessAudio.playCastle();
+        } else if (pos.san.includes('+') || pos.san.includes('#')) {
+          chessAudio.playCheck();
+        } else {
+          chessAudio.playMove();
+        }
+      }
+    }
+    prevPlyRef.current = currentPly;
+  }, [currentPly, gamePositions]);
+
+  // Audio trigger when review completes
+  useEffect(() => {
+    if (analysisLifecycle === 'completed') {
+      chessAudio.playReviewComplete();
+    }
+  }, [analysisLifecycle]);
+
   const currentPosData = gamePositions[currentPly] || gamePositions[0];
   const currentFen = currentPosData ? currentPosData.fen : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
   const displayFen = exploredFen || currentFen;
+
+  const materialData = useMemo(() => {
+    return getCapturedPiecesAndMaterial(displayFen);
+  }, [displayFen]);
+
+  const isOrientationWhite = boardOrientation === 'white';
+  const topPlayerName = isOrientationWhite ? (activeGame?.black || 'Black') : (activeGame?.white || 'White');
+  const topPlayerElo = isOrientationWhite ? (activeGame?.blackElo || 1500) : (activeGame?.whiteElo || 1500);
+  const topCapturedPieces = isOrientationWhite ? materialData.whiteCapturedByBlack : materialData.blackCapturedByWhite;
+  const topMaterialAdvantage = isOrientationWhite ? materialData.blackAdvantage : materialData.whiteAdvantage;
+
+  const bottomPlayerName = isOrientationWhite ? (activeGame?.white || 'White') : (activeGame?.black || 'Black');
+  const bottomPlayerElo = isOrientationWhite ? (activeGame?.whiteElo || 1500) : (activeGame?.blackElo || 1500);
+  const bottomCapturedPieces = isOrientationWhite ? materialData.blackCapturedByWhite : materialData.whiteCapturedByBlack;
+  const bottomMaterialAdvantage = isOrientationWhite ? materialData.whiteAdvantage : materialData.blackAdvantage;
 
   // Analysis position data (supports real-time live positions during active review)
   const currentAnalysisPos =
@@ -538,48 +629,48 @@ export const AnalysisView: React.FC = () => {
           {/* Accuracy & Game Rating Header */}
           <div className="grid grid-cols-2 gap-2.5">
             {/* White Card */}
-            <div className="bg-surface-elevated rounded-xl p-3 border border-surface-border flex flex-col justify-between">
+            <div className="bg-[#262421] rounded-[6px] p-3 border border-[#383531] flex flex-col justify-between">
               <div className="flex items-center space-x-1.5 mb-1">
                 <span className="w-2.5 h-2.5 rounded-full bg-white inline-block shadow-sm" />
-                <span className="font-bold text-xs text-slate-200 truncate">
+                <span className="font-bold text-xs text-white truncate">
                   {activeGame.white}
                 </span>
               </div>
-              <div className="my-1.5">
-                <span className="text-2xl font-black font-mono text-emerald-400">
+              <div className="my-1.5 flex items-baseline gap-1.5">
+                <span className="text-3xl font-black font-sans text-[#81b64c]">
                   {Math.round(summary.accuracyWhite)}%
                 </span>
-                <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">
+                <span className="text-[10px] text-[#989795] uppercase tracking-wider font-bold">
                   Accuracy
                 </span>
               </div>
-              <div className="pt-2 border-t border-surface-border text-[11px] text-slate-300 flex items-center justify-between">
-                <span className="text-slate-400">Game Rating:</span>
-                <span className="font-mono font-bold text-amber-300">
+              <div className="pt-2 border-t border-[#383531] text-[11px] text-[#c3c2bf] flex items-center justify-between">
+                <span className="text-[#989795]">Game Rating:</span>
+                <span className="font-bold text-[#e58f2a]">
                   {summary.estimatedEloWhite || 1500}
                 </span>
               </div>
             </div>
 
             {/* Black Card */}
-            <div className="bg-surface-elevated rounded-xl p-3 border border-surface-border flex flex-col justify-between">
+            <div className="bg-[#262421] rounded-[6px] p-3 border border-[#383531] flex flex-col justify-between">
               <div className="flex items-center space-x-1.5 mb-1">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-600 inline-block shadow-sm" />
-                <span className="font-bold text-xs text-slate-200 truncate">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#181715] border border-[#524e47] inline-block shadow-sm" />
+                <span className="font-bold text-xs text-white truncate">
                   {activeGame.black}
                 </span>
               </div>
-              <div className="my-1.5">
-                <span className="text-2xl font-black font-mono text-emerald-400">
+              <div className="my-1.5 flex items-baseline gap-1.5">
+                <span className="text-3xl font-black font-sans text-[#81b64c]">
                   {Math.round(summary.accuracyBlack)}%
                 </span>
-                <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">
+                <span className="text-[10px] text-[#989795] uppercase tracking-wider font-bold">
                   Accuracy
                 </span>
               </div>
-              <div className="pt-2 border-t border-surface-border text-[11px] text-slate-300 flex items-center justify-between">
-                <span className="text-slate-400">Game Rating:</span>
-                <span className="font-mono font-bold text-amber-300">
+              <div className="pt-2 border-t border-[#383531] text-[11px] text-[#c3c2bf] flex items-center justify-between">
+                <span className="text-[#989795]">Game Rating:</span>
+                <span className="font-bold text-[#e58f2a]">
                   {summary.estimatedEloBlack || 1500}
                 </span>
               </div>
@@ -588,10 +679,12 @@ export const AnalysisView: React.FC = () => {
 
           {/* Coach Verdict Banner */}
           {summary.gameReviewVerdict && (
-            <div className="p-3 rounded-xl bg-accent/10 border border-accent/30 text-xs text-slate-200 flex items-start space-x-2.5">
-              <Bot size={18} className="text-accent shrink-0 mt-0.5" />
+            <div className="p-3 rounded-[6px] bg-[#262421] border border-[#383531] text-xs text-[#c3c2bf] flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-[4px] bg-[#81b64c] flex items-center justify-center text-white shrink-0 mt-0.5 shadow-sm">
+                <GraduationCap size={18} />
+              </div>
               <div>
-                <span className="font-bold text-accent block text-[11px] uppercase tracking-wider mb-0.5">
+                <span className="font-bold text-[#81b64c] block text-[11px] uppercase tracking-wider mb-0.5">
                   Coach Verdict
                 </span>
                 <p className="leading-relaxed text-xs">{summary.gameReviewVerdict}</p>
@@ -600,14 +693,14 @@ export const AnalysisView: React.FC = () => {
           )}
 
           {/* Move Breakdown Table (Chess.com Style) */}
-          <div className="bg-surface-elevated rounded-xl border border-surface-border p-3">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider pb-2 border-b border-surface-border">
+          <div className="bg-[#262421] rounded-[6px] border border-[#383531] p-3">
+            <div className="flex items-center justify-between text-[11px] font-bold text-[#989795] uppercase tracking-wider pb-2 border-b border-[#383531]">
               <span className="w-8 text-center">White</span>
-              <span>Move Classification</span>
+              <span>Classification (click to jump)</span>
               <span className="w-8 text-center">Black</span>
             </div>
 
-            <div className="divide-y divide-surface-border/50 text-xs">
+            <div className="divide-y divide-[#383531]/50 text-xs mt-1">
               {(
                 [
                   'brilliant',
@@ -625,36 +718,56 @@ export const AnalysisView: React.FC = () => {
                 const badge = CLASSIFICATION_BADGES[cls];
                 const wCount = summary.whiteStats[cls] || 0;
                 const bCount = summary.blackStats[cls] || 0;
+                const hasMoves = wCount > 0 || bCount > 0;
 
                 return (
-                  <div key={cls} className="py-1.5 flex items-center justify-between">
+                  <button
+                    key={cls}
+                    onClick={() => {
+                      if (!activeAnalysis) return;
+                      const matchPlies = activeAnalysis.positions
+                        .filter((p) => p.classification === cls && p.ply > 0)
+                        .map((p) => p.ply);
+                      if (matchPlies.length === 0) return;
+                      const nextMatch = matchPlies.find((ply) => ply > currentPly);
+                      setCurrentPly(nextMatch !== undefined ? nextMatch : matchPlies[0]);
+                    }}
+                    disabled={!hasMoves}
+                    className={`w-full py-1.5 px-1 flex items-center justify-between rounded transition text-left ${
+                      hasMoves
+                        ? 'hover:bg-[#383531] cursor-pointer'
+                        : 'opacity-40 cursor-default'
+                    }`}
+                    title={hasMoves ? `Jump to ${badge.label} moves` : undefined}
+                  >
                     <span
                       className={`w-8 text-center font-mono font-bold text-xs ${
-                        wCount > 0 ? badge.text : 'text-slate-600'
+                        wCount > 0 ? badge.text : 'text-[#6b6967]'
                       }`}
                     >
                       {wCount}
                     </span>
 
-                    <div className="flex items-center space-x-1.5">
+                    <div className="flex items-center space-x-2">
                       <span
-                        className={`w-6 h-5 rounded flex items-center justify-center font-bold text-[10px] ${badge.bg} ${badge.text}`}
+                        className="w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] text-white shadow-sm shrink-0"
+                        style={{ backgroundColor: badge.hex }}
                       >
                         {badge.icon}
                       </span>
-                      <span className="text-slate-300 font-medium text-xs">
+                      <span className="text-[#e2e1de] font-bold text-xs">
                         {badge.label}
                       </span>
                     </div>
 
                     <span
                       className={`w-8 text-center font-mono font-bold text-xs ${
-                        bCount > 0 ? badge.text : 'text-slate-600'
+                        bCount > 0 ? badge.text : 'text-[#6b6967]'
                       }`}
                     >
                       {bCount}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -906,28 +1019,28 @@ export const AnalysisView: React.FC = () => {
       <div className="hidden lg:flex flex-1 flex-row h-full overflow-hidden bg-background">
         {/* Left Column: Board, EvalBar, Nav Controls, EvalGraph */}
         <div className="flex-1 flex flex-col p-4 lg:p-6 overflow-y-auto items-center">
-          {/* Header Bar */}
-          <div className="w-full max-w-[540px] flex items-center justify-between mb-3 text-sm">
+          {/* Chess.com Action Header */}
+          <div className="w-full max-w-[540px] flex items-center justify-between mb-2.5 text-sm">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setAnalysisStage('summary')}
-                className="text-xs px-2.5 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover text-slate-400 hover:text-slate-200 transition flex items-center gap-1"
+                className="chess-btn-secondary text-xs px-3 py-1.5 rounded-[6px] flex items-center gap-1.5"
               >
                 <ChevronLeft size={13} />
                 <span>Summary</span>
               </button>
               <button
                 onClick={() => setAnalysisStage('opening_coach')}
-                className="text-xs px-2.5 py-1.5 rounded-lg bg-accent/10 hover:bg-accent text-accent hover:text-black transition flex items-center gap-1"
+                className="chess-btn-primary text-xs px-3 py-1.5 rounded-[6px] flex items-center gap-1.5"
               >
                 <Target size={13} />
-                <span>Opening coach</span>
+                <span>Coach</span>
               </button>
             </div>
 
             <button
               onClick={flipBoard}
-              className="p-1.5 text-slate-500 hover:text-slate-300 bg-surface-elevated rounded-lg text-xs flex items-center gap-1 transition"
+              className="chess-btn-secondary px-2.5 py-1.5 rounded-[6px] text-xs flex items-center gap-1.5"
               title="Flip board orientation (F)"
             >
               <RotateCcw size={13} />
@@ -935,72 +1048,150 @@ export const AnalysisView: React.FC = () => {
             </button>
           </div>
 
-          {/* Board & Eval Bar Container */}
-          <div className="w-full max-w-[540px] flex gap-3 items-stretch justify-center">
-            <div className="w-6 shrink-0 flex items-stretch">
-              <EvalBar
-                score={evalScore}
-                mate={evalMate}
-                orientation={boardOrientation}
-                className="w-6"
-              />
+          {/* Board Area Framed with Chess.com Player Cards */}
+          <div className="w-full max-w-[540px] flex flex-col items-center">
+            {/* Top Opponent Card */}
+            <div className="w-full flex items-center justify-between py-1.5 px-3 bg-[#262421] rounded-t-[6px] border border-[#3d3a34]">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-[4px] bg-[#383531] border border-[#4a463f] flex items-center justify-center text-xs font-bold text-white shrink-0">
+                  {topPlayerName.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex items-center gap-1.5">
+                  <span className="text-[13px] font-bold text-white truncate max-w-[140px]">
+                    {topPlayerName}
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#989795] font-mono">
+                    ({topPlayerElo})
+                  </span>
+                </div>
+                {/* Captured pieces rack */}
+                <div className="flex items-center gap-0.5 ml-2 text-xs text-[#b8b6b4]">
+                  {topCapturedPieces.map((p, i) => (
+                    <span key={i} className="inline-flex items-center">
+                      {Array.from({ length: p.count }).map((_, idx) => (
+                        <span key={idx} className="text-[13px] -mr-1">{p.symbol}</span>
+                      ))}
+                    </span>
+                  ))}
+                  {topMaterialAdvantage && (
+                    <span className="text-[11px] font-black text-[#81b64c] ml-1.5 font-mono">
+                      {topMaterialAdvantage}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                {currentAnalysisPos && (
+                  <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#312e2b] text-[#989795]">
+                    d:{currentAnalysisPos.depth}
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="flex-1 min-w-0 max-w-[490px] aspect-square flex items-center justify-center">
-              <InteractiveChessboard
-                fen={displayFen}
-                boardOrientation={boardOrientation}
-                allowMoves={!isAnalyzing}
-                onMove={(move) => {
-                  const nextMove = gamePositions[currentPly + 1];
-                  if (nextMove && nextMove.san === move.san) {
-                    setExploredFen(null);
-                    setExploredSan(null);
-                    nextPly();
+            {/* Board & Eval Bar Container */}
+            <div className="w-full flex gap-2.5 items-stretch justify-center my-1">
+              <div className="w-6 shrink-0 flex items-stretch">
+                <EvalBar
+                  score={evalScore}
+                  mate={evalMate}
+                  orientation={boardOrientation}
+                  className="w-6"
+                />
+              </div>
+
+              <div className="flex-1 min-w-0 max-w-[490px] aspect-square flex items-center justify-center">
+                <InteractiveChessboard
+                  id="analysis-board-desktop"
+                  fen={displayFen}
+                  boardOrientation={boardOrientation}
+                  allowMoves={!isAnalyzing}
+                  onMove={(move) => {
+                    const nextMove = gamePositions[currentPly + 1];
+                    if (nextMove && nextMove.san === move.san) {
+                      setExploredFen(null);
+                      setExploredSan(null);
+                      nextPly();
+                      return true;
+                    }
+                    setExploredFen(move.fen);
+                    setExploredSan(move.san);
                     return true;
+                  }}
+                  arrows={customArrows}
+                  lastMove={
+                    currentPosData?.from && currentPosData?.to
+                      ? { from: currentPosData.from, to: currentPosData.to }
+                      : null
                   }
-                  setExploredFen(move.fen);
-                  setExploredSan(move.san);
-                  return true;
-                }}
-                arrows={customArrows}
-                lastMove={
-                  currentPosData?.from && currentPosData?.to
-                    ? { from: currentPosData.from, to: currentPosData.to }
-                    : null
-                }
-                moveAnnotation={moveAnnotation}
-                customSquareStyles={customSquareStyles}
-                maxWidth="100%"
-              />
+                  moveAnnotation={moveAnnotation}
+                  customSquareStyles={customSquareStyles}
+                  maxWidth="100%"
+                />
+              </div>
+            </div>
+
+            {/* Bottom User Card */}
+            <div className="w-full flex items-center justify-between py-1.5 px-3 bg-[#262421] rounded-b-[6px] border border-[#3d3a34]">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-[4px] bg-[#81b64c] flex items-center justify-center text-xs font-black text-white shrink-0 shadow-sm">
+                  {bottomPlayerName.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex items-center gap-1.5">
+                  <span className="text-[13px] font-bold text-white truncate max-w-[140px]">
+                    {bottomPlayerName}
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#989795] font-mono">
+                    ({bottomPlayerElo})
+                  </span>
+                </div>
+                {/* Captured pieces rack */}
+                <div className="flex items-center gap-0.5 ml-2 text-xs text-[#b8b6b4]">
+                  {bottomCapturedPieces.map((p, i) => (
+                    <span key={i} className="inline-flex items-center">
+                      {Array.from({ length: p.count }).map((_, idx) => (
+                        <span key={idx} className="text-[13px] -mr-1">{p.symbol}</span>
+                      ))}
+                    </span>
+                  ))}
+                  {bottomMaterialAdvantage && (
+                    <span className="text-[11px] font-black text-[#81b64c] ml-1.5 font-mono">
+                      {bottomMaterialAdvantage}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#81b64c]" title="You" />
+              </div>
             </div>
           </div>
 
           {/* Exploratory Variation Banner if off-book */}
           {exploredFen && (
-            <div className="w-full max-w-[540px] mt-2.5 p-2.5 rounded-lg bg-surface-elevated border border-accent/40 flex items-center justify-between text-xs">
-              <span className="text-slate-200">
-                Exploring variation (<span className="text-accent font-mono font-bold">{exploredSan}</span>)
+            <div className="w-full max-w-[540px] mt-2.5 p-2.5 rounded-[6px] bg-[#262421] border border-[#81b64c]/50 flex items-center justify-between text-xs">
+              <span className="text-white">
+                Exploring variation (<span className="text-[#81b64c] font-mono font-bold">{exploredSan}</span>)
               </span>
               <button
                 onClick={() => {
                   setExploredFen(null);
                   setExploredSan(null);
                 }}
-                className="px-3 py-1.5 text-xs bg-surface border border-surface-border hover:bg-surface-border text-slate-200 rounded-md font-semibold transition flex items-center space-x-1"
+                className="chess-btn-secondary px-3 py-1 text-xs rounded-[4px]"
               >
                 <span>Return to Game</span>
               </button>
             </div>
           )}
 
-          {/* Desktop Navigation Bar */}
-          <div className="w-full max-w-[540px] mt-3 flex items-center justify-between bg-surface-elevated border border-surface-border rounded-xl p-2">
+          {/* Chess.com Desktop Navigation Bar */}
+          <div className="w-full max-w-[540px] mt-2.5 flex items-center justify-between bg-[#262421] border border-[#3d3a34] rounded-[6px] p-2">
             <div className="flex items-center space-x-1">
               <button
                 onClick={firstPly}
                 disabled={isAnalyzing || currentPly === 0}
-                className="p-2 text-slate-300 hover:text-white disabled:opacity-30 hover:bg-surface-border rounded-lg transition"
+                className="p-2 text-[#c3c2bf] hover:text-white disabled:opacity-30 hover:bg-[#383531] rounded transition"
                 title="First move (Up Arrow)"
               >
                 <ChevronFirst size={20} />
@@ -1008,7 +1199,7 @@ export const AnalysisView: React.FC = () => {
               <button
                 onClick={prevPly}
                 disabled={isAnalyzing || currentPly === 0}
-                className="p-2 text-slate-300 hover:text-white disabled:opacity-30 hover:bg-surface-border rounded-lg transition"
+                className="p-2 text-[#c3c2bf] hover:text-white disabled:opacity-30 hover:bg-[#383531] rounded transition"
                 title="Previous move (Left Arrow)"
               >
                 <ChevronLeft size={20} />
@@ -1016,7 +1207,7 @@ export const AnalysisView: React.FC = () => {
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
                 disabled={isAnalyzing}
-                className="p-2 text-accent hover:bg-accent/15 rounded-lg transition disabled:opacity-30"
+                className="p-2 text-[#81b64c] hover:bg-[#81b64c]/20 rounded transition disabled:opacity-30"
                 title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
               >
                 {isPlaying ? <Pause size={20} /> : <Play size={20} />}
@@ -1024,7 +1215,7 @@ export const AnalysisView: React.FC = () => {
               <button
                 onClick={nextPly}
                 disabled={isAnalyzing || currentPly >= gamePositions.length - 1}
-                className="p-2 text-slate-300 hover:text-white disabled:opacity-30 hover:bg-surface-border rounded-lg transition"
+                className="p-2 text-[#c3c2bf] hover:text-white disabled:opacity-30 hover:bg-[#383531] rounded transition"
                 title="Next move (Right Arrow)"
               >
                 <ChevronRight size={20} />
@@ -1032,7 +1223,7 @@ export const AnalysisView: React.FC = () => {
               <button
                 onClick={lastPly}
                 disabled={isAnalyzing || currentPly >= gamePositions.length - 1}
-                className="p-2 text-slate-300 hover:text-white disabled:opacity-30 hover:bg-surface-border rounded-lg transition"
+                className="p-2 text-[#c3c2bf] hover:text-white disabled:opacity-30 hover:bg-[#383531] rounded transition"
                 title="Last move (Down Arrow)"
               >
                 <ChevronLast size={20} />
@@ -1081,13 +1272,13 @@ export const AnalysisView: React.FC = () => {
         </div>
 
         {/* Right Column: Engine header, Tabs, Tab Content */}
-        <div className="w-[420px] bg-surface-muted border-l border-surface-border/60 flex flex-col h-full">
+        <div className="w-[420px] bg-[#262421] border-l border-[#383531] flex flex-col h-full select-none">
           {/* Analysis Controls Header */}
-          <div className="px-4 py-3 border-b border-surface-border/60">
+          <div className="px-4 py-3 border-b border-[#383531] bg-[#21201d]">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Zap size={14} className="text-accent" />
-                <h3 className="font-medium text-slate-300 text-sm">Stockfish</h3>
+                <Zap size={14} className="text-[#81b64c]" />
+                <h3 className="font-bold text-white text-sm">Stockfish 10</h3>
               </div>
               <div className="flex items-center gap-1 text-xs">
                 {[
@@ -1099,10 +1290,10 @@ export const AnalysisView: React.FC = () => {
                     key={p.depth}
                     onClick={() => setSelectedDepth(p.depth)}
                     disabled={isAnalyzing}
-                    className={`px-2 py-1 rounded-lg text-xs transition ${
+                    className={`px-2 py-1 rounded-[4px] text-xs font-bold transition ${
                       selectedDepth === p.depth
-                        ? 'bg-accent/15 text-accent font-semibold'
-                        : 'text-slate-500 hover:text-slate-300 bg-surface-elevated'
+                        ? 'bg-[#81b64c] text-white shadow-sm'
+                        : 'text-[#989795] hover:text-white bg-[#262421]'
                     }`}
                   >
                     {p.label}
@@ -1113,23 +1304,23 @@ export const AnalysisView: React.FC = () => {
 
             {isAnalyzing ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center justify-between text-xs text-[#c3c2bf]">
                   <span>
                     {analysisLifecycle === 'finalizing'
-                      ? 'Finalizing…'
+                      ? 'Finalizing report…'
                       : analysisLifecycle === 'initializing'
                       ? 'Initializing engine…'
-                      : `Move ${analysisProgress.current} of ${analysisProgress.total}`}
+                      : `Evaluating ply ${analysisProgress.current} of ${analysisProgress.total}`}
                   </span>
-                  <span className="font-mono text-accent">
+                  <span className="font-mono text-[#81b64c] font-bold">
                     {analysisProgress.total > 0
                       ? `${Math.min(100, Math.round((analysisProgress.current / analysisProgress.total) * 100))}%`
                       : '0%'}
                   </span>
                 </div>
-                <div className="w-full bg-surface-elevated h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-[#3d3a34] h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-accent h-full transition-all duration-300"
+                    className="bg-[#81b64c] h-full transition-all duration-200"
                     style={{
                       width: `${
                         analysisProgress.total > 0
@@ -1141,15 +1332,15 @@ export const AnalysisView: React.FC = () => {
                 </div>
                 <button
                   onClick={stopAnalysis}
-                  className="w-full py-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/15 rounded-lg transition"
+                  className="w-full py-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/15 rounded-[4px] transition"
                 >
-                  Cancel
+                  Cancel Analysis
                 </button>
               </div>
             ) : (
               <div className="space-y-2">
                 {analysisLifecycle === 'failed' && (
-                  <div className="p-2.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs">
+                  <div className="p-2.5 rounded-[4px] bg-rose-500/10 text-rose-400 text-xs">
                     <div className="flex items-center gap-1.5 font-medium mb-1">
                       <AlertTriangle size={13} />
                       <span>Analysis failed</span>
@@ -1161,82 +1352,93 @@ export const AnalysisView: React.FC = () => {
                 )}
                 <button
                   onClick={() => startAnalysis(selectedDepth)}
-                  className="w-full py-2 px-3 bg-accent hover:bg-accent-hover text-black font-semibold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow"
+                  className="chess-btn-primary w-full py-2.5 px-3 rounded-[6px] text-xs font-bold flex items-center justify-center gap-2"
                 >
-                  <Sparkles size={14} />
+                  <Sparkles size={15} />
                   <span>
                     {analysisLifecycle === 'failed'
-                      ? 'Retry analysis'
+                      ? 'Retry Analysis'
                       : activeAnalysis
-                      ? 'Re-analyze'
-                      : 'Analyze game'}
+                      ? 'Re-Run Game Review'
+                      : 'Start Game Review'}
                   </span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Desktop Tabs Header */}
-          <div className="flex border-b border-surface-border/60 px-2 pt-2 gap-0.5 text-xs">
-            <button
-              onClick={() => setSidebarTab('coach')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg font-medium transition border-b-2 ${
-                sidebarTab === 'coach'
-                  ? 'text-slate-200 border-accent'
-                  : 'text-slate-500 hover:text-slate-300 border-transparent'
-              }`}
-            >
-              <Lightbulb size={13} />
-              <span>Coach</span>
-            </button>
+          {/* Desktop Tabs Header (Chess.com Style) */}
+          <div className="flex border-b border-[#383531] bg-[#21201d] px-2 pt-1.5 gap-1 text-xs">
             <button
               onClick={() => setSidebarTab('review')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg font-medium transition border-b-2 ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-[6px] font-bold transition border-b-2 ${
                 sidebarTab === 'review'
-                  ? 'text-slate-200 border-accent'
-                  : 'text-slate-500 hover:text-slate-300 border-transparent'
+                  ? 'text-white border-[#81b64c] bg-[#262421]'
+                  : 'text-[#989795] hover:text-white border-transparent'
               }`}
             >
-              <BarChart3 size={13} />
+              <BarChart3 size={14} className={sidebarTab === 'review' ? 'text-[#81b64c]' : ''} />
               <span>Review</span>
             </button>
             <button
               onClick={() => setSidebarTab('moves')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg font-medium transition border-b-2 ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-[6px] font-bold transition border-b-2 ${
                 sidebarTab === 'moves'
-                  ? 'text-slate-200 border-accent'
-                  : 'text-slate-500 hover:text-slate-300 border-transparent'
+                  ? 'text-white border-[#81b64c] bg-[#262421]'
+                  : 'text-[#989795] hover:text-white border-transparent'
               }`}
             >
-              <ListOrdered size={13} />
+              <ListOrdered size={14} className={sidebarTab === 'moves' ? 'text-[#81b64c]' : ''} />
               <span>Moves</span>
+            </button>
+            <button
+              onClick={() => setSidebarTab('coach')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-[6px] font-bold transition border-b-2 ${
+                sidebarTab === 'coach'
+                  ? 'text-white border-[#81b64c] bg-[#262421]'
+                  : 'text-[#989795] hover:text-white border-transparent'
+              }`}
+            >
+              <Lightbulb size={14} className={sidebarTab === 'coach' ? 'text-[#81b64c]' : ''} />
+              <span>Coach</span>
+            </button>
+            <button
+              onClick={() => setSidebarTab('graph')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-[6px] font-bold transition border-b-2 ${
+                sidebarTab === 'graph'
+                  ? 'text-white border-[#81b64c] bg-[#262421]'
+                  : 'text-[#989795] hover:text-white border-transparent'
+              }`}
+            >
+              <TrendingUp size={14} className={sidebarTab === 'graph' ? 'text-[#81b64c]' : ''} />
+              <span>Graph</span>
             </button>
           </div>
 
           {/* Desktop Tab Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {sidebarTab === 'coach' && renderCoachTab()}
             {sidebarTab === 'review' && renderReviewTab()}
             {sidebarTab === 'moves' && renderMovesTab()}
+            {sidebarTab === 'coach' && renderCoachTab()}
             {sidebarTab === 'graph' && renderGraphTab()}
           </div>
         </div>
       </div>
 
       {/* MOBILE LAYOUT (visible on screens smaller than lg) */}
-      <div className="flex lg:hidden flex-1 flex-col h-full overflow-hidden bg-background">
+      <div className="flex lg:hidden flex-1 flex-col h-full overflow-hidden bg-background select-none">
         {/* 1. Mobile Compact Top Header */}
-        <div className="px-3 py-2 border-b border-surface-border bg-surface/90 backdrop-blur-sm flex items-center justify-between text-xs shrink-0">
+        <div className="px-3 py-2 border-b border-[#383531] bg-[#262421] flex items-center justify-between text-xs shrink-0">
           <div className="flex items-center space-x-1.5">
             <button
               onClick={() => setAnalysisStage('summary')}
-              className="px-2 py-1 rounded bg-surface hover:bg-surface-border text-slate-300 border border-surface-border text-[11px] font-semibold transition"
+              className="chess-btn-secondary px-2.5 py-1 rounded text-[11px] font-bold"
             >
               ← Summary
             </button>
             <button
               onClick={() => setAnalysisStage('opening_coach')}
-              className="px-2 py-1 rounded bg-accent/15 text-accent border border-accent/30 text-[11px] font-semibold transition flex items-center space-x-1"
+              className="chess-btn-primary px-2.5 py-1 rounded text-[11px] font-bold flex items-center space-x-1"
             >
               <Target size={12} />
               <span>Coach</span>
@@ -1245,7 +1447,7 @@ export const AnalysisView: React.FC = () => {
 
           <div className="flex items-center space-x-2">
             {/* Live Eval pill */}
-            <div className="font-mono text-[11px] px-2 py-0.5 rounded bg-surface-elevated border border-surface-border text-slate-300">
+            <div className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-[#21201d] border border-[#383531] text-white">
               {evalMate !== undefined
                 ? evalMate > 0
                   ? `+M${evalMate}`
@@ -1255,18 +1457,29 @@ export const AnalysisView: React.FC = () => {
 
             <button
               onClick={flipBoard}
-              className="p-1.5 text-slate-400 hover:text-slate-200 bg-surface-elevated rounded border border-surface-border text-xs transition"
+              className="chess-btn-secondary p-1.5 rounded text-xs"
               title="Flip board orientation (F)"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={13} />
             </button>
           </div>
         </div>
 
         {/* 2. Viewport-Bounded Board & EvalBar Container */}
-        <div className="flex flex-col items-center justify-center p-1.5 shrink-0 bg-background/50">
+        <div className="flex flex-col items-center justify-center p-2 shrink-0 bg-[#2b2825]">
+          {/* Mobile Opponent Strip */}
+          <div className="w-full max-w-[340px] flex items-center justify-between py-1 px-2 bg-[#262421] rounded-t-[4px] border border-[#383531] text-[11px]">
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="font-bold text-white truncate">{topPlayerName}</span>
+              <span className="text-[#989795] font-mono">({topPlayerElo})</span>
+            </div>
+            {topMaterialAdvantage && (
+              <span className="font-bold text-[#81b64c] font-mono">{topMaterialAdvantage}</span>
+            )}
+          </div>
+
           <div
-            className="w-full flex gap-1.5 items-stretch justify-center"
+            className="w-full flex gap-1.5 items-stretch justify-center my-0.5"
             style={{ maxHeight: 'min(36dvh, 320px)' }}
           >
             <div className="w-4 shrink-0 flex items-stretch">
@@ -1279,6 +1492,7 @@ export const AnalysisView: React.FC = () => {
             </div>
             <div className="h-full aspect-square max-h-[min(36dvh,320px)] max-w-[min(calc(100vw-2.5rem),36dvh,320px)] flex items-center justify-center">
               <InteractiveChessboard
+                id="analysis-board-mobile"
                 fen={displayFen}
                 boardOrientation={boardOrientation}
                 allowMoves={!isAnalyzing}
@@ -1307,17 +1521,28 @@ export const AnalysisView: React.FC = () => {
             </div>
           </div>
 
+          {/* Mobile User Strip */}
+          <div className="w-full max-w-[340px] flex items-center justify-between py-1 px-2 bg-[#262421] rounded-b-[4px] border border-[#383531] text-[11px]">
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="font-bold text-white truncate">{bottomPlayerName}</span>
+              <span className="text-[#989795] font-mono">({bottomPlayerElo})</span>
+            </div>
+            {bottomMaterialAdvantage && (
+              <span className="font-bold text-[#81b64c] font-mono">{bottomMaterialAdvantage}</span>
+            )}
+          </div>
+
           {exploredFen && (
-            <div className="w-full max-w-[340px] mt-1 px-2 py-1 rounded bg-surface-elevated border border-accent/40 flex items-center justify-between text-[11px]">
-              <span className="text-slate-200 truncate">
-                Exploring <span className="text-accent font-mono font-bold">{exploredSan}</span>
+            <div className="w-full max-w-[340px] mt-1 px-2 py-1 rounded bg-[#262421] border border-[#81b64c]/40 flex items-center justify-between text-[11px]">
+              <span className="text-white truncate">
+                Exploring <span className="text-[#81b64c] font-mono font-bold">{exploredSan}</span>
               </span>
               <button
                 onClick={() => {
                   setExploredFen(null);
                   setExploredSan(null);
                 }}
-                className="px-2 py-0.5 text-[10px] bg-surface text-slate-200 rounded font-semibold border border-surface-border shrink-0 ml-2"
+                className="chess-btn-secondary px-2 py-0.5 text-[10px] rounded shrink-0 ml-2"
               >
                 Reset
               </button>
@@ -1326,7 +1551,7 @@ export const AnalysisView: React.FC = () => {
         </div>
 
         {/* 3. Compact Move Navigation Bar */}
-        <div className="px-2 py-1.5 bg-surface-elevated border-y border-surface-border flex items-center justify-between shrink-0">
+        <div className="px-2 py-1.5 bg-[#262421] border-y border-[#383531] flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-0.5 sm:space-x-1">
             <button
               onClick={firstPly}

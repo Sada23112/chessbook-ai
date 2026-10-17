@@ -83,65 +83,65 @@ export const ProgressView: React.FC = () => {
 
         {/* Top Metrics Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-          <div className="bg-surface rounded-2xl p-5">
-            <span className="text-xs text-slate-500">Average accuracy</span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-2xl font-bold text-slate-100 font-mono">
+          <div className="bg-[#262421] border border-[#383531] rounded-[6px] p-4 shadow-sm">
+            <span className="text-xs text-[#989795] font-semibold">Average Accuracy</span>
+            <div className="flex items-baseline gap-2 mt-1.5">
+              <span className="text-3xl font-black text-[#81b64c] font-sans">
                 {avgAccuracy !== null ? `${avgAccuracy}%` : '—'}
               </span>
             </div>
-            <span className="text-xs text-slate-600 block mt-1">overall play</span>
+            <span className="text-[11px] text-[#989795] block mt-1">Stockfish evaluation</span>
           </div>
 
-          <div className="bg-surface rounded-2xl p-5">
-            <span className="text-xs text-slate-500">Average CPL</span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-2xl font-bold text-slate-100 font-mono">
+          <div className="bg-[#262421] border border-[#383531] rounded-[6px] p-4 shadow-sm">
+            <span className="text-xs text-[#989795] font-semibold">Average CPL</span>
+            <div className="flex items-baseline gap-2 mt-1.5">
+              <span className="text-3xl font-black text-white font-sans">
                 {avgCpl !== null ? avgCpl : '—'}
               </span>
             </div>
-            <span className="text-xs text-slate-600 block mt-1">centipawn loss</span>
+            <span className="text-[11px] text-[#989795] block mt-1">Centipawns per move</span>
           </div>
 
-          <div className="bg-surface rounded-2xl p-5">
-            <span className="text-xs text-slate-500">Blunders</span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-2xl font-bold text-rose-400 font-mono">
+          <div className="bg-[#262421] border border-[#383531] rounded-[6px] p-4 shadow-sm">
+            <span className="text-xs text-[#989795] font-semibold">Blunder Rate</span>
+            <div className="flex items-baseline gap-2 mt-1.5">
+              <span className="text-3xl font-black text-[#ca3431] font-sans">
                 {blundersPerGame !== null ? blundersPerGame : '—'}
               </span>
             </div>
-            <span className="text-xs text-slate-600 block mt-1">per game / player</span>
+            <span className="text-[11px] text-[#989795] block mt-1">Blunders / game</span>
           </div>
 
-          <div className="bg-surface rounded-2xl p-5">
-            <span className="text-xs text-slate-500">Exercise accuracy</span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-2xl font-bold text-accent font-mono">
+          <div className="bg-[#262421] border border-[#383531] rounded-[6px] p-4 shadow-sm">
+            <span className="text-xs text-[#989795] font-semibold">Puzzle Accuracy</span>
+            <div className="flex items-baseline gap-2 mt-1.5">
+              <span className="text-3xl font-black text-[#e58f2a] font-sans">
                 {trainingAccuracy !== null ? `${trainingAccuracy}%` : '—'}
               </span>
             </div>
-            <span className="text-xs text-slate-600 block mt-1">{reviewedCards.length} reviewed</span>
+            <span className="text-[11px] text-[#989795] block mt-1">{reviewedCards.length} solved</span>
           </div>
         </div>
 
         {/* Weakness Memory */}
-        <div className="bg-surface rounded-2xl p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-[#262421] border border-[#383531] rounded-[6px] p-5 mb-8 shadow-sm">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#383531]">
             <div>
-              <h3 className="font-medium text-slate-200 text-sm flex items-center gap-2">
-                <AlertTriangle size={15} className="text-amber-400" />
+              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+                <AlertTriangle size={16} className="text-[#e58f2a]" />
                 <span>Weakness Memory</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-[#989795] mt-0.5">
                 Tactical blindspots tracked across your games.
               </p>
             </div>
           </div>
 
           {weaknesses.length === 0 ? (
-            <div className="py-12 text-center text-slate-500 text-xs">
+            <div className="py-10 text-center text-[#989795] text-xs">
               <p>No weakness patterns detected yet.</p>
-              <p className="text-slate-600 mt-1">
+              <p className="text-[#65625a] mt-1">
                 Analyze more games to start identifying recurring mistakes.
               </p>
             </div>
@@ -150,37 +150,37 @@ export const ProgressView: React.FC = () => {
               {weaknesses.map((w) => (
                 <div
                   key={w.id}
-                  className="p-4 rounded-xl bg-surface-elevated flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="p-3.5 rounded-[6px] bg-[#1f1e1b] border border-[#383531] flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <h4 className="font-medium text-sm text-slate-100">{w.title}</h4>
+                      <h4 className="font-bold text-xs text-white">{w.title}</h4>
                       <span
-                        className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-[4px] ${
                           w.priority === 'high'
-                            ? 'bg-rose-500/10 text-rose-400'
+                            ? 'bg-[#ca3431]/20 text-[#ca3431]'
                             : w.priority === 'medium'
-                            ? 'bg-amber-500/10 text-amber-400'
-                            : 'bg-slate-500/10 text-slate-400'
+                            ? 'bg-[#e58f2a]/20 text-[#e58f2a]'
+                            : 'bg-[#65625a]/20 text-[#989795]'
                         }`}
                       >
                         {w.priority} priority
                       </span>
-                      <span className="text-xs font-mono text-slate-500">
+                      <span className="text-xs font-mono font-bold text-[#81b64c]">
                         {w.occurrences}×
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed mb-2.5">{w.description}</p>
+                    <p className="text-xs text-[#c3c2bf] leading-relaxed mb-2.5">{w.description}</p>
 
                     {/* Supporting Game Examples */}
                     {w.examples.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-[#989795]">
                         <span>Games:</span>
                         {w.examples.slice(0, 3).map((ex, i) => (
                           <button
                             key={i}
                             onClick={() => setActiveGame(ex.gameId)}
-                            className="font-mono text-[11px] text-accent hover:underline bg-surface px-2 py-0.5 rounded-lg transition"
+                            className="font-mono text-[11px] text-[#81b64c] hover:underline bg-[#262421] px-2 py-0.5 rounded border border-[#383531] transition"
                           >
                             {ex.gameTitle.split('(')[0]} · {ex.playedMove}
                           </button>
@@ -191,7 +191,7 @@ export const ProgressView: React.FC = () => {
 
                   <button
                     onClick={() => setTab('training')}
-                    className="px-3.5 py-2 bg-surface hover:bg-surface-hover text-slate-300 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5"
+                    className="chess-btn-primary px-3 py-1.5 rounded-[4px] text-xs font-bold transition shrink-0 flex items-center gap-1.5 shadow"
                   >
                     <span>Train</span>
                     <ArrowRight size={12} />

@@ -154,7 +154,7 @@ describe('InteractiveChessboard Component', () => {
     // After clicking e2, e2's inner style div should have selected square highlight style
     const e2Inner = e2Square.querySelector('div') as HTMLElement;
     expect(e2Inner).toBeTruthy();
-    expect(e2Inner.style.boxShadow).toContain('22c55e');
+    expect(e2Inner.style.boxShadow).toContain('186, 202, 68');
 
     // Legal destinations e3 and e4 should receive dot indicators
     const e4Square = container.querySelector('[data-square="e4"]') as HTMLElement;

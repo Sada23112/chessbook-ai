@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import type { TrainingCard } from '../../types/chess';
+import { chessAudio } from '../../utils/chessAudio';
 import {
   type TrainingMachineState,
   createTrainingMachineState,
@@ -128,6 +129,7 @@ export const TrainingView: React.FC = () => {
       setMachineState(nextState);
 
       if (validation.isCorrect) {
+        chessAudio.playSuccess();
         setBoardFen(nextFen);
         setLastMove({ from, to });
         confetti({
@@ -139,6 +141,7 @@ export const TrainingView: React.FC = () => {
         answerTrainingCard(currentCard.id, true);
         return true;
       } else {
+        chessAudio.playBlunder();
         // Incorrect move: do not advance exercise, keep position active
         setLastMove({ from, to });
         answerTrainingCard(currentCard.id, false);
@@ -175,6 +178,7 @@ export const TrainingView: React.FC = () => {
         const promo = bestUci[4] || undefined;
         const m = chess.move({ from, to, promotion: promo });
         if (m) {
+          chessAudio.playMove();
           setBoardFen(chess.fen());
           setLastMove({ from, to });
           setMachineState(
@@ -249,25 +253,27 @@ export const TrainingView: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Column: Interactive Board */}
             <div className="lg:col-span-7 flex flex-col items-center">
-              <div className="w-full max-w-[480px] flex items-center justify-between mb-3 text-xs text-slate-400">
-                <span className="flex items-center gap-2 font-medium text-slate-200">
+              {/* Chess.com Player & Turn Indicator */}
+              <div className="w-full max-w-[480px] flex items-center justify-between mb-2.5 px-3 py-2 bg-[#262421] border border-[#383531] rounded-[6px] text-xs">
+                <span className="flex items-center gap-2 font-bold text-white">
                   <span
-                    className={`w-2.5 h-2.5 rounded-full ${
-                      turn === 'white' ? 'bg-slate-100' : 'bg-slate-700'
+                    className={`w-3.5 h-3.5 rounded-full shadow-sm ${
+                      turn === 'white' ? 'bg-white border border-gray-300' : 'bg-[#181715] border border-[#524e47]'
                     }`}
                   />
                   <span>{turn === 'white' ? 'White' : 'Black'} to move</span>
                 </span>
-                <span className="text-slate-500 font-mono">
-                  {currentCardIndex + 1} of {trainingQueue.length}
+                <span className="text-[#989795] font-mono font-semibold">
+                  Exercise {currentCardIndex + 1} of {trainingQueue.length}
                 </span>
               </div>
 
               <div className="w-full max-w-[min(100vw-2.5rem,480px)] aspect-square flex items-center justify-center">
                 <InteractiveChessboard
+                  id="training-studio-board"
                   fen={boardFen}
                   boardOrientation={turn}
                   turn={currentCard.turn}
@@ -285,34 +291,34 @@ export const TrainingView: React.FC = () => {
             </div>
 
             {/* Right Column: Lesson, Verification & Controls */}
-            <div className="lg:col-span-5 bg-surface rounded-2xl p-6 flex flex-col justify-between">
+            <div className="lg:col-span-5 bg-[#262421] border border-[#383531] rounded-[6px] p-5 flex flex-col justify-between">
               <div>
                 {/* Badge & Motif */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-accent">
+                <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-[#383531]">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#81b64c]">
                     {currentCard.motif || 'Tactics'}
                   </span>
-                  <span className="text-xs text-slate-500 font-mono">
-                    #{currentCard.repetitions}
+                  <span className="text-xs text-[#989795] font-mono font-bold">
+                    SRS Rep #{currentCard.repetitions}
                   </span>
                 </div>
 
-                <h3 className="text-base font-medium text-slate-100 mb-2">
+                <h3 className="text-base font-bold text-white mb-1.5">
                   Find the best move
                 </h3>
-                <p className="text-xs text-slate-400 leading-relaxed mb-5">
-                  You previously played <span className="font-mono text-rose-400 font-semibold">{currentCard.playedMoveSan}</span> here.
-                  Can you find the stronger continuation?
+                <p className="text-xs text-[#c3c2bf] leading-relaxed mb-4">
+                  You previously played <span className="font-mono text-[#ca3431] font-bold bg-[#ca3431]/10 px-1 py-0.5 rounded">{currentCard.playedMoveSan}</span> here.
+                  Can you find the master-level continuation?
                 </p>
 
                 {/* Status Outcome: Correct */}
                 {isSolved && (
-                  <div className="p-4 rounded-xl bg-emerald-500/10 text-emerald-400 mb-4 animate-in fade-in">
-                    <div className="flex items-center gap-2 font-semibold text-sm mb-1">
-                      <CheckCircle2 size={16} />
-                      <span>Solved correctly</span>
+                  <div className="p-3.5 rounded-[6px] bg-[#81b64c]/15 border border-[#81b64c]/40 text-[#81b64c] mb-4">
+                    <div className="flex items-center gap-2 font-bold text-sm mb-1 text-white">
+                      <CheckCircle2 size={18} className="text-[#81b64c]" />
+                      <span>Solved correctly! (+12 Rating)</span>
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed mt-1">
+                    <p className="text-xs text-[#c3c2bf] leading-relaxed mt-1">
                       {currentCard.lesson}
                     </p>
                   </div>
@@ -320,29 +326,29 @@ export const TrainingView: React.FC = () => {
 
                 {/* Status Outcome: Incorrect */}
                 {isIncorrect && (
-                  <div className="p-4 rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-in fade-in">
-                    <div className="flex items-center gap-2 font-semibold text-sm mb-1">
-                      <XCircle size={16} />
-                      <span>Not quite</span>
+                  <div className="p-3.5 rounded-[6px] bg-[#ca3431]/15 border border-[#ca3431]/40 text-[#ca3431] mb-4">
+                    <div className="flex items-center gap-2 font-bold text-sm mb-1 text-white">
+                      <XCircle size={18} className="text-[#ca3431]" />
+                      <span>Incorrect continuation</span>
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                      That move isn't the continuation we're looking for. Try again!
+                    <p className="text-xs text-[#c3c2bf] leading-relaxed mt-1">
+                      That move doesn't exploit the tactical opportunity. Try again!
                     </p>
                   </div>
                 )}
 
                 {/* Status Outcome: Revealed Solution */}
                 {isShowingSolution && (
-                  <div className="p-4 rounded-xl bg-amber-500/10 text-amber-300 mb-4 animate-in fade-in">
-                    <div className="flex items-center gap-2 font-semibold text-sm mb-1">
-                      <Eye size={16} />
-                      <span>Solution revealed</span>
+                  <div className="p-3.5 rounded-[6px] bg-[#e58f2a]/15 border border-[#e58f2a]/40 text-[#e58f2a] mb-4">
+                    <div className="flex items-center gap-2 font-bold text-sm mb-1 text-white">
+                      <Eye size={18} className="text-[#e58f2a]" />
+                      <span>Solution Revealed</span>
                     </div>
-                    <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                      The best move is <span className="font-mono text-emerald-400 font-bold">{currentCard.solutionMovesSan[0]}</span>.
+                    <p className="text-xs text-[#c3c2bf] leading-relaxed mt-1">
+                      The best engine move is <span className="font-mono text-[#81b64c] font-black">{currentCard.solutionMovesSan[0]}</span>.
                     </p>
                     {currentCard.lesson && (
-                      <p className="text-xs text-slate-400 mt-2">
+                      <p className="text-xs text-[#989795] mt-2">
                         {currentCard.lesson}
                       </p>
                     )}
@@ -351,26 +357,26 @@ export const TrainingView: React.FC = () => {
 
                 {/* Hint section */}
                 {showHint && machineState?.status === 'awaiting_move' && (
-                  <div className="p-3.5 rounded-xl bg-surface-elevated text-xs text-slate-300 mb-4 flex items-start gap-2.5">
-                    <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                  <div className="p-3 rounded-[6px] bg-[#21201d] border border-[#383531] text-xs text-[#c3c2bf] mb-4 flex items-start gap-2.5">
+                    <Lightbulb size={16} className="text-[#e58f2a] mt-0.5 shrink-0" />
                     <div>
-                      <span className="font-medium text-amber-400 block mb-0.5">Hint</span>
-                      <span className="text-slate-400">
-                        Move the piece on <span className="font-mono text-slate-200 font-bold uppercase">{currentCard.solutionMovesUci[0]?.slice(0, 2)}</span>.
+                      <span className="font-bold text-[#e58f2a] block mb-0.5">Tactical Hint</span>
+                      <span className="text-[#989795]">
+                        Consider moving the piece on <span className="font-mono text-white font-bold uppercase">{currentCard.solutionMovesUci[0]?.slice(0, 2)}</span>.
                       </span>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="space-y-2 pt-4 border-t border-surface-elevated mt-4">
+              {/* Actions with authentic Chess.com 3D buttons */}
+              <div className="space-y-2 pt-3 border-t border-[#383531] mt-3">
                 {isSolved || isShowingSolution ? (
                   <button
                     onClick={handleNext}
-                    className="w-full py-2.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow"
+                    className="chess-btn-primary w-full py-2.5 px-4 rounded-[6px] text-xs font-bold flex items-center justify-center gap-2 shadow"
                   >
-                    <span>Next Exercise</span>
+                    <span>Next Puzzle</span>
                     <ArrowRight size={14} />
                   </button>
                 ) : (
@@ -378,14 +384,14 @@ export const TrainingView: React.FC = () => {
                     <button
                       onClick={() => setShowHint(true)}
                       disabled={showHint}
-                      className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-hover disabled:opacity-40 text-slate-300 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5"
+                      className="chess-btn-secondary flex-1 py-2 px-3 rounded-[6px] text-xs font-bold flex items-center justify-center gap-1.5"
                     >
-                      <Lightbulb size={13} className="text-amber-400" />
+                      <Lightbulb size={13} className="text-[#e58f2a]" />
                       <span>Hint</span>
                     </button>
                     <button
                       onClick={handleRevealSolution}
-                      className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-hover text-slate-400 hover:text-slate-200 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5"
+                      className="chess-btn-secondary flex-1 py-2 px-3 rounded-[6px] text-xs font-bold flex items-center justify-center gap-1.5"
                     >
                       <Eye size={13} />
                       <span>Reveal</span>
@@ -396,7 +402,7 @@ export const TrainingView: React.FC = () => {
                 {isIncorrect && (
                   <button
                     onClick={handleRetry}
-                    className="w-full py-2 px-3 bg-rose-500/10 hover:bg-rose-500/15 text-rose-300 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5"
+                    className="w-full py-2 px-3 bg-[#ca3431]/20 hover:bg-[#ca3431]/30 border border-[#ca3431]/40 text-[#ffffff] rounded-[6px] text-xs font-bold transition flex items-center justify-center gap-1.5"
                   >
                     <RotateCcw size={13} />
                     <span>Try again</span>
