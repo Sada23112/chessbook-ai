@@ -194,23 +194,23 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
     switch (priority) {
       case 'high':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400">
             <Flame size={12} />
-            <span>High Priority</span>
+            <span>High priority</span>
           </span>
         );
       case 'medium':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-300">
             <AlertTriangle size={12} />
-            <span>Medium Priority</span>
+            <span>Medium priority</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-elevated text-slate-300">
             <Info size={12} />
-            <span>Low Priority</span>
+            <span>Low priority</span>
           </span>
         );
     }
@@ -221,37 +221,37 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
     switch (type) {
       case 'fix_mistake':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-950/60 text-red-300 border border-red-800/50">
-            <AlertTriangle size={10} />
-            <span>Fix Move Error</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-300">
+            <AlertTriangle size={11} />
+            <span>Fix move error</span>
           </span>
         );
       case 'anti_gambit_trap':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950/60 text-amber-300 border border-amber-800/50">
-            <ShieldAlert size={10} />
-            <span>Anti-Gambit / Trap</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-300">
+            <ShieldAlert size={11} />
+            <span>Anti-gambit / trap</span>
           </span>
         );
       case 'repertoire_expansion':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950/60 text-blue-300 border border-blue-800/50">
-            <Layers size={10} />
-            <span>Repertoire Gap</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-300">
+            <Layers size={11} />
+            <span>Repertoire gap</span>
           </span>
         );
       case 'starter':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">
-            <Sparkles size={10} />
-            <span>Starter Course</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300">
+            <Sparkles size={11} />
+            <span>Starter course</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-950/60 text-purple-300 border border-purple-800/50">
-            <BookOpen size={10} />
-            <span>New Opening</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-300">
+            <BookOpen size={11} />
+            <span>New opening</span>
           </span>
         );
     }
@@ -262,29 +262,29 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
     switch (status) {
       case 'completed':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">
             <CheckCircle2 size={11} />
             <span>Completed</span>
           </span>
         );
       case 'in_progress':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400">
             <Sparkles size={11} />
-            <span>In Progress</span>
+            <span>In progress</span>
           </span>
         );
       case 'needs_revision':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400">
             <RotateCcw size={11} />
-            <span>Needs Revision</span>
+            <span>Needs revision</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-elevated text-slate-400 border border-surface-border">
-            <span>Not Started</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-elevated text-slate-400">
+            <span>Not started</span>
           </span>
         );
     }
@@ -305,22 +305,22 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
   return (
     <div className="flex-1 flex flex-col space-y-6">
       {/* 1. Header Section */}
-      <div className="bg-surface-elevated/70 border border-surface-border/80 rounded-2xl p-4 sm:p-6 backdrop-blur-sm shadow-lg">
+      <div className="bg-surface rounded-2xl p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent">
-                <Sparkles size={18} />
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                <Sparkles size={20} />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight flex items-center gap-2">
-                  <span>Recommended for You</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-accent/20 text-accent font-bold border border-accent/30">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight flex items-center gap-2.5">
+                  <span>Recommended for you</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-accent/10 text-accent font-semibold">
                     {activeRecsCount}
                   </span>
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                  Personalized opening courses based on your games, mistakes, and playing style.
+                  Personalized opening courses based on your games, mistakes, and repertoire gaps.
                 </p>
               </div>
             </div>
@@ -330,57 +330,57 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
           <div className="flex items-center space-x-2">
             <button
               onClick={loadData}
-              className="px-3 py-1.5 bg-surface-elevated hover:bg-surface-border text-slate-300 border border-surface-border rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 shadow-sm"
+              className="px-3.5 py-2 bg-surface-elevated hover:bg-surface-border text-slate-300 rounded-xl text-xs font-medium transition flex items-center space-x-1.5"
               title="Re-scan games and update recommendations"
             >
               <RefreshCw size={13} />
-              <span>Refresh Recommendations</span>
+              <span>Refresh recommendations</span>
             </button>
           </div>
         </div>
 
         {/* 2. Opening Performance Signals Banner */}
         {report && report.totalGames > 0 && (
-          <div className="mt-5 pt-5 border-t border-surface-border/70 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-surface-dark/60 border border-surface-border/50 rounded-xl p-3">
-              <span className="text-[11px] font-medium text-slate-400 block">Games Examined</span>
+          <div className="mt-5 pt-5 border-t border-surface-elevated grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-surface-elevated rounded-xl p-3">
+              <span className="text-xs font-medium text-slate-400 block">Games examined</span>
               <div className="flex items-baseline space-x-1.5 mt-0.5">
                 <span className="text-lg font-bold text-slate-100">{report.totalGames}</span>
-                <span className="text-[10px] text-slate-500 font-mono">
+                <span className="text-xs text-slate-500 font-mono">
                   ({report.gamesAsWhite}W / {report.gamesAsBlack}B)
                 </span>
               </div>
             </div>
 
-            <div className="bg-surface-dark/60 border border-surface-border/50 rounded-xl p-3">
-              <span className="text-[11px] font-medium text-slate-400 block">Analyzed with Engine</span>
+            <div className="bg-surface-elevated rounded-xl p-3">
+              <span className="text-xs font-medium text-slate-400 block">Analyzed with engine</span>
               <div className="flex items-baseline space-x-1.5 mt-0.5">
                 <span className="text-lg font-bold text-accent">{report.analyzedGamesCount}</span>
-                <span className="text-[10px] text-slate-500 font-mono">
+                <span className="text-xs text-slate-500 font-mono">
                   / {report.totalGames} games
                 </span>
               </div>
             </div>
 
-            <div className="bg-surface-dark/60 border border-surface-border/50 rounded-xl p-3">
-              <span className="text-[11px] font-medium text-slate-400 block">Win Rate as White</span>
+            <div className="bg-surface-elevated rounded-xl p-3">
+              <span className="text-xs font-medium text-slate-400 block">Win rate as White</span>
               <div className="flex items-baseline space-x-1.5 mt-0.5">
                 <span className="text-lg font-bold text-slate-200">
                   {report.whiteStats.gamesCount > 0 ? `${report.whiteStats.winRate}%` : '—'}
                 </span>
-                <span className="text-[10px] text-slate-500">
+                <span className="text-xs text-slate-500">
                   ({report.whiteStats.wins}W - {report.whiteStats.losses}L)
                 </span>
               </div>
             </div>
 
-            <div className="bg-surface-dark/60 border border-surface-border/50 rounded-xl p-3">
-              <span className="text-[11px] font-medium text-slate-400 block">Win Rate as Black</span>
+            <div className="bg-surface-elevated rounded-xl p-3">
+              <span className="text-xs font-medium text-slate-400 block">Win rate as Black</span>
               <div className="flex items-baseline space-x-1.5 mt-0.5">
                 <span className="text-lg font-bold text-slate-200">
                   {report.blackStats.gamesCount > 0 ? `${report.blackStats.winRate}%` : '—'}
                 </span>
-                <span className="text-[10px] text-slate-500">
+                <span className="text-xs text-slate-500">
                   ({report.blackStats.wins}W - {report.blackStats.losses}L)
                 </span>
               </div>
@@ -390,7 +390,7 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
 
         {/* Unanalyzed games prompt */}
         {report && report.totalGames > 0 && report.analyzedGamesCount < report.totalGames && (
-          <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="mt-4 p-3.5 rounded-xl bg-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-start space-x-2 text-amber-200">
               <Info size={16} className="shrink-0 mt-0.5 text-amber-400" />
               <span>
@@ -400,7 +400,7 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
             {onNavigateToAnalysis && (
               <button
                 onClick={onNavigateToAnalysis}
-                className="shrink-0 px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold rounded-lg transition"
+                className="shrink-0 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-medium rounded-lg transition"
               >
                 Go to Game Review
               </button>
@@ -410,12 +410,12 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
 
         {/* Cold-start prompt if 0 games */}
         {(!report || report.totalGames === 0) && (
-          <div className="mt-4 p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="mt-4 p-4 rounded-xl bg-blue-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-start space-x-2.5 text-blue-200">
               <BookOpen size={17} className="shrink-0 mt-0.5 text-blue-400" />
               <div>
                 <p className="font-semibold text-blue-100">No played games detected yet</p>
-                <p className="text-blue-300/90 mt-0.5">
+                <p className="text-blue-300/90 mt-0.5 leading-relaxed">
                   Showing foundational starter courses. Import your games from Chess.com, Lichess, or PGN files in My Games to unlock recommendations tailored directly to your personal opening blunders.
                 </p>
               </div>
@@ -423,10 +423,10 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
             {onNavigateToGames && (
               <button
                 onClick={onNavigateToGames}
-                className="shrink-0 px-3 py-1.5 bg-blue-500/25 hover:bg-blue-500/35 text-blue-200 font-semibold rounded-lg transition flex items-center space-x-1"
+                className="shrink-0 px-3.5 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 font-medium rounded-xl transition flex items-center space-x-1.5"
               >
                 <Upload size={13} />
-                <span>Import Games</span>
+                <span>Import games</span>
               </button>
             )}
           </div>
@@ -434,43 +434,43 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
       </div>
 
       {/* 3. Filter Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-elevated/40 border border-surface-border/50 p-3 rounded-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl">
         {/* Search */}
         <div className="relative flex-1 max-w-xs">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search recommendations..."
-            className="w-full pl-9 pr-3 py-1.5 bg-surface-dark border border-surface-border rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-accent"
+            className="w-full pl-9 pr-3.5 py-2 bg-surface-elevated rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-accent"
           />
         </div>
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Side filter */}
-          <div className="flex rounded-lg bg-surface-dark p-0.5 border border-surface-border text-xs">
+          <div className="flex rounded-xl bg-surface-elevated p-1 text-xs">
             <button
               onClick={() => setFilterSide('all')}
-              className={`px-2.5 py-1 rounded-md transition font-medium ${
-                filterSide === 'all' ? 'bg-surface-border text-slate-100' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1 rounded-lg transition font-medium ${
+                filterSide === 'all' ? 'bg-surface text-slate-100 font-semibold' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              All Sides
+              All
             </button>
             <button
               onClick={() => setFilterSide('white')}
-              className={`px-2.5 py-1 rounded-md transition font-medium ${
-                filterSide === 'white' ? 'bg-surface-border text-slate-100' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1 rounded-lg transition font-medium ${
+                filterSide === 'white' ? 'bg-surface text-slate-100 font-semibold' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               White
             </button>
             <button
               onClick={() => setFilterSide('black')}
-              className={`px-2.5 py-1 rounded-md transition font-medium ${
-                filterSide === 'black' ? 'bg-surface-border text-slate-100' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1 rounded-lg transition font-medium ${
+                filterSide === 'black' ? 'bg-surface text-slate-100 font-semibold' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               Black
@@ -481,44 +481,44 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value as any)}
-            className="px-2.5 py-1 bg-surface-dark border border-surface-border rounded-lg text-xs text-slate-300 focus:outline-none"
+            className="px-3 py-2 bg-surface-elevated rounded-xl text-xs text-slate-300 focus:outline-none"
           >
-            <option value="all">All Priorities</option>
-            <option value="high">High Priority</option>
-            <option value="medium">Medium Priority</option>
-            <option value="low">Low Priority</option>
+            <option value="all">All priorities</option>
+            <option value="high">High priority</option>
+            <option value="medium">Medium priority</option>
+            <option value="low">Low priority</option>
           </select>
 
           {/* Type filter */}
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as any)}
-            className="px-2.5 py-1 bg-surface-dark border border-surface-border rounded-lg text-xs text-slate-300 focus:outline-none"
+            className="px-3 py-2 bg-surface-elevated rounded-xl text-xs text-slate-300 focus:outline-none"
           >
-            <option value="all">All Types</option>
-            <option value="fix_mistake">Fix Move Errors</option>
-            <option value="anti_gambit_trap">Anti-Gambit / Traps</option>
-            <option value="repertoire_expansion">Repertoire Gaps</option>
-            <option value="starter">Starter Courses</option>
+            <option value="all">All types</option>
+            <option value="fix_mistake">Fix move errors</option>
+            <option value="anti_gambit_trap">Anti-gambit / traps</option>
+            <option value="repertoire_expansion">Repertoire gaps</option>
+            <option value="starter">Starter courses</option>
           </select>
 
           {/* Show Dismissed Toggle */}
           <button
             onClick={() => setShowDismissed(!showDismissed)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
+            className={`px-3 py-2 rounded-xl text-xs font-medium transition ${
               showDismissed
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                : 'bg-surface-dark text-slate-400 hover:text-slate-200 border-surface-border'
+                ? 'bg-amber-500/10 text-amber-300'
+                : 'bg-surface-elevated text-slate-400 hover:text-slate-200'
             }`}
           >
-            {showDismissed ? 'Showing Dismissed' : `Dismissed (${dismissedRecsCount})`}
+            {showDismissed ? 'Showing dismissed' : `Dismissed (${dismissedRecsCount})`}
           </button>
         </div>
       </div>
 
       {/* 4. Recommendation Cards Grid */}
       {filteredRecs.length === 0 ? (
-        <div className="bg-surface-elevated/40 border border-surface-border rounded-2xl p-10 text-center text-slate-400">
+        <div className="bg-surface rounded-2xl p-12 text-center text-slate-400">
           <CheckCircle2 size={36} className="mx-auto text-slate-500 mb-3" />
           <p className="text-base font-semibold text-slate-200">No recommendations match your filters</p>
           <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
@@ -536,22 +536,18 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
             return (
               <div
                 key={rec.id}
-                className={`flex flex-col justify-between bg-surface-elevated/80 border rounded-2xl p-4 sm:p-5 transition hover:shadow-xl ${
-                  rec.priority === 'high'
-                    ? 'border-rose-500/30 hover:border-rose-500/50'
-                    : 'border-surface-border hover:border-slate-600'
-                }`}
+                className="flex flex-col justify-between bg-surface rounded-2xl p-6 transition hover:bg-surface/90"
               >
                 <div>
                   {/* Top Header Pills */}
                   <div className="flex items-center justify-between gap-2 mb-2.5">
                     <div className="flex flex-wrap items-center gap-1.5">
                       {renderTypeBadge(rec.type)}
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-dark text-slate-300 border border-surface-border uppercase">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-surface-elevated text-slate-300 capitalize">
                         {rec.side}
                       </span>
                       {rec.eco && (
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-dark text-slate-400 border border-surface-border">
+                        <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-md bg-surface-elevated text-accent">
                           {rec.eco}
                         </span>
                       )}
@@ -570,39 +566,39 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                   </p>
 
                   {/* Rationale backed by game data */}
-                  <div className="mt-2.5 p-2.5 rounded-xl bg-surface-dark/70 border border-surface-border/60 text-xs text-slate-300 leading-relaxed">
+                  <div className="mt-3 p-3.5 rounded-xl bg-surface-elevated text-xs text-slate-300 leading-relaxed">
                     <p className="font-semibold text-slate-200 mb-0.5">Why this is recommended:</p>
                     <p className="text-slate-300">{rec.reason}</p>
                     {rec.recurringMistake && (
-                      <p className="text-slate-400 text-[11px] mt-1.5 border-t border-surface-border/50 pt-1">
+                      <p className="text-slate-400 text-xs mt-2 border-t border-surface-border pt-1.5">
                         <span className="text-slate-300 font-medium">Specific issue:</span> {rec.recurringMistake}
                       </p>
                     )}
                   </div>
 
                   {/* Metadata Row: Games count, win rate, estimated time */}
-                  <div className="flex flex-wrap items-center gap-3 mt-3 text-[11px] text-slate-400">
+                  <div className="flex flex-wrap items-center gap-3.5 mt-3.5 text-xs text-slate-400">
                     {rec.gamesCount > 0 ? (
-                      <span className="flex items-center space-x-1">
-                        <Swords size={12} className="text-slate-400" />
+                      <span className="flex items-center space-x-1.5">
+                        <Swords size={13} className="text-slate-400" />
                         <span>
                           {rec.gamesCount} game{rec.gamesCount > 1 ? 's' : ''} ({rec.wins}W - {rec.losses}L)
                         </span>
                       </span>
                     ) : (
-                      <span className="flex items-center space-x-1">
-                        <Sparkles size={12} className="text-emerald-400" />
-                        <span>Curated Starter</span>
+                      <span className="flex items-center space-x-1.5">
+                        <Sparkles size={13} className="text-emerald-400" />
+                        <span>Curated starter</span>
                       </span>
                     )}
 
-                    <span className="flex items-center space-x-1">
-                      <Clock size={12} className="text-slate-400" />
+                    <span className="flex items-center space-x-1.5">
+                      <Clock size={13} className="text-slate-400" />
                       <span>{rec.estimatedMinutes} mins est.</span>
                     </span>
 
-                    <span className="flex items-center space-x-1">
-                      <Award size={12} className="text-slate-400" />
+                    <span className="flex items-center space-x-1.5">
+                      <Award size={13} className="text-slate-400" />
                       <span>{rec.difficulty}</span>
                     </span>
 
@@ -612,7 +608,7 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                   </div>
 
                   {/* Priority Reason Explanation */}
-                  <div className="mt-2 text-[10px] text-slate-400 italic">
+                  <div className="mt-2 text-xs text-slate-400 italic">
                     {rec.priorityReason}
                   </div>
 
@@ -623,21 +619,21 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                         onClick={() => setExpandedRecId(isExpanded ? null : rec.id)}
                         className="text-xs text-accent hover:text-accent-hover font-medium flex items-center space-x-1 transition"
                       >
-                        <span>{isExpanded ? 'Hide Game Evidence' : `View ${rec.evidence.length} Game Examples`}</span>
+                        <span>{isExpanded ? 'Hide game evidence' : `View ${rec.evidence.length} game examples`}</span>
                         {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                       </button>
 
                       {isExpanded && (
-                        <div className="mt-2 space-y-2 p-3 rounded-xl bg-surface-dark border border-surface-border">
+                        <div className="mt-2.5 space-y-2 p-3 rounded-xl bg-surface-elevated">
                           {rec.evidence.map((ev, i) => (
                             <div
                               key={i}
-                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded-lg bg-surface-elevated/50 border border-surface-border/50 text-xs"
+                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-surface text-xs"
                             >
                               <div>
                                 <span className="font-semibold text-slate-200">{ev.gameTitle}</span>
-                                <span className="text-[11px] text-slate-400 ml-1.5">({ev.date})</span>
-                                <div className="mt-0.5 text-[11px] text-slate-300">
+                                <span className="text-xs text-slate-400 ml-1.5">({ev.date})</span>
+                                <div className="mt-0.5 text-xs text-slate-300">
                                   Move {ev.moveNumber}: You played{' '}
                                   <span className="font-mono text-rose-300 font-bold">{ev.playedSan}</span>{' '}
                                   (Engine suggests{' '}
@@ -645,16 +641,16 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                                   {ev.cpl ? `, -${ev.cpl} cpl` : ''})
                                 </div>
                                 {ev.consequence && (
-                                  <p className="text-[10px] text-slate-400 mt-0.5">{ev.consequence}</p>
+                                  <p className="text-xs text-slate-400 mt-0.5">{ev.consequence}</p>
                                 )}
                               </div>
 
                               <button
                                 onClick={() => onReviewGame(ev.gameId, ev.ply)}
-                                className="shrink-0 px-2.5 py-1 bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border rounded-lg text-[11px] font-semibold transition flex items-center space-x-1"
+                                className="shrink-0 px-3 py-1 bg-surface-elevated hover:bg-surface-border text-slate-200 rounded-lg text-xs font-medium transition flex items-center space-x-1"
                               >
                                 <ExternalLink size={11} />
-                                <span>Replay Position</span>
+                                <span>Replay position</span>
                               </button>
                             </div>
                           ))}
@@ -665,15 +661,15 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                 </div>
 
                 {/* Bottom Action Buttons */}
-                <div className="mt-4 pt-3.5 border-t border-surface-border/60 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-1.5">
+                <div className="mt-4 pt-4 border-t border-surface-elevated flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {/* Primary action: Start Course */}
                     <button
                       onClick={() => onStartCourse(rec.repertoireId || 'rep_white_e4', rec.variationId)}
-                      className="px-3.5 py-1.5 bg-accent hover:bg-accent-hover text-black rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm"
+                      className="px-4 py-2 bg-accent hover:bg-accent-hover text-black rounded-xl text-xs font-semibold transition flex items-center space-x-1.5"
                     >
                       <Play size={13} />
-                      <span>Start Course</span>
+                      <span>Start course</span>
                     </button>
 
                     {/* Targeted practice from mistake position */}
@@ -682,11 +678,11 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                         onClick={() =>
                           onStartCourse(rec.repertoireId || 'rep_white_e4', rec.variationId, rec.mistakeFen)
                         }
-                        className="px-3 py-1.5 bg-surface-dark hover:bg-surface-border text-slate-200 border border-surface-border rounded-xl text-xs font-semibold transition flex items-center space-x-1.5"
+                        className="px-3.5 py-2 bg-surface-elevated hover:bg-surface-border text-slate-200 rounded-xl text-xs font-medium transition flex items-center space-x-1.5"
                         title="Practice move starting directly from the mistake position"
                       >
                         <RotateCcw size={12} />
-                        <span>Practice from Mistake</span>
+                        <span>Practice from mistake</span>
                       </button>
                     )}
 
@@ -694,15 +690,15 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                     <button
                       onClick={(e) => handleAddLine(rec, e)}
                       disabled={isAddedSuccess}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1 border ${
+                      className={`px-3 py-2 rounded-xl text-xs font-medium transition flex items-center space-x-1 ${
                         isAddedSuccess
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                          : 'bg-surface-dark hover:bg-surface-border text-slate-300 border-surface-border'
+                          ? 'bg-emerald-500/10 text-emerald-300'
+                          : 'bg-surface-elevated hover:bg-surface-border text-slate-300'
                       }`}
                       title="Add this opening variation to your personal repertoire"
                     >
                       {isAddedSuccess ? <Check size={12} /> : <Plus size={12} />}
-                      <span>{isAddedSuccess ? 'Added!' : 'Add to Repertoire'}</span>
+                      <span>{isAddedSuccess ? 'Added' : 'Add to repertoire'}</span>
                     </button>
                   </div>
 
@@ -711,7 +707,7 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                     {rec.status !== 'completed' ? (
                       <button
                         onClick={(e) => handleUpdateStatus(rec, 'completed', e)}
-                        className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-surface-dark rounded-lg transition"
+                        className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-surface-elevated rounded-lg transition"
                         title="Mark as completed"
                       >
                         <Check size={14} />
@@ -719,7 +715,7 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
                     ) : (
                       <button
                         onClick={(e) => handleUpdateStatus(rec, 'not_started', e)}
-                        className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-surface-dark rounded-lg transition"
+                        className="p-2 text-slate-400 hover:text-slate-200 hover:bg-surface-elevated rounded-lg transition"
                         title="Reset progress"
                       >
                         <RotateCcw size={14} />
@@ -728,7 +724,7 @@ export const RecommendedOpeningsView: React.FC<RecommendedOpeningsViewProps> = (
 
                     <button
                       onClick={(e) => handleToggleDismiss(rec, e)}
-                      className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-surface-dark rounded-lg transition"
+                      className="p-2 text-slate-400 hover:text-rose-400 hover:bg-surface-elevated rounded-lg transition"
                       title={rec.dismissed ? 'Restore recommendation' : 'Dismiss recommendation'}
                     >
                       {rec.dismissed ? <RotateCcw size={14} /> : <X size={14} />}

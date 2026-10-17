@@ -162,15 +162,15 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
         <div className="flex items-center space-x-3">
           <button
             onClick={onBackToLibrary}
-            className="p-2 rounded-xl bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white border border-surface-border transition flex items-center space-x-1.5 text-xs font-semibold"
+            className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white transition flex items-center space-x-1.5 text-xs font-medium"
           >
             <ArrowLeft size={16} />
-            <span>Back to Library</span>
+            <span>Back to library</span>
           </button>
 
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-surface-elevated border border-surface-border text-accent">
+              <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-md bg-surface-elevated text-accent">
                 {selectedVariation.eco || 'Theory'}
               </span>
               <h2 className="text-xl sm:text-2xl font-bold text-slate-100 truncate">
@@ -178,7 +178,7 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
               </h2>
             </div>
             <p className="text-slate-400 text-xs mt-0.5 truncate max-w-xl">
-              {repertoire.name} • {repertoire.color === 'white' ? 'White Perspective' : 'Black Perspective'}
+              {repertoire.name} · {repertoire.color === 'white' ? 'White perspective' : 'Black perspective'}
             </p>
           </div>
         </div>
@@ -186,10 +186,10 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
         {/* Primary Action: Start Training */}
         <button
           onClick={() => onStartTraining(repertoire, selectedVariation)}
-          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center space-x-2 shadow-lg self-start sm:self-auto"
+          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center space-x-2 self-start sm:self-auto"
         >
           <Dumbbell size={16} />
-          <span>Start Repertoire Training</span>
+          <span>Start training</span>
         </button>
       </div>
 
@@ -199,10 +199,10 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
         <div className="lg:col-span-6 flex flex-col items-center">
           {/* Position Info Pill */}
           <div className="w-full max-w-[480px] flex items-center justify-between mb-2.5 px-1 text-xs">
-            <span className="font-semibold text-slate-300">
-              {plyIndex === 0 ? 'Starting Position' : `Position after ply ${plyIndex}`}
+            <span className="font-medium text-slate-300">
+              {plyIndex === 0 ? 'Starting position' : `Position after ply ${plyIndex}`}
             </span>
-            <span className="font-mono text-slate-400 text-[11px]">
+            <span className="font-mono text-slate-400 text-xs">
               {selectedVariation.moves.length} total plies
             </span>
           </div>
@@ -219,7 +219,7 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
           </div>
 
           {/* Board Navigation Toolbar */}
-          <div className="w-full max-w-[480px] mt-3 flex items-center justify-between bg-surface border border-surface-border rounded-xl p-1.5">
+          <div className="w-full max-w-[480px] mt-3 flex items-center justify-between bg-surface rounded-2xl p-2">
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => {
@@ -227,7 +227,7 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
                   setIsPlaying(false);
                 }}
                 disabled={plyIndex === 0}
-                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 rounded-lg hover:bg-surface-elevated transition"
+                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 rounded-xl hover:bg-surface-elevated transition"
                 title="First move"
               >
                 <ChevronFirst size={18} />
@@ -238,14 +238,14 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
                   setIsPlaying(false);
                 }}
                 disabled={plyIndex === 0}
-                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 rounded-lg hover:bg-surface-elevated transition"
+                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 rounded-xl hover:bg-surface-elevated transition"
                 title="Previous move"
               >
                 <ChevronLeft size={18} />
               </button>
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-accent hover:bg-accent/15 rounded-lg transition"
+                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-accent hover:bg-accent/15 rounded-xl transition"
                 title={isPlaying ? 'Pause' : 'Play demonstration'}
               >
                 {isPlaying ? <Pause size={18} /> : <Play size={18} />}
@@ -256,7 +256,7 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
                   setIsPlaying(false);
                 }}
                 disabled={plyIndex >= selectedVariation.moves.length}
-                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 rounded-lg hover:bg-surface-elevated transition"
+                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 rounded-xl hover:bg-surface-elevated transition"
                 title="Next move"
               >
                 <ChevronRight size={18} />
@@ -267,22 +267,22 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
                   setIsPlaying(false);
                 }}
                 disabled={plyIndex >= selectedVariation.moves.length}
-                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 rounded-lg hover:bg-surface-elevated transition"
+                className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-300 hover:text-white disabled:opacity-30 rounded-xl hover:bg-surface-elevated transition"
                 title="Last move"
               >
                 <ChevronLast size={18} />
               </button>
             </div>
 
-            <div className="text-[11px] font-mono text-slate-400 pr-2">
+            <div className="text-xs font-mono text-slate-400 pr-3">
               Move {Math.floor(plyIndex / 2) + 1}
             </div>
           </div>
 
           {/* Move Sequence Pills */}
-          <div className="w-full max-w-[480px] mt-3 p-3 bg-surface rounded-xl border border-surface-border">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-              Move Sequence
+          <div className="w-full max-w-[480px] mt-3 p-4 bg-surface rounded-2xl">
+            <span className="text-xs font-semibold text-slate-400 block mb-2.5">
+              Move sequence
             </span>
             <div className="flex flex-wrap gap-1.5 items-center max-h-24 overflow-y-auto">
               {selectedVariation.moves.map((move, i) => (
@@ -292,9 +292,9 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
                     setPlyIndex(i + 1);
                     setIsPlaying(false);
                   }}
-                  className={`px-2 py-0.5 rounded text-xs font-mono transition ${
+                  className={`px-2 py-0.5 rounded-md text-xs font-mono transition ${
                     i < plyIndex
-                      ? 'bg-accent/20 text-accent font-semibold border border-accent/30'
+                      ? 'bg-accent/15 text-accent font-semibold'
                       : 'bg-surface-elevated text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -306,10 +306,10 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
 
           {/* Branching Alternatives */}
           {candidateBranches.length > 0 && (
-            <div className="w-full max-w-[480px] mt-3 p-3 bg-surface-elevated rounded-xl border border-surface-border">
-              <span className="text-[11px] font-bold text-slate-300 flex items-center space-x-1.5 mb-2">
+            <div className="w-full max-w-[480px] mt-3 p-4 bg-surface rounded-2xl">
+              <span className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5 mb-2.5">
                 <GitBranch size={13} className="text-accent" />
-                <span>Repertoire Alternatives at this Position:</span>
+                <span>Repertoire alternatives at this position:</span>
               </span>
               <div className="flex flex-wrap gap-2">
                 {candidateBranches.map((branch) => (
@@ -323,11 +323,11 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
                       }));
                       setPlyIndex(newMoves.length);
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-surface border border-surface-border hover:border-accent text-xs font-mono text-slate-200 hover:text-accent transition flex items-center space-x-1"
+                    className="px-3 py-1.5 rounded-xl bg-surface-elevated hover:bg-surface-border text-xs font-mono text-slate-200 hover:text-accent transition flex items-center space-x-1.5"
                   >
                     <span className="font-bold text-accent">{branch.san}</span>
                     {branch.comment && (
-                      <span className="text-[10px] text-slate-400 font-sans truncate max-w-[140px]">
+                      <span className="text-xs text-slate-400 font-sans truncate max-w-[140px]">
                         ({branch.comment})
                       </span>
                     )}
@@ -341,42 +341,42 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
         {/* Right Column: Strategic Description, Sister Variations, and Deviations */}
         <div className="lg:col-span-6 space-y-5">
           {/* Strategic Context Card */}
-          <div className="bg-surface rounded-xl border border-surface-border p-5">
+          <div className="bg-surface rounded-2xl p-6">
             <h3 className="font-semibold text-slate-100 text-sm mb-2 flex items-center space-x-2">
               <BookOpen size={16} className="text-accent" />
-              <span>Strategic Overview & Motifs</span>
+              <span>Strategic overview & motifs</span>
             </h3>
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
               {selectedVariation.description || repertoire.description}
             </p>
 
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-surface-border/60 text-xs">
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-surface-elevated text-xs">
               <div>
-                <span className="text-slate-400 block text-[11px]">Side Played</span>
-                <span className="font-bold text-slate-200 capitalize">{repertoire.color}</span>
+                <span className="text-slate-400 block text-xs">Side played</span>
+                <span className="font-medium text-slate-200 capitalize">{repertoire.color}</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[11px]">Deepest Preparation</span>
-                <span className="font-bold text-slate-200 font-mono">
-                  {selectedVariation.moves.length} Plies
+                <span className="text-slate-400 block text-xs">Deepest preparation</span>
+                <span className="font-medium text-slate-200 font-mono">
+                  {selectedVariation.moves.length} plies
                 </span>
               </div>
             </div>
           </div>
 
           {/* Sister Variations in this Repertoire */}
-          <div className="bg-surface rounded-xl border border-surface-border p-5">
+          <div className="bg-surface rounded-2xl p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-slate-100 text-sm flex items-center space-x-2">
                 <GitBranch size={16} className="text-accent" />
-                <span>Lines in this Repertoire ({repertoire.variations?.length || 0})</span>
+                <span>Lines in this repertoire ({repertoire.variations?.length || 0})</span>
               </h3>
               <button
                 onClick={() => setShowAddLineModal(true)}
-                className="px-2.5 py-1 text-xs bg-surface-elevated hover:bg-surface-border text-accent border border-surface-border rounded-lg transition flex items-center space-x-1"
+                className="px-2.5 py-1 text-xs bg-surface-elevated hover:bg-surface-border text-accent rounded-lg transition flex items-center space-x-1"
               >
                 <Plus size={13} />
-                <span>Add Variation</span>
+                <span>Add variation</span>
               </button>
             </div>
 
@@ -391,17 +391,17 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
                       setPlyIndex(v.moves.length);
                       setIsPlaying(false);
                     }}
-                    className={`w-full text-left p-2.5 rounded-xl border transition flex items-center justify-between text-xs ${
+                    className={`w-full text-left p-3 rounded-xl transition flex items-center justify-between text-xs ${
                       isCurrent
-                        ? 'bg-accent/15 border-accent text-accent font-semibold'
-                        : 'bg-surface-elevated hover:bg-surface-border border-surface-border text-slate-300'
+                        ? 'bg-accent/10 text-accent font-semibold ring-1 ring-accent/30'
+                        : 'bg-surface-elevated hover:bg-surface-border text-slate-300'
                     }`}
                   >
                     <div className="truncate pr-2">
-                      <span className="font-mono text-[10px] mr-2 text-slate-400">{v.eco || 'Line'}</span>
+                      <span className="font-mono text-xs mr-2 text-slate-400">{v.eco || 'Line'}</span>
                       <span className="truncate">{v.name}</span>
                     </div>
-                    <span className="text-[10px] font-mono text-slate-500 shrink-0">
+                    <span className="text-xs font-mono text-slate-500 shrink-0">
                       {v.moves.length} plies
                     </span>
                   </button>
@@ -411,14 +411,14 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
           </div>
 
           {/* User Deviations in this Repertoire */}
-          <div className="bg-surface rounded-xl border border-surface-border p-5">
+          <div className="bg-surface rounded-2xl p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-slate-100 text-sm flex items-center space-x-2">
                 <AlertTriangle size={16} className="text-amber-400" />
-                <span>Game Deviations</span>
+                <span>Game deviations</span>
               </h3>
-              <span className="text-xs font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                {relevantDeviations.length} Detected
+              <span className="text-xs font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full font-medium">
+                {relevantDeviations.length} detected
               </span>
             </div>
 
@@ -431,13 +431,13 @@ export const OpeningDetailsView: React.FC<OpeningDetailsViewProps> = ({
                 {relevantDeviations.slice(0, 8).map((dev, i) => (
                   <div
                     key={i}
-                    className="p-2.5 rounded-lg bg-surface-elevated border border-surface-border flex items-center justify-between text-xs"
+                    className="p-3 rounded-xl bg-surface-elevated flex items-center justify-between text-xs"
                   >
                     <div>
                       <span className="font-medium text-slate-200 block mb-0.5">
                         Ply {dev.ply} in your game
                       </span>
-                      <div className="flex items-center space-x-2 font-mono text-[11px]">
+                      <div className="flex items-center space-x-2 font-mono text-xs">
                         <span className="text-rose-400">Played: {dev.playedSan}</span>
                         <span className="text-slate-500">→</span>
                         <span className="text-emerald-400">Repertoire: {dev.repertoireSan}</span>

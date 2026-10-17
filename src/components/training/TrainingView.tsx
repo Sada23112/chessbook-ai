@@ -195,214 +195,218 @@ export const TrainingView: React.FC = () => {
   const isShowingSolution = machineState?.status === 'showing_solution';
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto bg-background">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
-            Personal Training Studio
-          </h1>
-          <p className="text-slate-400 text-sm mt-0.5">
-            Turn your game mistakes into permanent mastery with spaced repetition.
-          </p>
+    <div className="flex-1 flex flex-col overflow-y-auto bg-background">
+      <div className="max-w-5xl w-full mx-auto px-5 md:px-8 py-7 md:py-10">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-100 tracking-tight">
+              Training
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">
+              Practice tactical motifs and key positions with spaced repetition.
+            </p>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { id: 'due', label: 'Due for review' },
+              { id: 'mistakes', label: 'My mistakes' },
+              { id: 'tactics', label: 'Tactics' },
+              { id: 'all', label: 'All exercises' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setTrainingFilter(f.id as any)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
+                  trainingFilter === f.id
+                    ? 'bg-accent/15 text-accent font-semibold'
+                    : 'bg-surface text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap gap-2">
-          {[
-            { id: 'due', label: 'Due for Review' },
-            { id: 'mistakes', label: 'My Game Mistakes' },
-            { id: 'tactics', label: 'Tactical Motifs' },
-            { id: 'all', label: 'All Exercises' },
-          ].map((f) => (
+        {/* Main Training Body */}
+        {!currentCard ? (
+          <div className="py-20 flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-surface flex items-center justify-center text-2xl mb-4 text-emerald-400">
+              ✓
+            </div>
+            <h2 className="text-base font-medium text-slate-200 mb-1">Queue clear</h2>
+            <p className="text-xs text-slate-500 max-w-sm mb-6 leading-relaxed">
+              You've completed all scheduled exercises in this queue. Analyze new games to discover more positions or switch modes above.
+            </p>
             <button
-              key={f.id}
-              onClick={() => setTrainingFilter(f.id as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition border ${
-                trainingFilter === f.id
-                  ? 'bg-accent/15 text-accent border-accent/40 shadow-sm'
-                  : 'bg-surface text-slate-400 hover:text-slate-200 border-surface-border'
-              }`}
+              onClick={() => setTrainingFilter('all')}
+              className="px-4 py-2 bg-surface-elevated hover:bg-surface-hover text-slate-300 font-medium rounded-xl text-xs transition"
             >
-              {f.label}
+              Review all exercises
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Training Body */}
-      {!currentCard ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-surface rounded-2xl border border-surface-border text-center max-w-xl mx-auto my-12">
-          <div className="w-16 h-16 rounded-2xl bg-accent/15 border border-accent/40 flex items-center justify-center text-accent text-3xl mb-4">
-            ✓
           </div>
-          <h2 className="text-xl font-bold text-slate-100 mb-2">Training Queue Clear!</h2>
-          <p className="text-slate-400 text-sm leading-relaxed mb-6">
-            You've completed all scheduled training exercises for this mode. Analyze new games to discover more personalized exercises or switch modes above.
-          </p>
-          <button
-            onClick={() => setTrainingFilter('all')}
-            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg text-xs transition"
-          >
-            Review All Exercises
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Interactive Board */}
-          <div className="lg:col-span-7 flex flex-col items-center">
-            <div className="w-full max-w-[480px] flex items-center justify-between mb-3 text-xs font-mono text-slate-400">
-              <span className="flex items-center space-x-1.5 font-sans font-semibold text-slate-200">
-                <span
-                  className={`w-3 h-3 rounded-full ${
-                    turn === 'white' ? 'bg-white' : 'bg-slate-900 border border-slate-600'
-                  }`}
-                />
-                <span>{turn === 'white' ? 'White' : 'Black'} to move</span>
-              </span>
-              <span>
-                Exercise {currentCardIndex + 1} of {trainingQueue.length}
-              </span>
-            </div>
-
-            <div className="w-full max-w-[min(100vw-2.5rem,480px)] aspect-square flex items-center justify-center">
-              <InteractiveChessboard
-                fen={boardFen}
-                boardOrientation={turn}
-                turn={currentCard.turn}
-                allowMoves={machineState?.status === 'awaiting_move'}
-                onMove={handleMove}
-                lastMove={lastMove}
-                highlightSquares={
-                  showHint && currentCard
-                    ? [currentCard.solutionMovesUci[0]?.slice(0, 2)].filter(Boolean)
-                    : []
-                }
-                maxWidth="100%"
-              />
-            </div>
-          </div>
-
-          {/* Right Column: Lesson, Verification & Controls */}
-          <div className="lg:col-span-5 bg-surface rounded-xl border border-surface-border p-6 flex flex-col justify-between">
-            <div>
-              {/* Badge & Motif */}
-              <div className="flex items-center justify-between mb-4">
-                <span className="px-2.5 py-1 rounded bg-accent/10 border border-accent/30 text-accent text-xs font-bold uppercase tracking-wider">
-                  {currentCard.motif || 'Tactics'}
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Column: Interactive Board */}
+            <div className="lg:col-span-7 flex flex-col items-center">
+              <div className="w-full max-w-[480px] flex items-center justify-between mb-3 text-xs text-slate-400">
+                <span className="flex items-center gap-2 font-medium text-slate-200">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      turn === 'white' ? 'bg-slate-100' : 'bg-slate-700'
+                    }`}
+                  />
+                  <span>{turn === 'white' ? 'White' : 'Black'} to move</span>
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
-                  Repetition #{currentCard.repetitions}
+                <span className="text-slate-500 font-mono">
+                  {currentCardIndex + 1} of {trainingQueue.length}
                 </span>
               </div>
 
-              <h3 className="text-base font-bold text-slate-100 mb-2">
-                Find the best move in this position
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                You previously played <span className="font-mono text-rose-400 font-bold">{currentCard.playedMoveSan}</span> here.
-                Can you find the engine-recommended continuation?
-              </p>
-
-              {/* Status Outcome: Correct */}
-              {isSolved && (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mb-4 animate-in fade-in">
-                  <div className="flex items-center space-x-2 font-bold text-sm mb-1">
-                    <CheckCircle2 size={18} />
-                    <span>Solved Correctly!</span>
-                  </div>
-                  <p className="text-xs text-slate-200 leading-relaxed mt-1">
-                    {currentCard.lesson}
-                  </p>
-                </div>
-              )}
-
-              {/* Status Outcome: Incorrect */}
-              {isIncorrect && (
-                <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 mb-4 animate-in fade-in">
-                  <div className="flex items-center space-x-2 font-bold text-sm mb-1">
-                    <XCircle size={18} />
-                    <span>Not the Best Move</span>
-                  </div>
-                  <p className="text-xs text-slate-200 leading-relaxed mt-1">
-                    That move is not the accepted continuation. The position remains active so you can try again!
-                  </p>
-                </div>
-              )}
-
-              {/* Status Outcome: Revealed Solution */}
-              {isShowingSolution && (
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 mb-4 animate-in fade-in">
-                  <div className="flex items-center space-x-2 font-bold text-sm mb-1">
-                    <Eye size={18} />
-                    <span>Solution Revealed</span>
-                  </div>
-                  <p className="text-xs text-slate-200 leading-relaxed mt-1">
-                    The optimal move was <span className="font-mono text-emerald-400 font-bold">{currentCard.solutionMovesSan[0]}</span>.
-                  </p>
-                  <p className="text-xs text-slate-300 mt-2">
-                    <span className="font-bold text-slate-100">Coach Note:</span> {currentCard.lesson}
-                  </p>
-                </div>
-              )}
-
-              {/* Hint section */}
-              {showHint && machineState?.status === 'awaiting_move' && (
-                <div className="p-3 rounded-lg bg-surface-elevated border border-surface-border text-xs text-slate-300 mb-4 flex items-start space-x-2">
-                  <Lightbulb size={16} className="text-amber-400 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="font-semibold text-amber-400 block mb-0.5">Tactical Hint</span>
-                    <span>
-                      The piece to move is on square <span className="font-mono text-sky-400 font-bold uppercase">{currentCard.solutionMovesUci[0]?.slice(0, 2)}</span>. Motif: {currentCard.motif}.
-                    </span>
-                  </div>
-                </div>
-              )}
+              <div className="w-full max-w-[min(100vw-2.5rem,480px)] aspect-square flex items-center justify-center">
+                <InteractiveChessboard
+                  fen={boardFen}
+                  boardOrientation={turn}
+                  turn={currentCard.turn}
+                  allowMoves={machineState?.status === 'awaiting_move'}
+                  onMove={handleMove}
+                  lastMove={lastMove}
+                  highlightSquares={
+                    showHint && currentCard
+                      ? [currentCard.solutionMovesUci[0]?.slice(0, 2)].filter(Boolean)
+                      : []
+                  }
+                  maxWidth="100%"
+                />
+              </div>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-2 pt-4 border-t border-surface-border mt-4">
-              {isSolved || isShowingSolution ? (
-                <button
-                  onClick={handleNext}
-                  className="w-full py-2.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg text-xs transition flex items-center justify-center space-x-2 shadow"
-                >
-                  <span>Next Exercise</span>
-                  <ArrowRight size={16} />
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowHint(true)}
-                    disabled={showHint}
-                    className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-border disabled:opacity-50 text-slate-300 rounded-lg text-xs font-medium border border-surface-border transition flex items-center justify-center space-x-1.5"
-                  >
-                    <Lightbulb size={14} className="text-amber-400" />
-                    <span>Show Hint</span>
-                  </button>
-                  <button
-                    onClick={handleRevealSolution}
-                    className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 rounded-lg text-xs font-medium border border-surface-border transition flex items-center justify-center space-x-1.5"
-                  >
-                    <Eye size={14} className="text-slate-400" />
-                    <span>Reveal Solution</span>
-                  </button>
+            {/* Right Column: Lesson, Verification & Controls */}
+            <div className="lg:col-span-5 bg-surface rounded-2xl p-6 flex flex-col justify-between">
+              <div>
+                {/* Badge & Motif */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-accent">
+                    {currentCard.motif || 'Tactics'}
+                  </span>
+                  <span className="text-xs text-slate-500 font-mono">
+                    #{currentCard.repetitions}
+                  </span>
                 </div>
-              )}
 
-              {isIncorrect && (
-                <button
-                  onClick={handleRetry}
-                  className="w-full py-2.5 px-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-semibold border border-rose-500/40 transition flex items-center justify-center space-x-1.5 shadow"
-                >
-                  <RotateCcw size={14} />
-                  <span>Try Again</span>
-                </button>
-              )}
+                <h3 className="text-base font-medium text-slate-100 mb-2">
+                  Find the best move
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed mb-5">
+                  You previously played <span className="font-mono text-rose-400 font-semibold">{currentCard.playedMoveSan}</span> here.
+                  Can you find the stronger continuation?
+                </p>
+
+                {/* Status Outcome: Correct */}
+                {isSolved && (
+                  <div className="p-4 rounded-xl bg-emerald-500/10 text-emerald-400 mb-4 animate-in fade-in">
+                    <div className="flex items-center gap-2 font-semibold text-sm mb-1">
+                      <CheckCircle2 size={16} />
+                      <span>Solved correctly</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed mt-1">
+                      {currentCard.lesson}
+                    </p>
+                  </div>
+                )}
+
+                {/* Status Outcome: Incorrect */}
+                {isIncorrect && (
+                  <div className="p-4 rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-in fade-in">
+                    <div className="flex items-center gap-2 font-semibold text-sm mb-1">
+                      <XCircle size={16} />
+                      <span>Not quite</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed mt-1">
+                      That move isn't the continuation we're looking for. Try again!
+                    </p>
+                  </div>
+                )}
+
+                {/* Status Outcome: Revealed Solution */}
+                {isShowingSolution && (
+                  <div className="p-4 rounded-xl bg-amber-500/10 text-amber-300 mb-4 animate-in fade-in">
+                    <div className="flex items-center gap-2 font-semibold text-sm mb-1">
+                      <Eye size={16} />
+                      <span>Solution revealed</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed mt-1">
+                      The best move is <span className="font-mono text-emerald-400 font-bold">{currentCard.solutionMovesSan[0]}</span>.
+                    </p>
+                    {currentCard.lesson && (
+                      <p className="text-xs text-slate-400 mt-2">
+                        {currentCard.lesson}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Hint section */}
+                {showHint && machineState?.status === 'awaiting_move' && (
+                  <div className="p-3.5 rounded-xl bg-surface-elevated text-xs text-slate-300 mb-4 flex items-start gap-2.5">
+                    <Lightbulb size={15} className="text-amber-400 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-medium text-amber-400 block mb-0.5">Hint</span>
+                      <span className="text-slate-400">
+                        Move the piece on <span className="font-mono text-slate-200 font-bold uppercase">{currentCard.solutionMovesUci[0]?.slice(0, 2)}</span>.
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-2 pt-4 border-t border-surface-elevated mt-4">
+                {isSolved || isShowingSolution ? (
+                  <button
+                    onClick={handleNext}
+                    className="w-full py-2.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow"
+                  >
+                    <span>Next Exercise</span>
+                    <ArrowRight size={14} />
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowHint(true)}
+                      disabled={showHint}
+                      className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-hover disabled:opacity-40 text-slate-300 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5"
+                    >
+                      <Lightbulb size={13} className="text-amber-400" />
+                      <span>Hint</span>
+                    </button>
+                    <button
+                      onClick={handleRevealSolution}
+                      className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-hover text-slate-400 hover:text-slate-200 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5"
+                    >
+                      <Eye size={13} />
+                      <span>Reveal</span>
+                    </button>
+                  </div>
+                )}
+
+                {isIncorrect && (
+                  <button
+                    onClick={handleRetry}
+                    className="w-full py-2 px-3 bg-rose-500/10 hover:bg-rose-500/15 text-rose-300 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Try again</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

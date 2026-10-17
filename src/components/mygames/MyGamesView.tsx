@@ -10,7 +10,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  RefreshCw,
+  Plus,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { db } from '../../db/db';
 import type { GameRecord } from '../../types/chess';
@@ -22,7 +24,7 @@ import { getGameOutcome } from '../../utils/gameOutcome';
 const SAMPLE_GAMES: Array<{ title: string; desc: string; pgn: string }> = [
   {
     title: 'Kasparov vs. Topalov (1999)',
-    desc: 'Kasparov’s Immortal — a tactical masterpiece featuring brilliant sacrifices and king hunts.',
+    desc: 'Kasparov’s Immortal — tactical masterpiece with deep king hunt.',
     pgn: `[Event "Hoogovens Group A"]
 [Site "Wijk aan Zee NED"]
 [Date "1999.01.20"]
@@ -36,7 +38,7 @@ const SAMPLE_GAMES: Array<{ title: string; desc: string; pgn: string }> = [
   },
   {
     title: 'Carlsen vs. Nakamura (2020)',
-    desc: 'Sharp clash in the Ruy Lopez with rapid tactical shifts.',
+    desc: 'Sharp clash in the Ruy Lopez Berlin Defense.',
     pgn: `[Event "Chessable Masters"]
 [Site "chess24.com"]
 [Date "2020.06.28"]
@@ -50,7 +52,7 @@ const SAMPLE_GAMES: Array<{ title: string; desc: string; pgn: string }> = [
   },
   {
     title: 'Sada012 vs. licht_d_god (2026)',
-    desc: 'Sada012’s Scotch Game victory on Chess.com featuring tactical rook infiltration and king hunt.',
+    desc: 'Scotch Game with tactical rook penetration.',
     pgn: `[Event "Live Chess"]
 [Site "Chess.com"]
 [Date "2026.10.11"]
@@ -67,14 +69,14 @@ const SAMPLE_GAMES: Array<{ title: string; desc: string; pgn: string }> = [
 ];
 
 export const MyGamesView: React.FC = () => {
-  const { setActiveGame, startAnalysis, settings } = useAppStore();
+  const { setActiveGame, settings } = useAppStore();
   const [games, setGames] = useState<GameRecord[]>([]);
   const [search, setSearch] = useState('');
+  const [showImportSection, setShowImportSection] = useState(false);
   const [activeImportTab, setActiveImportTab] = useState<'upload' | 'paste' | 'lichess' | 'chesscom'>('upload');
 
-  // Input states
   const [pastedPgn, setPastedPgn] = useState('');
-  const [lichessUser, setLichessUser] = useState('');
+  const [lichessUser, setLichessUser] = useState(settings?.playerUsernames?.lichess || '');
   const [chessComUser, setChessComUser] = useState(settings?.playerUsernames?.chessCom || 'Sada012');
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -89,7 +91,6 @@ export const MyGamesView: React.FC = () => {
     loadGames();
   }, []);
 
-  // Handle PGN File Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -114,9 +115,9 @@ export const MyGamesView: React.FC = () => {
 
       if (newGames.length > 0) {
         await db.games.bulkPut(newGames);
-        setStatusMessage(`Successfully imported ${newGames.length} new game(s)!`);
+        setStatusMessage(`Imported ${newGames.length} new game(s).`);
       } else {
-        setStatusMessage('All games in this file were already in your library.');
+        setStatusMessage('All games were already in your library.');
       }
 
       await loadGames();
@@ -127,7 +128,6 @@ export const MyGamesView: React.FC = () => {
     }
   };
 
-  // Handle Pasted PGN Text
   const handlePasteImport = async () => {
     if (!pastedPgn.trim()) return;
 
@@ -148,10 +148,10 @@ export const MyGamesView: React.FC = () => {
 
       if (newGames.length > 0) {
         await db.games.bulkPut(newGames);
-        setStatusMessage(`Imported ${newGames.length} game(s) successfully!`);
+        setStatusMessage(`Imported ${newGames.length} game(s) successfully.`);
         setPastedPgn('');
       } else {
-        setStatusMessage('Game is already in your library (duplicate detected).');
+        setStatusMessage('Game is already in your library.');
       }
 
       await loadGames();
@@ -162,7 +162,6 @@ export const MyGamesView: React.FC = () => {
     }
   };
 
-  // Handle Lichess fetch
   const handleLichessImport = async () => {
     if (!lichessUser.trim()) return;
     setIsLoading(true);
@@ -173,14 +172,13 @@ export const MyGamesView: React.FC = () => {
       setErrorMessage(result.error);
     } else {
       setStatusMessage(
-        `Imported ${result.newImported} new game(s) from Lichess (${result.duplicatesSkipped} duplicates skipped).`
+        `Imported ${result.newImported} game(s) from Lichess.`
       );
       await loadGames();
     }
     setIsLoading(false);
   };
 
-  // Handle Chess.com fetch
   const handleChessComImport = async () => {
     if (!chessComUser.trim()) return;
     setIsLoading(true);
@@ -191,14 +189,13 @@ export const MyGamesView: React.FC = () => {
       setErrorMessage(result.error);
     } else {
       setStatusMessage(
-        `Imported ${result.newImported} new game(s) from Chess.com (${result.duplicatesSkipped} duplicates skipped).`
+        `Imported ${result.newImported} game(s) from Chess.com.`
       );
       await loadGames();
     }
     setIsLoading(false);
   };
 
-  // Load a sample demo game
   const handleLoadSample = async (sample: (typeof SAMPLE_GAMES)[0]) => {
     const parsed = parseSinglePgn(sample.pgn, 'paste');
     if (parsed) {
@@ -208,7 +205,6 @@ export const MyGamesView: React.FC = () => {
     }
   };
 
-  // Delete a game
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this game from your library?')) {
@@ -226,340 +222,330 @@ export const MyGamesView: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto bg-background">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Game Library</h1>
-          <p className="text-slate-400 text-sm mt-0.5">
-            Import, organize, and analyze your games locally without a server.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <button
-            onClick={() => handleChessComImport()}
-            disabled={isLoading}
-            className="w-full sm:w-auto px-3.5 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1.5 shadow-sm"
-          >
-            <Globe size={14} />
-            <span>Sync Sada012 from Chess.com</span>
-          </button>
-
-          {/* Search */}
-          <div className="relative w-full sm:w-64">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search players or openings..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-surface-elevated border border-surface-border rounded-lg text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-accent"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Import Section Card */}
-      <div className="bg-surface rounded-xl border border-surface-border p-5 mb-8">
-        <h3 className="font-semibold text-slate-200 text-sm mb-3 flex items-center space-x-2">
-          <Upload size={16} className="text-accent" />
-          <span>Import Games</span>
-        </h3>
-
-        {/* Import Tabs */}
-        <div className="flex flex-wrap gap-2 mb-4 border-b border-surface-border pb-3">
-          {[
-            { id: 'upload', label: 'PGN File Upload', icon: Upload },
-            { id: 'paste', label: 'Paste PGN', icon: FileText },
-            { id: 'lichess', label: 'Lichess API', icon: Globe },
-            { id: 'chesscom', label: 'Chess.com API', icon: Globe },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveImportTab(tab.id as any);
-                  setStatusMessage(null);
-                  setErrorMessage(null);
-                }}
-                className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  activeImportTab === tab.id
-                    ? 'bg-accent/15 text-accent border border-accent/30'
-                    : 'text-slate-400 hover:text-slate-200 bg-surface-elevated'
-                }`}
-              >
-                <Icon size={14} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tab 1: PGN File Upload */}
-        {activeImportTab === 'upload' && (
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-surface-border hover:border-accent/50 rounded-xl p-6 bg-surface-muted transition cursor-pointer relative">
-            <input
-              type="file"
-              accept=".pgn,.txt"
-              onChange={handleFileUpload}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-            <Upload size={28} className="text-accent mb-2" />
-            <p className="text-sm font-medium text-slate-200">
-              Drop your .pgn file here, or click to browse
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              Supports single games or multi-game database archives
+    <div className="flex-1 flex flex-col overflow-y-auto bg-background">
+      <div className="max-w-6xl w-full mx-auto px-5 md:px-8 py-7 md:py-10">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-100 tracking-tight">Game Library</h1>
+            <p className="text-slate-500 text-sm mt-1">
+              {games.length} {games.length === 1 ? 'game' : 'games'} stored locally in your browser.
             </p>
           </div>
-        )}
 
-        {/* Tab 2: Paste PGN */}
-        {activeImportTab === 'paste' && (
-          <div className="space-y-3">
-            <textarea
-              rows={4}
-              placeholder="Paste PGN text here (e.g. 1. e4 e5 2. Nf3 Nc6...)"
-              value={pastedPgn}
-              onChange={(e) => setPastedPgn(e.target.value)}
-              className="w-full bg-surface-muted border border-surface-border rounded-lg p-3 text-xs font-mono text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-accent"
-            />
+          <div className="flex items-center gap-2.5">
+            {/* Search */}
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Search players or openings…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 pr-3 py-2 bg-surface rounded-xl text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-accent/40 w-48 sm:w-60"
+              />
+            </div>
+
+            {/* Toggle Import Panel */}
             <button
-              onClick={handlePasteImport}
-              disabled={isLoading || !pastedPgn.trim()}
-              className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-50 text-black font-semibold rounded-lg text-xs transition"
+              onClick={() => setShowImportSection((prev) => !prev)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
+                showImportSection
+                  ? 'bg-surface-elevated text-slate-200'
+                  : 'bg-accent hover:bg-accent-hover text-black shadow-sm'
+              }`}
             >
-              Parse & Save PGN
+              {showImportSection ? (
+                <>
+                  <span>Close</span>
+                  <ChevronUp size={14} />
+                </>
+              ) : (
+                <>
+                  <Plus size={14} />
+                  <span>Import</span>
+                </>
+              )}
             </button>
           </div>
-        )}
+        </div>
 
-        {/* Tab 3: Lichess */}
-        {activeImportTab === 'lichess' && (
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Lichess username (e.g. DrNykterstein)"
-                value={lichessUser}
-                onChange={(e) => setLichessUser(e.target.value)}
-                className="flex-1 bg-surface-muted border border-surface-border rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-accent"
-              />
-              <button
-                onClick={handleLichessImport}
-                disabled={isLoading || !lichessUser.trim()}
-                className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-50 text-black font-semibold rounded-lg text-xs transition flex items-center space-x-1.5"
-              >
-                {isLoading && <Loader2 size={14} className="animate-spin" />}
-                <span>Fetch Games</span>
-              </button>
+        {/* Collapsible Import Drawer */}
+        {showImportSection && (
+          <div className="bg-surface rounded-2xl p-6 mb-8 transition-all">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium text-slate-200 text-sm">Import games</h3>
+              <div className="flex items-center gap-1">
+                {[
+                  { id: 'upload', label: 'File' },
+                  { id: 'paste', label: 'Paste PGN' },
+                  { id: 'chesscom', label: 'Chess.com' },
+                  { id: 'lichess', label: 'Lichess' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveImportTab(tab.id as any);
+                      setStatusMessage(null);
+                      setErrorMessage(null);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                      activeImportTab === tab.id
+                        ? 'bg-surface-elevated text-slate-100'
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="text-[11px] text-slate-500">
-              Fetches recent rated games directly via Lichess's public CORS API.
-            </p>
-          </div>
-        )}
 
-        {/* Tab 4: Chess.com */}
-        {activeImportTab === 'chesscom' && (
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Enter Chess.com username (e.g. magnuscarlsen)"
-                value={chessComUser}
-                onChange={(e) => setChessComUser(e.target.value)}
-                className="flex-1 bg-surface-muted border border-surface-border rounded-lg px-3 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-accent"
-              />
-              <button
-                onClick={handleChessComImport}
-                disabled={isLoading || !chessComUser.trim()}
-                className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-50 text-black font-semibold rounded-lg text-xs transition flex items-center space-x-1.5"
-              >
-                {isLoading && <Loader2 size={14} className="animate-spin" />}
-                <span>Fetch Games</span>
-              </button>
-            </div>
-            <p className="text-[11px] text-slate-500">
-              Fetches monthly archives from Chess.com's public published archives.
-            </p>
-          </div>
-        )}
+            {/* Upload tab */}
+            {activeImportTab === 'upload' && (
+              <label className="flex flex-col items-center justify-center rounded-xl p-8 bg-surface-elevated/50 hover:bg-surface-elevated transition cursor-pointer border border-dashed border-surface-border/80">
+                <input
+                  type="file"
+                  accept=".pgn,.txt"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Upload size={22} className="text-slate-400 mb-2" />
+                <p className="text-xs font-medium text-slate-200">
+                  Select or drop a .pgn file
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Single games or multi-game PGN databases
+                </p>
+              </label>
+            )}
 
-        {/* Feedback Messages */}
-        {statusMessage && (
-          <div className="mt-3 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-2">
-            <CheckCircle2 size={16} />
-            <span>{statusMessage}</span>
-          </div>
-        )}
-        {errorMessage && (
-          <div className="mt-3 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-2">
-            <AlertCircle size={16} />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Quick Demo Games */}
-        <div className="mt-5 pt-4 border-t border-surface-border">
-          <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block mb-2">
-            Or test instantly with a Master Game:
-          </span>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {SAMPLE_GAMES.map((sample, i) => (
-              <div
-                key={i}
-                className="p-3 rounded-lg bg-surface-elevated border border-surface-border flex items-center justify-between hover:border-slate-600 transition"
-              >
-                <div>
-                  <h4 className="text-xs font-semibold text-slate-200">{sample.title}</h4>
-                  <p className="text-[11px] text-slate-400 line-clamp-1">{sample.desc}</p>
-                </div>
+            {/* Paste tab */}
+            {activeImportTab === 'paste' && (
+              <div className="space-y-3">
+                <textarea
+                  rows={4}
+                  placeholder="Paste PGN here (e.g. 1. e4 e5 2. Nf3 Nc6...)"
+                  value={pastedPgn}
+                  onChange={(e) => setPastedPgn(e.target.value)}
+                  className="w-full bg-surface-elevated rounded-xl p-3 text-xs font-mono text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-accent/40"
+                />
                 <button
-                  onClick={() => handleLoadSample(sample)}
-                  className="px-2.5 py-1 text-xs bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 rounded font-medium transition"
+                  onClick={handlePasteImport}
+                  disabled={isLoading || !pastedPgn.trim()}
+                  className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-40 text-black font-semibold rounded-xl text-xs transition"
                 >
-                  Load
+                  Parse & Save
                 </button>
               </div>
-            ))}
+            )}
+
+            {/* Chess.com tab */}
+            {activeImportTab === 'chesscom' && (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Chess.com username (e.g. Sada012)"
+                    value={chessComUser}
+                    onChange={(e) => setChessComUser(e.target.value)}
+                    className="flex-1 bg-surface-elevated rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-accent/40"
+                  />
+                  <button
+                    onClick={handleChessComImport}
+                    disabled={isLoading || !chessComUser.trim()}
+                    className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-40 text-black font-semibold rounded-xl text-xs transition flex items-center gap-1.5"
+                  >
+                    {isLoading && <Loader2 size={13} className="animate-spin" />}
+                    <span>Fetch Games</span>
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Fetches your recent rated games from Chess.com public archives.
+                </p>
+              </div>
+            )}
+
+            {/* Lichess tab */}
+            {activeImportTab === 'lichess' && (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Lichess username (e.g. DrNykterstein)"
+                    value={lichessUser}
+                    onChange={(e) => setLichessUser(e.target.value)}
+                    className="flex-1 bg-surface-elevated rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-accent/40"
+                  />
+                  <button
+                    onClick={handleLichessImport}
+                    disabled={isLoading || !lichessUser.trim()}
+                    className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-40 text-black font-semibold rounded-xl text-xs transition flex items-center gap-1.5"
+                  >
+                    {isLoading && <Loader2 size={13} className="animate-spin" />}
+                    <span>Fetch Games</span>
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Fetches recent games directly from Lichess public API.
+                </p>
+              </div>
+            )}
+
+            {/* Status alerts */}
+            {statusMessage && (
+              <div className="mt-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-xs flex items-center gap-2">
+                <CheckCircle2 size={14} />
+                <span>{statusMessage}</span>
+              </div>
+            )}
+            {errorMessage && (
+              <div className="mt-4 p-3 rounded-xl bg-rose-500/10 text-rose-400 text-xs flex items-center gap-2">
+                <AlertCircle size={14} />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Quick demo master games */}
+            <div className="mt-6 pt-5 border-t border-surface-border/50">
+              <p className="text-xs text-slate-500 mb-2.5">Or try a sample game:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {SAMPLE_GAMES.map((sample, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleLoadSample(sample)}
+                    className="text-left p-3 rounded-xl bg-surface-elevated hover:bg-surface-hover transition"
+                  >
+                    <p className="text-xs font-medium text-slate-200 truncate">{sample.title}</p>
+                    <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{sample.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Game List Table */}
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-slate-200 text-sm">
-            Saved Games ({filteredGames.length})
-          </h3>
-        </div>
-
+        {/* Game cards */}
         {filteredGames.length === 0 ? (
-          <div className="p-8 text-center bg-surface rounded-xl border border-surface-border">
-            <p className="text-slate-400 text-sm">No games found.</p>
-            <p className="text-xs text-slate-500 mt-1">
-              Upload a PGN or import from Lichess/Chess.com above.
+          <div className="py-20 flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-surface flex items-center justify-center text-2xl mb-4 text-slate-500">
+              ♟
+            </div>
+            <h2 className="text-base font-medium text-slate-200 mb-1">No games found</h2>
+            <p className="text-xs text-slate-500 max-w-sm mb-6">
+              {search ? 'Try adjusting your search query.' : 'Import games above to start analyzing your moves.'}
             </p>
+            {!showImportSection && (
+              <button
+                onClick={() => setShowImportSection(true)}
+                className="px-4 py-2 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition"
+              >
+                Import Games
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {filteredGames.map((game) => (
-              <div
-                key={game.id}
-                onClick={() => setActiveGame(game.id)}
-                className="p-4 rounded-xl bg-surface hover:bg-surface-elevated border border-surface-border hover:border-accent/40 transition cursor-pointer flex flex-col justify-between group shadow-sm"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono text-slate-500">{game.date}</span>
-                    {(() => {
-                      const outcome = getGameOutcome(
-                        game,
-                        settings?.playerUsernames?.chessCom || chessComUser || 'Sada012'
-                      );
-                      return (
-                        <span
-                          className={`text-xs font-mono font-bold px-2 py-0.5 rounded border flex items-center space-x-1.5 ${outcome.badgeClass}`}
-                        >
-                          <span>{game.result}</span>
-                          {outcome.isWin && (
-                            <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-emerald-500/20 text-emerald-300">
-                              WIN
-                            </span>
-                          )}
-                          {outcome.isLoss && (
-                            <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-rose-500/20 text-rose-300">
-                              LOSS
-                            </span>
-                          )}
-                          {outcome.isDraw && (
-                            <span className="text-[10px] font-sans font-extrabold uppercase px-1 rounded bg-slate-500/20 text-slate-300">
-                              DRAW
-                            </span>
-                          )}
-                        </span>
-                      );
-                    })()}
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredGames.map((game) => {
+              const outcome = getGameOutcome(
+                game,
+                settings?.playerUsernames?.chessCom || chessComUser || 'Sada012'
+              );
 
-                  <div className="space-y-1 mb-3">
-                    <div className="flex items-center space-x-1.5 text-sm font-semibold text-slate-200">
-                      <span className="text-slate-400 font-mono text-xs">W:</span>
-                      <span className="truncate">{game.white}</span>
-                      {game.whiteElo && (
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          ({game.whiteElo})
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-1.5 text-sm font-semibold text-slate-200">
-                      <span className="text-slate-400 font-mono text-xs">B:</span>
-                      <span className="truncate">{game.black}</span>
-                      {game.blackElo && (
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          ({game.blackElo})
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {game.opening && (
-                    <p className="text-xs text-slate-400 truncate mb-3">
-                      <span className="font-mono text-slate-500">{game.eco}</span> {game.opening}
-                    </p>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-surface-border/60 flex flex-col gap-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-slate-400">{game.movesCount} plies</span>
-                      {game.summary ? (
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium text-[10px] border border-emerald-500/30">
-                          Analyzed
-                        </span>
-                      ) : (
-                        <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">
-                          Unanalyzed
-                        </span>
-                      )}
+              return (
+                <div
+                  key={game.id}
+                  onClick={() => setActiveGame(game.id)}
+                  className="bg-surface hover:bg-surface-elevated rounded-2xl p-5 transition cursor-pointer flex flex-col justify-between group"
+                >
+                  <div>
+                    {/* Date & Outcome */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs text-slate-500 font-mono">{game.date}</span>
+                      <span
+                        className={`text-xs font-mono font-semibold px-2 py-0.5 rounded-lg ${
+                          outcome.isWin
+                            ? 'bg-emerald-500/10 text-emerald-400'
+                            : outcome.isLoss
+                            ? 'bg-rose-500/10 text-rose-400'
+                            : 'bg-slate-500/10 text-slate-400'
+                        }`}
+                      >
+                        {game.result}
+                      </span>
                     </div>
 
-                    <button
-                      onClick={(e) => handleDelete(game.id, e)}
-                      className="p-1 text-slate-500 hover:text-rose-400 transition rounded"
-                      title="Delete game"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {/* Players */}
+                    <div className="space-y-1 mb-3">
+                      <div className="flex items-center justify-between text-sm text-slate-200">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="w-2 h-2 rounded-full bg-slate-100 shrink-0" />
+                          <span className="font-medium truncate">{game.white}</span>
+                        </div>
+                        {game.whiteElo && (
+                          <span className="text-xs text-slate-500 font-mono shrink-0 ml-2">
+                            {game.whiteElo}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm text-slate-200">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="w-2 h-2 rounded-full bg-slate-700 shrink-0" />
+                          <span className="font-medium truncate">{game.black}</span>
+                        </div>
+                        {game.blackElo && (
+                          <span className="text-xs text-slate-500 font-mono shrink-0 ml-2">
+                            {game.blackElo}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Opening */}
+                    {game.opening && (
+                      <p className="text-xs text-slate-500 truncate mb-4">
+                        {game.eco && <span className="font-mono text-slate-600 mr-1.5">{game.eco}</span>}
+                        {game.opening}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveGame(game.id, 'opening_coach');
-                      }}
-                      className="flex-1 py-1.5 px-2 bg-accent/15 hover:bg-accent text-accent hover:text-black font-semibold rounded-lg text-[11px] transition text-center border border-accent/30"
-                    >
-                      Review Opening Mistakes
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveGame(game.id, 'full_game');
-                      }}
-                      className="py-1.5 px-2.5 bg-surface-elevated hover:bg-surface-border text-slate-300 font-semibold rounded-lg text-[11px] transition border border-surface-border"
-                    >
-                      Full Game
-                    </button>
+                  {/* Card footer */}
+                  <div className="pt-3 border-t border-surface-elevated flex items-center justify-between text-xs">
+                    <span className="text-slate-500">{game.movesCount} plies</span>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveGame(game.id, 'opening_coach');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-surface-elevated hover:bg-surface-hover text-slate-300 font-medium text-xs transition"
+                      >
+                        Coach
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveGame(game.id, 'full_game');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-accent/15 hover:bg-accent text-accent hover:text-black font-semibold text-xs transition"
+                      >
+                        Analysis
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(game.id, e)}
+                        className="p-1 text-slate-600 hover:text-rose-400 transition ml-1"
+                        title="Delete game"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

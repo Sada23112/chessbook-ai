@@ -373,246 +373,225 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
     switch (status) {
       case 'mastered':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400">
             <Award size={11} />
             <span>Mastered</span>
           </span>
         );
       case 'completed':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400">
             <CheckCircle2 size={11} />
             <span>Completed</span>
           </span>
         );
       case 'in_progress':
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-sky-500/10 text-sky-400">
             <Sparkles size={11} />
-            <span>In Progress</span>
+            <span>In progress</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-surface-elevated text-slate-400 border border-surface-border">
-            <span>Not Started</span>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-slate-500">
+            <span>Not started</span>
           </span>
         );
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 overflow-y-auto bg-background min-h-0">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-background min-h-0">
+      <div className="max-w-7xl w-full mx-auto px-5 md:px-8 py-7 md:py-10">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent">
-              <BookOpen size={18} />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
-                Opening Courses & Repertoire
-              </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Level-based courses with sequential lessons, interactive move trainer, and progress tracking.
-              </p>
-            </div>
-          </div>
+          <h1 className="text-xl font-semibold text-slate-100 tracking-tight">
+            Opening Repertoire
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Courses, move trees, and spaced-repetition training lines.
+          </p>
         </div>
 
         {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {onOpenAntiOpeningTrainer && (
             <button
               onClick={() => onOpenAntiOpeningTrainer()}
-              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md"
+              className="px-3 py-2 bg-surface hover:bg-surface-elevated text-slate-300 rounded-xl text-xs font-medium transition flex items-center gap-1.5"
             >
-              <ShieldCheck size={14} />
-              <span>Anti-Opening Trainer</span>
+              <ShieldCheck size={14} className="text-amber-400" />
+              <span>Anti-Openings</span>
             </button>
           )}
 
           <button
             onClick={() => setShowImportModal(true)}
-            className="px-3 py-2 bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border rounded-xl text-xs font-semibold transition flex items-center space-x-1.5"
+            className="px-3 py-2 bg-surface hover:bg-surface-elevated text-slate-300 rounded-xl text-xs font-medium transition flex items-center gap-1.5"
           >
-            <Upload size={14} />
+            <Upload size={13} />
             <span>Import PGN</span>
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-3 py-2 bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border rounded-xl text-xs font-semibold transition flex items-center space-x-1.5"
+            className="px-3 py-2 bg-surface hover:bg-surface-elevated text-slate-300 rounded-xl text-xs font-medium transition flex items-center gap-1.5"
           >
-            <Plus size={14} />
-            <span>New Repertoire</span>
+            <Plus size={13} />
+            <span>New</span>
           </button>
 
           <button
             onClick={onReseedMasterOpenings}
             disabled={isReseeding}
-            className="p-2 bg-surface-elevated hover:bg-surface-border text-slate-400 hover:text-slate-200 border border-surface-border rounded-xl text-xs transition"
-            title="Reload official master repertoires"
+            className="p-2 bg-surface hover:bg-surface-elevated text-slate-400 hover:text-slate-200 rounded-xl text-xs transition"
+            title="Reload master repertoires"
           >
-            <RefreshCw size={15} className={isReseeding ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={isReseeding ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
 
-      {/* View Mode Toggle & Category Filter Tabs */}
+      {/* Category Filter Tabs & View Mode Toggle */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
-        {/* Repertoire Category Tabs */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {/* Category Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
           <button
             onClick={() => setActiveTab('recommended')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'recommended'
-                ? 'bg-gradient-to-r from-accent to-emerald-400 text-black font-bold shadow-md'
-                : 'bg-accent/15 text-accent hover:bg-accent/25 border border-accent/30'
+                ? 'bg-accent/15 text-accent font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
-            <Sparkles size={13} className={activeTab === 'recommended' ? 'text-black' : 'text-accent'} />
-            <span>Recommended for You</span>
+            <Sparkles size={13} />
+            <span>Recommended</span>
           </button>
 
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'all'
-                ? 'bg-accent text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <span>All Courses</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+            <span className="text-[10px] font-mono text-slate-500">
               {counts.all}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('popular')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'popular'
-                ? 'bg-accent text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
-            <Flame size={12} className={activeTab === 'popular' ? 'text-black' : 'text-amber-400'} />
+            <Flame size={12} className="text-amber-400/80" />
             <span>Popular</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+            <span className="text-[10px] font-mono text-slate-500">
               {counts.popular}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('gambits')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'gambits'
-                ? 'bg-accent text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <span>Gambits</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+            <span className="text-[10px] font-mono text-slate-500">
               {counts.gambits}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('traps')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'traps'
-                ? 'bg-accent text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <span>Traps</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+            <span className="text-[10px] font-mono text-slate-500">
               {counts.traps}
             </span>
           </button>
 
           <button
-            onClick={() => setActiveTab('anti_openings')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
-              activeTab === 'anti_openings'
-                ? 'bg-amber-500 text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
-            }`}
-          >
-            <ShieldCheck size={12} className={activeTab === 'anti_openings' ? 'text-black' : 'text-amber-400'} />
-            <span>Anti-Openings</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
-              {counts.anti_openings}
-            </span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('white')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'white'
-                ? 'bg-accent text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
-            <span>White (1.e4 / 1.d4)</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+            <span>White</span>
+            <span className="text-[10px] font-mono text-slate-500">
               {counts.white}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('black_e4')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'black_e4'
-                ? 'bg-accent text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
-            <span>Black vs 1.e4</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+            <span>vs 1.e4</span>
+            <span className="text-[10px] font-mono text-slate-500">
               {counts.black_e4}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('black_d4')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'black_d4'
-                ? 'bg-accent text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
-            <span>Black vs 1.d4</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+            <span>vs 1.d4</span>
+            <span className="text-[10px] font-mono text-slate-500">
               {counts.black_d4}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('flank')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 flex items-center space-x-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition shrink-0 flex items-center gap-1.5 ${
               activeTab === 'flank'
-                ? 'bg-accent text-black font-bold shadow-sm'
-                : 'bg-surface-elevated text-slate-400 hover:text-slate-200 hover:bg-surface-border'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
-            <span>Flank & Other</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/20">
+            <span>Flank</span>
+            <span className="text-[10px] font-mono text-slate-500">
               {counts.flank}
             </span>
           </button>
         </div>
 
-        {/* View Mode Toggle: Courses vs All Lines */}
-        <div className="flex items-center space-x-1 bg-surface-elevated p-1 rounded-xl border border-surface-border self-start lg:self-auto">
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-1 bg-surface p-1 rounded-xl self-start lg:self-auto">
           <button
             onClick={() => setViewMode('courses')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 ${
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
               viewMode === 'courses'
-                ? 'bg-accent text-black font-bold shadow'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <Layers size={13} />
@@ -620,10 +599,10 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
           </button>
           <button
             onClick={() => setViewMode('variations')}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5 ${
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
               viewMode === 'variations'
-                ? 'bg-accent text-black font-bold shadow'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-surface-elevated text-slate-200 font-semibold'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <BookOpen size={13} />
@@ -656,75 +635,48 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
         />
       ) : (
         <>
-          {/* Top Recommended Spotlight Banner */}
-          <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-accent/15 via-surface-elevated to-surface-dark border border-accent/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent shrink-0">
-                <Sparkles size={20} />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-                  <span>Recommended for You</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-accent/20 text-accent uppercase">
-                    AI Coach
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Personalized opening courses based on your games, mistakes, and playing style.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setActiveTab('recommended')}
-              className="shrink-0 px-4 py-2 bg-accent hover:bg-accent-hover text-black rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm"
-            >
-              <span>View Recommendations</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
 
           {/* Search & Sort Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-surface p-3 rounded-2xl border border-surface-border">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={
-              viewMode === 'courses'
-                ? 'Search courses by name, ECO, or ideas...'
-                : 'Search variation lines, moves, or ECO...'
-            }
-            className="w-full pl-9 pr-3 py-2 bg-surface-elevated border border-surface-border rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-accent"
-          />
-        </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-surface p-3 rounded-2xl">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={
+                  viewMode === 'courses'
+                    ? 'Search courses by name or ideas…'
+                    : 'Search variation lines, moves, or ECO…'
+                }
+                className="w-full pl-8 pr-3 py-2 bg-surface-elevated rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-accent/40"
+              />
+            </div>
 
-        {/* Sort & Count */}
-        <div className="flex items-center space-x-3 text-xs text-slate-400">
-          <span>
-            Showing{' '}
-            {viewMode === 'courses' ? sortedCourses.length : sortedEntries.length}{' '}
-            {viewMode === 'courses' ? 'courses' : 'lines'}
-          </span>
-          <div className="flex items-center space-x-1.5">
-            <span className="text-slate-500">Sort:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="bg-surface-elevated border border-surface-border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-accent"
-            >
-              <option value="default">Repertoire Order</option>
-              <option value="name">Name (A-Z)</option>
-              <option value="moves">
-                {viewMode === 'courses' ? 'Most Variations' : 'Deepest Line'}
-              </option>
-              <option value="eco">ECO Code</option>
-            </select>
+            {/* Sort & Count */}
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span>
+                {viewMode === 'courses' ? sortedCourses.length : sortedEntries.length}{' '}
+                {viewMode === 'courses' ? 'courses' : 'lines'}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span>Sort:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="bg-surface-elevated rounded-xl px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-accent/40"
+                >
+                  <option value="default">Repertoire Order</option>
+                  <option value="name">Name (A-Z)</option>
+                  <option value="moves">
+                    {viewMode === 'courses' ? 'Most Variations' : 'Deepest Line'}
+                  </option>
+                  <option value="eco">ECO Code</option>
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
       {/* Grid: Courses Mode (Default) */}
       {viewMode === 'courses' ? (
@@ -748,37 +700,31 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {sortedCourses.map(({ repertoire, course, progress, primaryVariation }) => {
               const previewPly = Math.min(primaryVariation?.moves?.length || 0, 10);
               return (
                 <div
                   key={course.id}
-                  className="bg-surface hover:bg-surface-elevated/70 border border-surface-border hover:border-accent/40 rounded-2xl p-4 transition duration-200 flex flex-col justify-between group shadow-sm"
+                  className="bg-surface hover:bg-surface-elevated rounded-2xl p-5 transition duration-200 flex flex-col justify-between group"
                 >
                   <div>
                     {/* Top Header: ECO, Color & Status */}
                     <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center space-x-1.5">
+                      <div className="flex items-center gap-1.5">
                         {primaryVariation?.eco && (
-                          <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-surface-elevated border border-surface-border text-accent">
+                          <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-surface-elevated text-slate-400">
                             {primaryVariation.eco}
                           </span>
                         )}
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                            repertoire.color === 'white'
-                              ? 'bg-slate-100 text-slate-900 border-white'
-                              : 'bg-slate-900 text-slate-100 border-slate-700'
-                          }`}
-                        >
+                        <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
                           {repertoire.color}
                         </span>
                       </div>
 
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         {renderStatusBadge(progress.status)}
-                        <span className="text-[11px] font-mono text-slate-400">
+                        <span className="text-[11px] font-mono text-slate-500">
                           {course.totalLines} lines
                         </span>
                       </div>
@@ -787,55 +733,55 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
                     {/* Course Title & Description */}
                     <h3
                       onClick={() => onSelectOpening(repertoire, primaryVariation)}
-                      className="text-sm font-bold text-slate-100 group-hover:text-accent transition truncate mb-1 cursor-pointer"
+                      className="text-sm font-semibold text-slate-100 group-hover:text-accent transition truncate mb-1 cursor-pointer"
                     >
                       {course.name}
                     </h3>
-                    <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mb-3 min-h-[32px]">
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4 min-h-[32px]">
                       {course.description}
                     </p>
 
-                    {/* Genuine Board Preview & Key Position */}
+                    {/* Board Preview & Key Position */}
                     {primaryVariation && (
-                      <div className="flex gap-3 items-center mb-3 p-2.5 rounded-xl bg-surface-elevated/80 border border-surface-border">
+                      <div className="flex gap-3 items-center mb-4 p-2.5 rounded-xl bg-surface-elevated/70">
                         <CompactBoardPreview
                           moves={primaryVariation.moves}
                           targetPly={previewPly}
                           boardOrientation={repertoire.color}
-                          size={110}
-                          className="flex-shrink-0"
+                          size={105}
+                          className="shrink-0"
                         />
 
-                        <div className="flex-1 min-w-0 flex flex-col justify-between text-xs space-y-1.5">
+                        <div className="flex-1 min-w-0 flex flex-col justify-between text-xs space-y-1">
                           <div>
-                            <span className="text-[10px] font-semibold text-slate-400 block uppercase tracking-wide">
-                              Representative Line
+                            <span className="text-[10px] text-slate-500 block uppercase tracking-wide">
+                              Main Line
                             </span>
-                            <span className="text-[11px] font-semibold text-slate-200 truncate block">
+                            <span className="text-xs font-medium text-slate-300 truncate block">
                               {primaryVariation.name}
                             </span>
-                            <span className="text-[10px] font-mono text-emerald-400 font-bold truncate block">
-                              After move {Math.floor(previewPly / 2) + 1}
+                            <span className="text-[11px] font-mono text-emerald-400/90 truncate block">
+                              Move {Math.floor(previewPly / 2) + 1}
                             </span>
                           </div>
 
-                          <div className="text-[10px] font-mono text-slate-400 truncate bg-surface px-2 py-1 rounded border border-surface-border">
-                            {primaryVariation.moves.slice(0, 4).join(' ')}...
+                          <div className="text-[11px] font-mono text-slate-500 truncate bg-surface px-2 py-0.5 rounded-lg">
+                            {primaryVariation.moves.slice(0, 4).join(' ')}…
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Meaningful Progress Bar */}
-                    <div className="mb-3 px-1">
-                      <div className="flex items-center justify-between text-[11px] mb-1">
-                        <span className="font-semibold text-slate-300">Course Progress</span>
+                    {/* Progress Bar */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="text-slate-500">Progress</span>
                         <span className="font-mono text-slate-400">
-                          {progress.completedLines} of {progress.totalLines} lines completed ·{' '}
-                          <span className="text-accent font-bold">{progress.percentage}%</span>
+                          {progress.completedLines}/{progress.totalLines} ·{' '}
+                          <span className="text-accent font-semibold">{progress.percentage}%</span>
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-surface-elevated rounded-full overflow-hidden border border-surface-border">
+                      <div className="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
                         <div
                           className={`h-full transition-all duration-300 rounded-full ${
                             progress.percentage === 100
@@ -850,26 +796,21 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Card Actions: Study Course & Train Line */}
-                  <div className="flex items-center gap-2 pt-3 border-t border-surface-border/60">
+                  {/* Card Actions */}
+                  <div className="flex items-center gap-2 pt-3 border-t border-surface-elevated">
                     <button
                       onClick={() => onSelectOpening(repertoire, primaryVariation)}
-                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border transition flex items-center justify-center space-x-1.5"
+                      className="flex-1 py-2 px-3 rounded-xl text-xs font-medium bg-surface-elevated hover:bg-surface-hover text-slate-200 transition flex items-center justify-center gap-1.5"
                     >
-                      <Layers size={14} className="text-accent" />
+                      <Layers size={13} className="text-accent" />
                       <span>Course Levels</span>
                     </button>
-
                     <button
                       onClick={() => onStartTraining(repertoire, primaryVariation)}
-                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-accent/20 hover:bg-accent text-accent hover:text-black border border-accent/40 transition flex items-center justify-center space-x-1.5"
+                      className="py-2 px-3 rounded-xl text-xs font-semibold bg-accent hover:bg-accent-hover text-black transition flex items-center justify-center gap-1"
                     >
-                      <Dumbbell size={14} />
-                      <span>
-                        {progress.completedLines > 0 && progress.percentage < 100
-                          ? 'Continue'
-                          : 'Train'}
-                      </span>
+                      <Dumbbell size={13} />
+                      <span>Train</span>
                     </button>
                   </div>
                 </div>
@@ -877,6 +818,7 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
             })}
           </div>
         )
+
       ) : (
         /* Variations Mode (Individual Lines) */
         sortedEntries.length === 0 ? (
@@ -1245,6 +1187,7 @@ export const OpeningLibraryView: React.FC<OpeningLibraryViewProps> = ({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

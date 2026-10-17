@@ -2,16 +2,12 @@ import React, { useEffect, useState } from 'react';
 import {
   Upload,
   Dumbbell,
-  SearchCode,
   Award,
   AlertTriangle,
-  TrendingUp,
   Activity,
   Layers,
-  Sparkles,
   BookOpen,
   ArrowRight,
-  CheckCircle2,
 } from 'lucide-react';
 import { db } from '../../db/db';
 import type {
@@ -141,7 +137,6 @@ export const DashboardView: React.FC = () => {
 
   const analyzedGamesCount = analyses.length;
 
-  // Real calculated average CPL across analyzed games
   const avgCpl =
     analyses.length > 0
       ? Math.round(
@@ -150,7 +145,6 @@ export const DashboardView: React.FC = () => {
         )
       : null;
 
-  // Aggregate blunders, mistakes, inaccuracies
   const totals = analyses.reduce(
     (acc, a) => {
       acc.blunders += (a.summary.whiteStats.blunder || 0) + (a.summary.blackStats.blunder || 0);
@@ -185,366 +179,335 @@ export const DashboardView: React.FC = () => {
     .slice(0, 4);
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto bg-background">
-      {/* Welcome Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-100 tracking-tight">
-            Personal Chess Coach
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Analyze your games locally, remember your recurring mistakes, and master opening theory.
-          </p>
-        </div>
+    <div className="flex-1 flex flex-col overflow-y-auto bg-background">
+      <div className="max-w-5xl w-full mx-auto px-5 md:px-8 py-7 md:py-10">
 
-        {/* Action Buttons */}
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setTab('my-games')}
-            className="px-4 py-2 bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border text-sm font-semibold rounded-lg transition flex items-center space-x-2"
-          >
-            <Upload size={16} />
-            <span>Import Games</span>
-          </button>
-          <button
-            onClick={() => setTab('training')}
-            className="px-4 py-2 bg-accent hover:bg-accent-hover text-black text-sm font-semibold rounded-lg shadow transition flex items-center space-x-2"
-          >
-            <Dumbbell size={16} />
-            <span>Resume Training ({dueCardsCount})</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Onboarding State if no games */}
-      {games.length === 0 ? (
-        <div className="p-8 md:p-12 bg-surface rounded-2xl border border-surface-border text-center max-w-2xl mx-auto my-6">
-          <div className="w-16 h-16 rounded-2xl bg-accent/15 border border-accent/40 flex items-center justify-center text-accent text-3xl mx-auto mb-4">
-            ♔
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-10">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-100 tracking-tight">
+              Good morning
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">
+              Here's where your chess stands today.
+            </p>
           </div>
-          <h2 className="text-xl font-bold text-slate-100 mb-2">Welcome to Chessbook AI</h2>
-          <p className="text-slate-400 text-sm leading-relaxed mb-6">
-            Get started by importing your games. We’ll analyze them with Stockfish, uncover your tactical blindspots, track your openings, and build custom spaced-repetition exercises.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-3">
+
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setTab('my-games')}
-              className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg text-sm transition shadow flex items-center justify-center space-x-2"
+              className="px-3.5 py-2 bg-surface-elevated hover:bg-surface-hover text-slate-300 border border-surface-border/70 text-sm font-medium rounded-xl transition flex items-center gap-2"
             >
-              <Upload size={18} />
-              <span>Import Your First Game</span>
+              <Upload size={14} className="text-slate-400" />
+              Import Games
+            </button>
+            <button
+              onClick={() => setTab('training')}
+              className="px-3.5 py-2 bg-accent hover:bg-accent-hover text-black text-sm font-semibold rounded-xl shadow-sm transition flex items-center gap-2"
+            >
+              <Dumbbell size={14} />
+              Train ({dueCardsCount})
             </button>
           </div>
         </div>
-      ) : (
-        <>
-          {/* Top Metrics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-            <div className="bg-surface rounded-xl p-4 border border-surface-border flex flex-col justify-between">
-              <span className="text-xs text-slate-400 font-medium">Games Analyzed</span>
-              <div className="flex items-baseline space-x-2 mt-2">
-                <span className="text-2xl font-bold text-slate-100 font-mono">
-                  {analyzedGamesCount}
-                </span>
-                <span className="text-xs text-slate-500">of {games.length} total</span>
-              </div>
-            </div>
 
-            <div className="bg-surface rounded-xl p-4 border border-surface-border flex flex-col justify-between">
-              <span className="text-xs text-slate-400 font-medium">Average CPL</span>
-              <div className="flex items-baseline space-x-2 mt-2">
-                <span className="text-2xl font-bold text-slate-100 font-mono">
-                  {avgCpl !== null ? `${avgCpl} cp` : '—'}
-                </span>
-                <span className="text-xs text-slate-500">Centipawn Loss</span>
-              </div>
+        {/* Empty state */}
+        {games.length === 0 ? (
+          <div className="py-20 flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-2xl bg-surface-elevated flex items-center justify-center text-2xl mb-5 text-slate-500">
+              ♟
             </div>
-
-            <div className="bg-surface rounded-xl p-4 border border-surface-border flex flex-col justify-between">
-              <span className="text-xs text-slate-400 font-medium">Identified Mistakes</span>
-              <div className="flex items-baseline space-x-2 mt-2">
-                <span className="text-2xl font-bold text-rose-400 font-mono">
-                  {totals.blunders}
-                </span>
-                <span className="text-xs text-slate-400 font-mono">
-                  ({totals.mistakes} mistakes)
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-surface rounded-xl p-4 border border-surface-border flex flex-col justify-between">
-              <span className="text-xs text-slate-400 font-medium">Exercises Due</span>
-              <div className="flex items-baseline space-x-2 mt-2">
-                <span className="text-2xl font-bold text-accent font-mono">{dueCardsCount}</span>
-                <span className="text-xs text-slate-500">in review queue</span>
-              </div>
-            </div>
+            <h2 className="text-lg font-semibold text-slate-200 mb-2">No games yet</h2>
+            <p className="text-slate-500 text-sm leading-relaxed max-w-sm mb-7">
+              Import your games and we'll analyze them with Stockfish, track your opening mistakes, and build a personalized training queue.
+            </p>
+            <button
+              onClick={() => setTab('my-games')}
+              className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-sm transition shadow flex items-center gap-2"
+            >
+              <Upload size={15} />
+              Import Your First Game
+            </button>
           </div>
-
-          {/* Main Grid: Recent Games & Recurring Weaknesses */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Recent Games */}
-            <div className="lg:col-span-2 bg-surface rounded-xl border border-surface-border p-5 flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-slate-200 text-sm flex items-center space-x-2">
-                  <Activity size={16} className="text-accent" />
-                  <span>Recent Games</span>
-                </h3>
-                <button
-                  onClick={() => setTab('my-games')}
-                  className="text-xs text-accent hover:underline"
-                >
-                  View All
-                </button>
+        ) : (
+          <>
+            {/* Stats row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+              <div className="bg-surface rounded-2xl p-5">
+                <p className="text-slate-500 text-xs mb-3">Games analyzed</p>
+                <p className="text-2xl font-bold text-slate-100 font-mono">{analyzedGamesCount}</p>
+                <p className="text-slate-600 text-xs mt-1">of {games.length} total</p>
               </div>
 
-              <div className="space-y-2 flex-1">
-                {games.slice(0, 5).map((game) => (
-                  <div
-                    key={game.id}
-                    onClick={() => setActiveGame(game.id)}
-                    className="p-3 rounded-lg bg-surface-elevated hover:bg-surface-border border border-surface-border/60 transition cursor-pointer flex items-center justify-between text-xs"
-                  >
-                    <div className="flex items-center space-x-3 truncate">
-                      {(() => {
-                        const outcome = getGameOutcome(game, userHandle);
-                        return (
-                          <span
-                            className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] flex items-center space-x-1 border ${outcome.badgeClass}`}
-                          >
-                            <span>{game.result}</span>
-                            {outcome.isWin && (
-                              <span className="text-[9px] font-sans font-extrabold uppercase px-1 rounded bg-emerald-500/20 text-emerald-300">
-                                WIN
-                              </span>
-                            )}
-                            {outcome.isLoss && (
-                              <span className="text-[9px] font-sans font-extrabold uppercase px-1 rounded bg-rose-500/20 text-rose-300">
-                                LOSS
-                              </span>
-                            )}
-                            {outcome.isDraw && (
-                              <span className="text-[9px] font-sans font-extrabold uppercase px-1 rounded bg-slate-500/20 text-slate-300">
-                                DRAW
-                              </span>
-                            )}
-                          </span>
-                        );
-                      })()}
-                      <div className="truncate">
-                        <span className="font-semibold text-slate-200">{game.white}</span>
-                        <span className="text-slate-500 mx-1.5">vs</span>
-                        <span className="font-semibold text-slate-200">{game.black}</span>
-                        {game.opening && (
-                          <span className="text-[11px] text-slate-400 block truncate">
-                            {game.opening}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+              <div className="bg-surface rounded-2xl p-5">
+                <p className="text-slate-500 text-xs mb-3">Avg CPL</p>
+                <p className="text-2xl font-bold text-slate-100 font-mono">
+                  {avgCpl !== null ? avgCpl : '—'}
+                </p>
+                <p className="text-slate-600 text-xs mt-1">centipawn loss</p>
+              </div>
 
-                    <div className="flex items-center space-x-3 text-slate-400 font-mono text-[11px]">
-                      <span>{game.date}</span>
-                      <span className="text-accent">→</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="bg-surface rounded-2xl p-5">
+                <p className="text-slate-500 text-xs mb-3">Blunders</p>
+                <p className="text-2xl font-bold text-rose-400 font-mono">{totals.blunders}</p>
+                <p className="text-slate-600 text-xs mt-1">{totals.mistakes} mistakes</p>
+              </div>
+
+              <div className="bg-surface rounded-2xl p-5">
+                <p className="text-slate-500 text-xs mb-3">Due exercises</p>
+                <p className="text-2xl font-bold text-accent font-mono">{dueCardsCount}</p>
+                <p className="text-slate-600 text-xs mt-1">in review queue</p>
               </div>
             </div>
 
-            {/* Recurring Weaknesses Column */}
-            <div className="bg-surface rounded-xl border border-surface-border p-5 flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-slate-200 text-sm flex items-center space-x-2">
-                  <AlertTriangle size={16} className="text-amber-400" />
-                  <span>Personal Weaknesses</span>
-                </h3>
-                <button
-                  onClick={() => setTab('progress')}
-                  className="text-xs text-accent hover:underline"
-                >
-                  Insights
-                </button>
+            {/* Main content grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+              {/* Recent Games */}
+              <div className="lg:col-span-2 bg-surface rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium text-slate-200 text-sm flex items-center gap-2">
+                    <Activity size={14} className="text-accent" />
+                    Recent Games
+                  </h3>
+                  <button
+                    onClick={() => setTab('my-games')}
+                    className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 transition"
+                  >
+                    View all <ArrowRight size={11} />
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  {games.slice(0, 5).map((game) => {
+                    const outcome = getGameOutcome(game, userHandle);
+                    return (
+                      <div
+                        key={game.id}
+                        onClick={() => setActiveGame(game.id)}
+                        className="px-3 py-2.5 rounded-xl hover:bg-surface-elevated transition cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span
+                            className={`text-[11px] font-bold w-8 shrink-0 ${
+                              outcome.isWin
+                                ? 'text-emerald-400'
+                                : outcome.isLoss
+                                ? 'text-rose-400'
+                                : 'text-slate-400'
+                            }`}
+                          >
+                            {outcome.isWin ? 'WIN' : outcome.isLoss ? 'LOSS' : 'DRAW'}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm text-slate-300 truncate">
+                              <span className="font-medium">{game.white}</span>
+                              <span className="text-slate-600 mx-1.5 text-xs">vs</span>
+                              <span className="font-medium">{game.black}</span>
+                            </p>
+                            {game.opening && (
+                              <p className="text-[11px] text-slate-600 truncate mt-0.5">{game.opening}</p>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-slate-600 font-mono shrink-0 ml-3">{game.date}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              {weaknesses.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-                  <p className="text-xs text-slate-400">No weaknesses detected yet.</p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Analyze more games to map your recurring tactical mistakes.
+              {/* Recurring Weaknesses */}
+              <div className="bg-surface rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium text-slate-200 text-sm flex items-center gap-2">
+                    <AlertTriangle size={14} className="text-amber-400" />
+                    Weaknesses
+                  </h3>
+                  <button
+                    onClick={() => setTab('progress')}
+                    className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 transition"
+                  >
+                    Insights <ArrowRight size={11} />
+                  </button>
+                </div>
+
+                {weaknesses.length === 0 ? (
+                  <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
+                    <p className="text-sm text-slate-500">No patterns yet</p>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      Analyze more games to surface recurring mistakes.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {weaknesses.slice(0, 4).map((w) => (
+                      <div
+                        key={w.id}
+                        className="px-3 py-2.5 rounded-xl bg-surface-elevated"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-slate-200">{w.title}</span>
+                          <span className="text-xs font-mono text-amber-400/80">{w.occurrences}×</span>
+                        </div>
+                        <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                          {w.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Repertoire Mastery */}
+            <div className="bg-surface rounded-2xl p-5 mb-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <div>
+                  <h3 className="font-medium text-slate-200 text-sm flex items-center gap-2">
+                    <Layers size={14} className="text-accent" />
+                    Repertoire Coverage
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Opening lines practiced and mastered.
                   </p>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {weaknesses.slice(0, 4).map((w) => (
-                    <div
-                      key={w.id}
-                      className="p-3 rounded-lg bg-surface-elevated border border-surface-border"
-                    >
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-semibold text-slate-200">{w.title}</span>
-                        <span className="font-mono text-xs text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                          {w.occurrences}x
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-                        {w.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Repertoire Courses Mastery & Training */}
-          <div className="bg-surface rounded-xl border border-surface-border p-5 mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div>
-                <h3 className="font-semibold text-slate-200 text-sm flex items-center space-x-2">
-                  <Layers size={16} className="text-accent" />
-                  <span>Opening Repertoire Courses Mastery</span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Track your theoretical coverage across all opening lessons and practiced lines.
-                </p>
-              </div>
-              <button
-                onClick={() => setTab('opening-book')}
-                className="px-3 py-1.5 bg-accent hover:bg-accent-hover text-black rounded-lg text-xs font-bold transition flex items-center space-x-1.5 self-start sm:self-auto"
-              >
-                <span>Browse Repertoires</span>
-                <ArrowRight size={13} />
-              </button>
-            </div>
-
-            {/* Overall Progress Bar */}
-            <div className="bg-surface-elevated/70 border border-surface-border rounded-xl p-4 mb-4">
-              <div className="flex items-center justify-between text-xs mb-2">
-                <span className="font-semibold text-slate-300">Overall Repertoire Coverage</span>
-                <span className="font-mono text-accent font-bold">
-                  {courseMastery.completedLines} of {courseMastery.totalLines} lines completed ·{' '}
-                  {courseMastery.percentage}%
-                </span>
-              </div>
-              <div className="w-full h-2.5 bg-surface rounded-full overflow-hidden border border-surface-border">
-                <div
-                  className={`h-full transition-all duration-500 rounded-full ${
-                    courseMastery.percentage === 100
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                      : 'bg-accent'
-                  }`}
-                  style={{ width: `${courseMastery.percentage}%` }}
-                />
+                <button
+                  onClick={() => setTab('opening-book')}
+                  className="px-3 py-1.5 bg-surface-elevated hover:bg-surface-hover text-slate-300 border border-surface-border/70 rounded-xl text-xs font-medium transition flex items-center gap-1.5 self-start sm:self-auto"
+                >
+                  Browse repertoires
+                  <ArrowRight size={12} />
+                </button>
               </div>
 
-              {/* Quick Metrics */}
-              <div className="grid grid-cols-3 gap-2.5 mt-3 text-center text-xs">
-                <div className="p-2 rounded-lg bg-surface border border-surface-border">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Courses</span>
-                  <span className="font-mono font-bold text-slate-200">{courseMastery.totalCourses}</span>
+              {/* Progress bar */}
+              <div className="mb-5">
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="text-slate-400">Overall completion</span>
+                  <span className="font-mono text-slate-300 font-semibold">
+                    {courseMastery.completedLines}/{courseMastery.totalLines} lines · {courseMastery.percentage}%
+                  </span>
                 </div>
-                <div className="p-2 rounded-lg bg-surface border border-surface-border">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Completed</span>
-                  <span className="font-mono font-bold text-slate-200">{courseMastery.completedLines}</span>
-                </div>
-                <div className="p-2 rounded-lg bg-surface border border-surface-border">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Mastered</span>
-                  <span className="font-mono font-bold text-emerald-400">{courseMastery.masteredLines}</span>
+                <div className="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 rounded-full ${
+                      courseMastery.percentage === 100
+                        ? 'bg-emerald-400'
+                        : 'bg-accent'
+                    }`}
+                    style={{ width: `${courseMastery.percentage}%` }}
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Recently Practiced Courses */}
-            {courseMastery.recentCourses.length > 0 && (
-              <div>
-                <span className="text-[11px] uppercase font-bold text-slate-400 block mb-2 tracking-wide">
-                  Recently Practiced Courses
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {courseMastery.recentCourses.map((rc) => (
-                    <div
-                      key={rc.id}
-                      onClick={() => setTab('opening-book')}
-                      className="p-3 rounded-lg bg-surface-elevated border border-surface-border hover:border-accent/40 cursor-pointer transition flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-surface border border-surface-border text-slate-300">
+              {/* Quick metrics */}
+              <div className="flex items-center gap-4 text-xs mb-5">
+                <div>
+                  <span className="text-slate-600 block">Courses</span>
+                  <span className="font-semibold text-slate-300 font-mono">{courseMastery.totalCourses}</span>
+                </div>
+                <div className="w-px h-6 bg-surface-border" />
+                <div>
+                  <span className="text-slate-600 block">Completed</span>
+                  <span className="font-semibold text-slate-300 font-mono">{courseMastery.completedLines}</span>
+                </div>
+                <div className="w-px h-6 bg-surface-border" />
+                <div>
+                  <span className="text-slate-600 block">Mastered</span>
+                  <span className="font-semibold text-emerald-400 font-mono">{courseMastery.masteredLines}</span>
+                </div>
+              </div>
+
+              {/* Recently practiced */}
+              {courseMastery.recentCourses.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-600 mb-2.5">Recently practiced</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {courseMastery.recentCourses.map((rc) => (
+                      <div
+                        key={rc.id}
+                        onClick={() => setTab('opening-book')}
+                        className="px-3.5 py-3 rounded-xl bg-surface-elevated hover:bg-surface-hover cursor-pointer transition"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
                             {rc.color}
                           </span>
-                          <span className="text-[10px] font-mono text-accent font-bold">
+                          <span className="text-xs font-mono text-accent font-semibold">
                             {rc.percentage}%
                           </span>
                         </div>
-                        <h4 className="text-xs font-bold text-slate-200 truncate mb-2">{rc.name}</h4>
+                        <h4 className="text-xs font-medium text-slate-300 truncate mb-2.5">{rc.name}</h4>
+                        <div className="w-full bg-surface h-1 rounded-full overflow-hidden">
+                          <div
+                            className="bg-accent h-full rounded-full"
+                            style={{ width: `${rc.percentage}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-surface h-1.5 rounded-full overflow-hidden border border-surface-border">
-                        <div
-                          className="bg-accent h-full"
-                          style={{ width: `${rc.percentage}%` }}
-                        />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Opening Performance */}
+            {topOpenings.length > 0 && (
+              <div className="bg-surface rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium text-slate-200 text-sm flex items-center gap-2">
+                    <BookOpen size={14} className="text-accent" />
+                    Opening Performance
+                  </h3>
+                  <button
+                    onClick={() => setTab('opening-book')}
+                    className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 transition"
+                  >
+                    Repertoire <ArrowRight size={11} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  {topOpenings.map(([openingName, stats], i) => {
+                    const winRate = Math.round((stats.wins / stats.total) * 100);
+                    return (
+                      <div
+                        key={i}
+                        className="px-3.5 py-3 rounded-xl bg-surface-elevated"
+                      >
+                        <h4
+                          className="font-medium text-xs text-slate-300 truncate mb-1"
+                          title={openingName}
+                        >
+                          {openingName}
+                        </h4>
+                        <div className="flex items-center justify-between text-xs mb-2.5">
+                          <span className="text-slate-600">{stats.total} game{stats.total !== 1 ? 's' : ''}</span>
+                          <span className="font-mono text-emerald-400 font-semibold">{winRate}% W</span>
+                        </div>
+                        <div className="w-full h-1 rounded-full overflow-hidden flex bg-surface">
+                          <div
+                            className="bg-emerald-500 h-full"
+                            style={{ width: `${(stats.wins / stats.total) * 100}%` }}
+                          />
+                          <div
+                            className="bg-slate-500/60 h-full"
+                            style={{ width: `${(stats.draws / stats.total) * 100}%` }}
+                          />
+                          <div
+                            className="bg-rose-500 h-full"
+                            style={{ width: `${(stats.losses / stats.total) * 100}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Opening Performance Section */}
-          {topOpenings.length > 0 && (
-            <div className="bg-surface rounded-xl border border-surface-border p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-slate-200 text-sm flex items-center space-x-2">
-                  <BookOpen size={16} className="text-accent" />
-                  <span>Opening Performance</span>
-                </h3>
-                <button
-                  onClick={() => setTab('opening-book')}
-                  className="text-xs text-accent hover:underline"
-                >
-                  Opening Repertoire
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {topOpenings.map(([openingName, stats], i) => {
-                  const winRate = Math.round((stats.wins / stats.total) * 100);
-                  return (
-                    <div
-                      key={i}
-                      className="p-3 rounded-lg bg-surface-elevated border border-surface-border"
-                    >
-                      <h4 className="font-semibold text-xs text-slate-200 truncate mb-1" title={openingName}>
-                        {openingName}
-                      </h4>
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span>{stats.total} game(s)</span>
-                        <span className="font-mono text-emerald-400 font-bold">{winRate}% wins</span>
-                      </div>
-                      <div className="w-full bg-surface-border h-1.5 rounded-full mt-2 overflow-hidden flex">
-                        <div
-                          className="bg-emerald-500 h-full"
-                          style={{ width: `${(stats.wins / stats.total) * 100}%` }}
-                        />
-                        <div
-                          className="bg-slate-400 h-full"
-                          style={{ width: `${(stats.draws / stats.total) * 100}%` }}
-                        />
-                        <div
-                          className="bg-rose-500 h-full"
-                          style={{ width: `${(stats.losses / stats.total) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

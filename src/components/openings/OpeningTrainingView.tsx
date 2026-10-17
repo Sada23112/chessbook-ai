@@ -571,50 +571,50 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
         <div className="flex items-center space-x-3">
           <button
             onClick={onExitTraining}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white border border-surface-border transition flex items-center space-x-1.5 text-xs font-semibold"
+            className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white transition flex items-center space-x-1.5 text-xs font-medium"
           >
             <ArrowLeft size={16} />
-            <span>Return to Course</span>
+            <span>Return to course</span>
           </button>
 
           <div>
             <div className="flex flex-wrap items-center gap-2">
               {/* Learning Mode Indicator Badge */}
               <span
-                className={`text-xs font-bold px-2 py-0.5 rounded flex items-center space-x-1.5 border ${
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center space-x-1.5 ${
                   isRecallTest
-                    ? 'bg-purple-500/15 border-purple-500/40 text-purple-300'
+                    ? 'bg-purple-500/10 text-purple-300'
                     : learningMode === 'guided'
-                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                    : 'bg-blue-500/15 border-blue-500/30 text-blue-300'
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-blue-500/10 text-blue-300'
                 }`}
               >
                 {isRecallTest ? (
                   <>
                     <ShieldCheck size={13} />
-                    <span>Stage 2: Blind Recall Test</span>
+                    <span>Stage 2: Blind recall test</span>
                   </>
                 ) : learningMode === 'guided' ? (
                   <>
                     <Eye size={13} />
-                    <span>Mode: Guided Learning</span>
+                    <span>Mode: Guided</span>
                   </>
                 ) : (
                   <>
                     <EyeOff size={13} />
-                    <span>Mode: Blind Recall</span>
+                    <span>Mode: Blind recall</span>
                   </>
                 )}
               </span>
 
               {lesson && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-surface-elevated border border-surface-border text-slate-300">
+                <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-surface-elevated text-slate-300">
                   Level {lesson.levelNumber}: {lesson.title}
                 </span>
               )}
 
               {variation.eco && (
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-surface-elevated border border-surface-border text-accent">
+                <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-md bg-surface-elevated text-accent">
                   {variation.eco}
                 </span>
               )}
@@ -633,10 +633,10 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
             <p className="text-slate-400 text-xs mt-0.5">
               Playing as{' '}
-              <span className="font-semibold text-slate-200 capitalize">
+              <span className="font-medium text-slate-200 capitalize">
                 {repertoire.color}
               </span>{' '}
-              • Move {Math.floor(plyIndex / 2) + 1}
+              · Move {Math.floor(plyIndex / 2) + 1}
             </p>
           </div>
         </div>
@@ -644,12 +644,12 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
         {/* Right Header: Mode Switcher & Stats */}
         <div className="flex items-center space-x-4 self-start sm:self-auto">
           {!isRecallTest && (
-            <div className="flex items-center bg-surface-elevated p-1 rounded-xl border border-surface-border text-xs">
+            <div className="flex items-center bg-surface p-1 rounded-xl text-xs">
               <button
                 onClick={() => handleToggleMode('guided')}
-                className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1.5 ${
+                className={`px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5 ${
                   learningMode === 'guided'
-                    ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shadow-sm'
+                    ? 'bg-surface-elevated text-emerald-400 font-semibold'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -658,30 +658,30 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
               </button>
               <button
                 onClick={() => handleToggleMode('recall')}
-                className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1.5 ${
+                className={`px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5 ${
                   learningMode === 'recall'
-                    ? 'bg-accent/20 text-accent font-bold border border-accent/40 shadow-sm'
+                    ? 'bg-surface-elevated text-accent font-semibold'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <Sparkles size={13} />
-                <span>Blind Recall</span>
+                <span>Recall</span>
               </button>
             </div>
           )}
 
           <div className="flex flex-col items-end text-xs">
             <div className="flex items-center space-x-2">
-              <span className="font-mono text-slate-300 font-bold">
+              <span className="font-mono text-slate-300 font-medium">
                 {plyIndex} / {variation.moves.length} plies
               </span>
               <span className="font-mono text-emerald-400 font-semibold">
                 {currentAccuracy}% acc
               </span>
             </div>
-            <div className="w-28 sm:w-36 h-2 bg-surface-elevated rounded-full overflow-hidden border border-surface-border mt-1">
+            <div className="w-28 sm:w-36 h-2 bg-surface-elevated rounded-full overflow-hidden mt-1.5">
               <div
-                className="h-full bg-accent transition-all duration-300"
+                className="h-full bg-accent transition-all duration-300 rounded-full"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
@@ -732,7 +732,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
           </div>
 
           {/* Interactive Chessboard with dynamic SVG Move Arrow Overlay */}
-          <div className="w-full max-w-[480px] bg-surface rounded-2xl p-2 sm:p-3 border border-surface-border shadow-md">
+          <div className="w-full max-w-[480px] bg-surface rounded-2xl p-2 sm:p-3">
             <InteractiveChessboard
               fen={currentFen}
               boardOrientation={repertoire.color}
@@ -756,11 +756,11 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
               return (
                 <span
                   key={idx}
-                  className={`px-2 py-1 rounded transition shrink-0 ${
+                  className={`px-2 py-1 rounded-md transition shrink-0 ${
                     isCurrent
-                      ? 'bg-accent text-black font-bold ring-2 ring-accent/50'
+                      ? 'bg-accent text-black font-bold'
                       : isPast
-                      ? 'bg-surface-elevated text-slate-200 border border-surface-border'
+                      ? 'bg-surface-elevated text-slate-200'
                       : 'text-slate-500 bg-surface-elevated/40'
                   }`}
                 >
@@ -773,18 +773,18 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
         </div>
 
         {/* Right Column: Training Guidance, Prompts & Move Notation */}
-        <div className="lg:col-span-5 bg-surface rounded-2xl border border-surface-border p-5 flex flex-col justify-between min-h-[460px]">
+        <div className="lg:col-span-5 bg-surface rounded-2xl p-6 flex flex-col justify-between min-h-[460px]">
           <div>
             {/* Header info */}
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-surface-border">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-surface-elevated">
+              <span className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
                 <BookOpen size={14} className="text-accent" />
                 <span>
                   {learningMode === 'guided'
-                    ? 'Guided Learning Mode'
+                    ? 'Guided learning'
                     : isRecallTest
-                    ? 'Blind Recall Test'
-                    : 'Blind Recall Mode'}
+                    ? 'Blind recall test'
+                    : 'Blind recall'}
                 </span>
               </span>
 
@@ -795,9 +795,9 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
             {/* Guided Move Spotlight (Visible only in Guided mode or when solution revealed) */}
             {isUserTurn && expectedMoveSan && (learningMode === 'guided' || showSolution) && (
-              <div className="p-4 rounded-xl bg-accent/15 border border-accent/40 mb-4 animate-in fade-in duration-150">
-                <span className="text-[10px] uppercase font-bold text-accent block tracking-wider mb-1">
-                  {showSolution ? 'Revealed Solution' : 'Recommended Move'}
+              <div className="p-4 rounded-2xl bg-accent/10 mb-4 animate-in fade-in duration-150">
+                <span className="text-xs font-medium text-accent block mb-1">
+                  {showSolution ? 'Revealed solution' : 'Recommended move'}
                 </span>
                 <div className="flex items-baseline space-x-2">
                   <span className="text-xl font-bold font-mono text-slate-100">
@@ -815,14 +815,14 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
             {/* Dynamic Status / Feedback Box */}
             <div
-              className={`p-4 rounded-xl border mb-5 transition-all ${
+              className={`p-4 rounded-2xl mb-5 transition-all ${
                 phase === 'line_completed'
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                  ? 'bg-emerald-500/10 text-emerald-300'
                   : isSuccess === true
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                  ? 'bg-emerald-500/10 text-emerald-300'
                   : isSuccess === false
-                  ? 'bg-rose-500/15 border-rose-500/40 text-rose-300'
-                  : 'bg-surface-elevated border-surface-border text-slate-200'
+                  ? 'bg-rose-500/10 text-rose-300'
+                  : 'bg-surface-elevated text-slate-200'
               }`}
             >
               <div className="flex items-start space-x-2.5">
@@ -834,16 +834,16 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                   <Sparkles size={18} className="text-accent shrink-0 mt-0.5" />
                 )}
                 <div>
-                  <h4 className="font-bold text-xs mb-1">
+                  <h4 className="font-semibold text-xs mb-1">
                     {phase === 'line_completed'
-                      ? 'Variation Complete!'
+                      ? 'Variation complete'
                       : isSuccess === true
-                      ? 'Correct Move'
+                      ? 'Correct move'
                       : isSuccess === false
-                      ? 'Incorrect Move'
+                      ? 'Incorrect move'
                       : learningMode === 'guided'
-                      ? 'Play the Indicated Move'
-                      : 'Recall Repertoire Move'}
+                      ? 'Play the indicated move'
+                      : 'Recall repertoire move'}
                   </h4>
                   <p className="text-xs leading-relaxed text-slate-300">
                     {trainingStatus ||
@@ -857,9 +857,9 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
             {/* Variation Strategic Notes */}
             {variation.description && (
-              <div className="p-3.5 rounded-xl bg-surface-elevated/70 border border-surface-border mb-4">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider mb-1">
-                  Strategic Plan & Key Ideas
+              <div className="p-4 rounded-2xl bg-surface-elevated mb-4">
+                <span className="text-xs font-semibold text-slate-400 block mb-1">
+                  Strategic plan & key ideas
                 </span>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   {variation.description}
@@ -869,10 +869,10 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
             {/* Hint Notice */}
             {showHint && isUserTurn && (
-              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-slate-200 mb-4 flex items-start space-x-2.5">
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 text-xs text-slate-200 mb-4 flex items-start space-x-2.5">
                 <Lightbulb size={16} className="text-amber-400 mt-0.5 shrink-0" />
                 <div>
-                  <span className="font-bold text-amber-400 block mb-0.5">Move Clue</span>
+                  <span className="font-semibold text-amber-400 block mb-0.5">Move clue</span>
                   <span className="text-slate-300">
                     A dashed amber arrow has been placed on the board pointing to the target square.
                   </span>
@@ -882,7 +882,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
           </div>
 
           {/* Action Toolbar */}
-          <div className="space-y-2.5 pt-4 border-t border-surface-border">
+          <div className="space-y-2.5 pt-4 border-t border-surface-elevated">
             {phase === 'line_completed' ? (
               <div className="space-y-2">
                 {onSelectNextVariation && (
@@ -972,51 +972,51 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
       {/* Modal 1: Standard Line Result Modal */}
       {showResultModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-surface border border-surface-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+          <div className="bg-surface rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <div className="text-center mb-5">
               <div
-                className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-3 border ${
+                className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-3 ${
                   mistakeCount === 0 && hintsCount === 0
-                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
-                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                    ? 'bg-amber-500/10 text-amber-400'
+                    : 'bg-emerald-500/10 text-emerald-400'
                 }`}
               >
                 {mistakeCount === 0 && hintsCount === 0 ? <Award size={32} /> : <CheckCircle2 size={32} />}
               </div>
 
-              <span className="text-[11px] font-bold uppercase tracking-wider text-accent block mb-1">
+              <span className="text-xs font-medium text-accent block mb-1">
                 {lesson ? `Level ${lesson.levelNumber}: ${lesson.title}` : 'Opening Repertoire'}
               </span>
               <h3 className="text-xl font-bold text-slate-100">
                 {learningMode === 'guided'
-                  ? 'Line Guided Practice Complete!'
+                  ? 'Guided practice complete'
                   : mistakeCount === 0
-                  ? 'Line Mastered from Memory! 🌟'
-                  : 'Line Recall Finished! 🎉'}
+                  ? 'Variation mastered from memory'
+                  : 'Variation practice finished'}
               </h3>
               <p className="text-xs text-slate-400 mt-1">{variation.name}</p>
             </div>
 
             {/* Performance Stats Cards */}
             <div className="grid grid-cols-3 gap-2.5 mb-6">
-              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3 text-center">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+              <div className="bg-surface-elevated rounded-xl p-3 text-center">
+                <span className="text-xs text-slate-400 font-medium block">
                   Accuracy
                 </span>
                 <span className="text-lg font-bold font-mono text-emerald-400">
                   {currentAccuracy}%
                 </span>
               </div>
-              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3 text-center">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+              <div className="bg-surface-elevated rounded-xl p-3 text-center">
+                <span className="text-xs text-slate-400 font-medium block">
                   Correct
                 </span>
                 <span className="text-lg font-bold font-mono text-slate-100">
                   {correctCount}
                 </span>
               </div>
-              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3 text-center">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+              <div className="bg-surface-elevated rounded-xl p-3 text-center">
+                <span className="text-xs text-slate-400 font-medium block">
                   Mistakes
                 </span>
                 <span
@@ -1037,9 +1037,9 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                     setShowResultModal(false);
                     onSelectNextVariation();
                   }}
-                  className="w-full py-3 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-md"
+                  className="w-full py-3 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2"
                 >
-                  <span>Continue to Next Line</span>
+                  <span>Continue to next line</span>
                   <ArrowRight size={16} />
                 </button>
               ) : null}
@@ -1050,10 +1050,10 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                     setShowResultModal(false);
                     handleRestart();
                   }}
-                  className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-200 font-semibold rounded-xl text-xs border border-surface-border transition flex items-center justify-center space-x-1.5"
+                  className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-200 font-medium rounded-xl text-xs transition flex items-center justify-center space-x-1.5"
                 >
                   <RotateCcw size={14} />
-                  <span>Retry Line</span>
+                  <span>Retry line</span>
                 </button>
 
                 <button
@@ -1061,9 +1061,9 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                     setShowResultModal(false);
                     onExitTraining();
                   }}
-                  className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white font-semibold rounded-xl text-xs border border-surface-border transition flex items-center justify-center space-x-1.5"
+                  className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white font-medium rounded-xl text-xs transition flex items-center justify-center space-x-1.5"
                 >
-                  <span>Return to Course</span>
+                  <span>Return to course</span>
                 </button>
               </div>
             </div>
@@ -1074,21 +1074,21 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
       {/* Modal 2: Stage 1 Learning Completed Modal (Prompt to Test Memory) */}
       {showStage1CompleteModal && lesson && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-surface border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-center">
-            <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-3 border bg-emerald-500/20 border-emerald-500/40 text-emerald-400">
-              <CheckCircle2 size={36} />
+          <div className="bg-surface rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-center">
+            <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-3 bg-emerald-500/10 text-emerald-400">
+              <CheckCircle2 size={32} />
             </div>
 
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 block mb-1">
-              Stage 1 Complete
+            <span className="text-xs font-medium text-emerald-400 block mb-1">
+              Stage 1 complete
             </span>
             <h3 className="text-xl font-bold text-slate-100">
-              Level {lesson.levelNumber} Lines Learned!
+              Level {lesson.levelNumber} lines learned
             </h3>
             <p className="text-xs text-slate-300 mt-2 mb-6 leading-relaxed">
               You have studied all {lesson.variations.length} variations in{' '}
               <strong>{lesson.title}</strong> with guided move arrows.
-              To unlock the next level, you must pass the <strong>Blind Recall Test</strong> without hints.
+              To unlock the next level, pass the <strong>Blind recall test</strong> without hints.
             </p>
 
             <div className="space-y-2.5">
@@ -1102,10 +1102,10 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                     handleRestart();
                   }
                 }}
-                className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg"
+                className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2"
               >
                 <ShieldCheck size={16} />
-                <span>Test My Memory (Start Blind Recall)</span>
+                <span>Test my memory (Start blind recall)</span>
               </button>
 
               <button
@@ -1113,9 +1113,9 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                   setShowStage1CompleteModal(false);
                   onExitTraining();
                 }}
-                className="w-full py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white font-semibold rounded-xl text-xs border border-surface-border transition"
+                className="w-full py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white font-medium rounded-xl text-xs transition"
               >
-                Return to Course Overview
+                Return to course overview
               </button>
             </div>
           </div>
@@ -1125,28 +1125,28 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
       {/* Modal 3: Stage 2 Blind Recall Test Result Modal (Pass / Fail) */}
       {showRecallTestModal && recallTestResult && lesson && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-surface border border-surface-border rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-center">
+          <div className="bg-surface rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-center">
             <div
-              className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-3 border ${
+              className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-3 ${
                 recallTestResult.passed
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                  : 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : 'bg-rose-500/10 text-rose-400'
               }`}
             >
-              {recallTestResult.passed ? <Award size={36} /> : <AlertCircle size={36} />}
+              {recallTestResult.passed ? <Award size={32} /> : <AlertCircle size={32} />}
             </div>
 
             <span
-              className={`text-[11px] font-bold uppercase tracking-wider block mb-1 ${
+              className={`text-xs font-medium block mb-1 ${
                 recallTestResult.passed ? 'text-emerald-400' : 'text-rose-400'
               }`}
             >
-              {recallTestResult.passed ? 'Level Passed!' : 'Needs More Practice'}
+              {recallTestResult.passed ? 'Level passed' : 'Needs more practice'}
             </span>
             <h3 className="text-xl font-bold text-slate-100">
               {recallTestResult.passed
-                ? `Level ${lesson.levelNumber} Mastered!`
-                : `Recall Test Not Passed`}
+                ? `Level ${lesson.levelNumber} mastered`
+                : `Recall test not passed`}
             </h3>
             <p className="text-xs text-slate-300 mt-2 mb-5 leading-relaxed">
               {recallTestResult.passed
@@ -1158,8 +1158,8 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
 
             {/* Test Stats */}
             <div className="grid grid-cols-3 gap-2.5 mb-6 text-center">
-              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+              <div className="bg-surface-elevated rounded-xl p-3">
+                <span className="text-xs text-slate-400 font-medium block">
                   Accuracy
                 </span>
                 <span
@@ -1170,16 +1170,16 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                   {recallTestResult.accuracy}%
                 </span>
               </div>
-              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+              <div className="bg-surface-elevated rounded-xl p-3">
+                <span className="text-xs text-slate-400 font-medium block">
                   Correct
                 </span>
                 <span className="text-lg font-bold font-mono text-slate-100">
                   {recallTestResult.correctMoves}
                 </span>
               </div>
-              <div className="bg-surface-elevated border border-surface-border rounded-xl p-3">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+              <div className="bg-surface-elevated rounded-xl p-3">
+                <span className="text-xs text-slate-400 font-medium block">
                   Mistakes
                 </span>
                 <span className="text-lg font-bold font-mono text-rose-400">
@@ -1196,7 +1196,7 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                     setShowRecallTestModal(false);
                     onAdvanceToNextLesson(nextLessonInCourse);
                   }}
-                  className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg"
+                  className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2"
                 >
                   <span>Continue to Level {nextLessonInCourse.levelNumber}</span>
                   <ArrowRight size={16} />
@@ -1208,10 +1208,10 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                     setLearningMode('guided');
                     handleRestart();
                   }}
-                  className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg"
+                  className="w-full py-3.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2"
                 >
                   <RotateCcw size={15} />
-                  <span>Review Lines in Guided Mode</span>
+                  <span>Review lines in guided mode</span>
                 </button>
               ) : null}
 
@@ -1220,9 +1220,9 @@ export const OpeningTrainingView: React.FC<OpeningTrainingViewProps> = ({
                   setShowRecallTestModal(false);
                   onExitTraining();
                 }}
-                className="w-full py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white font-semibold rounded-xl text-xs border border-surface-border transition"
+                className="w-full py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white font-medium rounded-xl text-xs transition"
               >
-                Return to Course Curriculum
+                Return to course overview
               </button>
             </div>
           </div>

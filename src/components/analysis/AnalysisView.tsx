@@ -222,18 +222,18 @@ export const AnalysisView: React.FC = () => {
   if (!activeGame) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center select-none">
-        <div className="w-16 h-16 rounded-2xl bg-surface-elevated border border-surface-border flex items-center justify-center text-accent text-3xl mb-4">
+        <div className="w-14 h-14 rounded-2xl bg-surface-elevated flex items-center justify-center text-2xl mb-5 text-slate-500">
           ♟
         </div>
-        <h2 className="text-xl font-bold text-slate-100 mb-2">No Game Selected</h2>
-        <p className="text-slate-400 text-sm max-w-md mb-6">
-          Choose a game from your library to explore move-by-move evaluations, Stockfish coach explanations, and tactical exercises.
+        <h2 className="text-lg font-semibold text-slate-200 mb-2">No game selected</h2>
+        <p className="text-slate-500 text-sm max-w-sm mb-7 leading-relaxed">
+          Pick a game from your library to explore move evaluations, Stockfish analysis, and opening coaching.
         </p>
         <button
           onClick={() => setTab('my-games')}
-          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg shadow transition flex items-center space-x-2"
+          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl shadow transition flex items-center gap-2"
         >
-          <Layers size={18} />
+          <Layers size={16} />
           <span>Open Game Library</span>
         </button>
       </div>
@@ -261,192 +261,156 @@ export const AnalysisView: React.FC = () => {
   if (analysisStage === 'summary') {
     const openingBoundary = detectOpeningBoundary(activeGame, repertoires);
     const mistakesCount = openingMistakesData?.mistakes.length ?? 0;
+    const outcome = getGameOutcome(activeGame, settings?.playerUsernames?.chessCom || 'Sada012');
 
     return (
-      <div className="flex-1 flex flex-col p-3 sm:p-6 md:p-8 pb-24 md:pb-8 overflow-y-auto bg-background max-w-5xl mx-auto w-full">
-        {/* Game Title & Outcome Banner */}
-        <div className="p-6 rounded-2xl bg-surface border border-surface-border mb-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex-1 flex flex-col overflow-y-auto bg-background pb-24 md:pb-0">
+        <div className="max-w-3xl w-full mx-auto px-5 md:px-8 py-7 md:py-10">
+
+          {/* Game header */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
             <div>
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-xs font-mono text-slate-500">{activeGame.date}</span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-slate-600 font-mono">{activeGame.date}</span>
                 {activeGame.eco && (
-                  <span className="px-2 py-0.5 rounded bg-surface-elevated border border-surface-border text-xs font-mono font-bold text-accent">
+                  <span className="px-1.5 py-0.5 rounded-md bg-surface-elevated text-xs font-mono text-slate-400">
                     {activeGame.eco}
                   </span>
                 )}
-                {activeGame.opening && (
-                  <span className="text-xs text-slate-300 font-medium truncate max-w-xs">
-                    {activeGame.opening}
-                  </span>
-                )}
               </div>
-              <h1 className="text-2xl font-bold text-slate-100 flex items-center space-x-3">
-                <span>{activeGame.white}</span>
-                <span className="text-slate-500 text-lg font-mono">vs</span>
-                <span>{activeGame.black}</span>
+              <h1 className="text-xl font-semibold text-slate-100">
+                {activeGame.white}
+                <span className="text-slate-600 text-base font-normal mx-2">vs</span>
+                {activeGame.black}
               </h1>
-            </div>
-
-            {/* Game Result */}
-            <div>
-              {(() => {
-                const outcome = getGameOutcome(
-                  activeGame,
-                  settings?.playerUsernames?.chessCom || 'Sada012'
-                );
-                return (
-                  <div className={`px-4 py-2 rounded-xl border flex items-center space-x-2 font-mono font-bold text-sm ${outcome.badgeClass}`}>
-                    <span className="text-base">{activeGame.result}</span>
-                    {outcome.isWin && <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">VICTORY</span>}
-                    {outcome.isLoss && <span className="text-xs px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">DEFEAT</span>}
-                    {outcome.isDraw && <span className="text-xs px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-300">DRAW</span>}
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-
-        {/* Primary Coach Action Callout */}
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-accent/15 via-surface-elevated to-surface border border-accent/40 mb-6 shadow-xl">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-1.5">
-              <div className="flex items-center space-x-2">
-                <GraduationCap size={20} className="text-accent" />
-                <span className="text-xs font-bold uppercase tracking-wider text-accent">
-                  Personal Opening Coach
-                </span>
-              </div>
-              <h2 className="text-xl font-bold text-slate-100">
-                {activeAnalysis
-                  ? mistakesCount > 0
-                    ? `We found ${mistakesCount} opening mistake${mistakesCount > 1 ? 's' : ''} to review`
-                    : 'Your opening play was accurate and solid!'
-                  : 'Start opening-focused mistake review'}
-              </h2>
-              <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
-                {activeAnalysis
-                  ? mistakesCount > 0
-                    ? `Learn where your opening diverged, guess the engine's recommended moves, and see how the continuation leads to a healthier, better position.`
-                    : `No significant opening mistakes were detected up to ply ${openingBoundary.endPly}. You can inspect full-game accuracy or review move annotations.`
-                  : 'Run Stockfish analysis to identify your opening inaccuracies and see how to reach a better position.'}
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-              {activeAnalysis ? (
-                <>
-                  <button
-                    onClick={() => setAnalysisStage('opening_coach')}
-                    className="px-6 py-3 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-sm transition shadow-lg flex items-center justify-center space-x-2"
-                  >
-                    <Target size={18} />
-                    <span>Review Opening Mistakes</span>
-                  </button>
-                  <button
-                    onClick={() => setAnalysisStage('full_game')}
-                    className="px-5 py-3 bg-surface hover:bg-surface-border text-slate-200 font-semibold rounded-xl text-sm transition border border-surface-border flex items-center justify-center space-x-2"
-                  >
-                    <BarChart3 size={18} />
-                    <span>Analyze Full Game</span>
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => startAnalysis(selectedDepth)}
-                  disabled={isAnalyzing}
-                  className="px-6 py-3 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-sm transition shadow-lg flex items-center justify-center space-x-2"
-                >
-                  <Sparkles size={18} />
-                  <span>
-                    {isAnalyzing
-                      ? analysisLifecycle === 'finalizing'
-                        ? 'Finalizing Game Review...'
-                        : 'Analyzing with Stockfish...'
-                      : 'Run Stockfish Review'}
-                  </span>
-                </button>
+              {activeGame.opening && (
+                <p className="text-sm text-slate-500 mt-1 truncate max-w-sm">{activeGame.opening}</p>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Accuracy and Performance Overview Cards */}
-        {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* White Player Card */}
-            <div className="p-5 rounded-xl bg-surface border border-surface-border flex flex-col justify-between">
+            <div className={`px-3.5 py-2 rounded-xl text-sm font-semibold font-mono shrink-0 ${outcome.badgeClass}`}>
+              {activeGame.result}
+              {outcome.isWin && <span className="ml-2 text-xs opacity-80">Victory</span>}
+              {outcome.isLoss && <span className="ml-2 text-xs opacity-80">Defeat</span>}
+              {outcome.isDraw && <span className="ml-2 text-xs opacity-80">Draw</span>}
+            </div>
+          </div>
+
+          {/* Opening review action */}
+          <div className="bg-surface rounded-2xl p-5 mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="w-3 h-3 rounded-full bg-white shadow" />
-                  <span className="font-bold text-sm text-slate-200">{activeGame.white}</span>
+                <h2 className="font-medium text-slate-200 text-sm mb-1">
+                  {activeAnalysis
+                    ? mistakesCount > 0
+                      ? `${mistakesCount} opening mistake${mistakesCount > 1 ? 's' : ''} to review`
+                      : 'Opening looked solid'
+                    : 'Opening review'}
+                </h2>
+                <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
+                  {activeAnalysis
+                    ? mistakesCount > 0
+                      ? `See where your opening diverged and practice the correct continuations.`
+                      : `No significant mistakes up to move ${Math.ceil(openingBoundary.endPly / 2)}. Check full-game stats below.`
+                    : 'Run analysis to see opening mistakes and overall accuracy.'}
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                {activeAnalysis ? (
+                  <>
+                    <button
+                      onClick={() => setAnalysisStage('opening_coach')}
+                      className="px-4 py-2 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-sm transition flex items-center gap-2"
+                    >
+                      <Target size={15} />
+                      Review openings
+                    </button>
+                    <button
+                      onClick={() => setAnalysisStage('full_game')}
+                      className="px-4 py-2 bg-surface-elevated hover:bg-surface-hover text-slate-300 font-medium rounded-xl text-sm transition flex items-center gap-2"
+                    >
+                      <BarChart3 size={15} />
+                      Full game
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => startAnalysis(selectedDepth)}
+                    disabled={isAnalyzing}
+                    className="px-4 py-2 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-sm transition flex items-center gap-2 disabled:opacity-60"
+                  >
+                    <Sparkles size={15} />
+                    {isAnalyzing
+                      ? analysisLifecycle === 'finalizing'
+                        ? 'Finalizing…'
+                        : 'Analyzing…'
+                      : 'Analyze game'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Accuracy cards */}
+          {summary && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+              {/* White */}
+              <div className="bg-surface rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-100 shadow-sm shrink-0" />
+                  <span className="font-medium text-sm text-slate-300">{activeGame.white}</span>
                   {activeGame.whiteElo && (
-                    <span className="text-xs text-slate-400 font-mono">
-                      (Platform: {activeGame.whiteElo})
-                    </span>
+                    <span className="text-xs text-slate-600 font-mono ml-auto">{activeGame.whiteElo}</span>
                   )}
                 </div>
-                <div className="flex items-baseline space-x-2 my-2">
-                  <span className="text-3xl font-black font-mono text-emerald-400">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold font-mono text-emerald-400">
                     {Math.round(summary.accuracyWhite)}%
                   </span>
-                  <span className="text-xs text-slate-400 uppercase font-semibold">
-                    Game Accuracy
+                  <span className="text-xs text-slate-500">accuracy</span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-surface-elevated flex items-center justify-between">
+                  <span className="text-xs text-slate-600">Game rating</span>
+                  <span className="font-mono font-semibold text-amber-300 text-sm">
+                    {summary.estimatedEloWhite || 1500}
                   </span>
                 </div>
               </div>
-              <div className="pt-3 border-t border-surface-border/60 flex items-center justify-between text-xs text-slate-400">
-                <span>Game Rating:</span>
-                <span className="font-mono font-bold text-amber-300 text-sm">
-                  {summary.estimatedEloWhite || 1500}
-                </span>
-              </div>
-            </div>
 
-            {/* Black Player Card */}
-            <div className="p-5 rounded-xl bg-surface border border-surface-border flex flex-col justify-between">
-              <div>
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="w-3 h-3 rounded-full bg-slate-900 border border-slate-600 shadow" />
-                  <span className="font-bold text-sm text-slate-200">{activeGame.black}</span>
+              {/* Black */}
+              <div className="bg-surface rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-700 border border-slate-600 shadow-sm shrink-0" />
+                  <span className="font-medium text-sm text-slate-300">{activeGame.black}</span>
                   {activeGame.blackElo && (
-                    <span className="text-xs text-slate-400 font-mono">
-                      (Platform: {activeGame.blackElo})
-                    </span>
+                    <span className="text-xs text-slate-600 font-mono ml-auto">{activeGame.blackElo}</span>
                   )}
                 </div>
-                <div className="flex items-baseline space-x-2 my-2">
-                  <span className="text-3xl font-black font-mono text-emerald-400">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold font-mono text-emerald-400">
                     {Math.round(summary.accuracyBlack)}%
                   </span>
-                  <span className="text-xs text-slate-400 uppercase font-semibold">
-                    Game Accuracy
+                  <span className="text-xs text-slate-500">accuracy</span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-surface-elevated flex items-center justify-between">
+                  <span className="text-xs text-slate-600">Game rating</span>
+                  <span className="font-mono font-semibold text-amber-300 text-sm">
+                    {summary.estimatedEloBlack || 1500}
                   </span>
                 </div>
               </div>
-              <div className="pt-3 border-t border-surface-border/60 flex items-center justify-between text-xs text-slate-400">
-                <span>Game Rating:</span>
-                <span className="font-mono font-bold text-amber-300 text-sm">
-                  {summary.estimatedEloBlack || 1500}
-                </span>
-              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Coach Opening Boundary & Verdict */}
-        {summary?.gameReviewVerdict && (
-          <div className="p-4 rounded-xl bg-surface-elevated border border-surface-border text-xs text-slate-300 flex items-start space-x-3">
-            <Bot size={20} className="text-accent shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-accent block text-xs uppercase tracking-wider mb-1">
-                Coach Verdict
-              </span>
-              <p className="leading-relaxed">{summary.gameReviewVerdict}</p>
+          {/* Coach verdict */}
+          {summary?.gameReviewVerdict && (
+            <div className="bg-surface rounded-2xl p-4 flex items-start gap-3">
+              <Bot size={16} className="text-accent shrink-0 mt-0.5" />
+              <p className="text-sm text-slate-400 leading-relaxed">{summary.gameReviewVerdict}</p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
@@ -944,28 +908,29 @@ export const AnalysisView: React.FC = () => {
         <div className="flex-1 flex flex-col p-4 lg:p-6 overflow-y-auto items-center">
           {/* Header Bar */}
           <div className="w-full max-w-[540px] flex items-center justify-between mb-3 text-sm">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setAnalysisStage('summary')}
-                className="text-xs font-semibold px-2.5 py-1 rounded bg-surface hover:bg-surface-border text-slate-300 border border-surface-border transition flex items-center space-x-1"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover text-slate-400 hover:text-slate-200 transition flex items-center gap-1"
               >
-                <span>← Summary</span>
+                <ChevronLeft size={13} />
+                <span>Summary</span>
               </button>
               <button
                 onClick={() => setAnalysisStage('opening_coach')}
-                className="text-xs font-semibold px-2.5 py-1 rounded bg-accent/15 hover:bg-accent text-accent hover:text-black border border-accent/30 transition flex items-center space-x-1"
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-accent/10 hover:bg-accent text-accent hover:text-black transition flex items-center gap-1"
               >
                 <Target size={13} />
-                <span>Opening Coach</span>
+                <span>Opening coach</span>
               </button>
             </div>
 
             <button
               onClick={flipBoard}
-              className="p-1.5 text-slate-400 hover:text-slate-200 bg-surface-elevated hover:bg-surface-border rounded-md border border-surface-border text-xs flex items-center space-x-1 transition"
+              className="p-1.5 text-slate-500 hover:text-slate-300 bg-surface-elevated rounded-lg text-xs flex items-center gap-1 transition"
               title="Flip board orientation (F)"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={13} />
               <span>Flip</span>
             </button>
           </div>
@@ -1116,15 +1081,15 @@ export const AnalysisView: React.FC = () => {
         </div>
 
         {/* Right Column: Engine header, Tabs, Tab Content */}
-        <div className="w-[440px] bg-surface border-l border-surface-border flex flex-col h-full">
+        <div className="w-[420px] bg-surface-muted border-l border-surface-border/60 flex flex-col h-full">
           {/* Analysis Controls Header */}
-          <div className="p-4 border-b border-surface-border bg-surface-muted">
+          <div className="px-4 py-3 border-b border-surface-border/60">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <Zap size={18} className="text-accent" />
-                <h3 className="font-semibold text-slate-200 text-sm">Stockfish Engine</h3>
+              <div className="flex items-center gap-2">
+                <Zap size={14} className="text-accent" />
+                <h3 className="font-medium text-slate-300 text-sm">Stockfish</h3>
               </div>
-              <div className="flex items-center space-x-1 text-xs">
+              <div className="flex items-center gap-1 text-xs">
                 {[
                   { label: 'Quick', depth: 10 },
                   { label: 'Standard', depth: 14 },
@@ -1134,13 +1099,13 @@ export const AnalysisView: React.FC = () => {
                     key={p.depth}
                     onClick={() => setSelectedDepth(p.depth)}
                     disabled={isAnalyzing}
-                    className={`px-2 py-1 rounded text-xs transition ${
+                    className={`px-2 py-1 rounded-lg text-xs transition ${
                       selectedDepth === p.depth
-                        ? 'bg-accent/20 text-accent font-semibold border border-accent/40'
-                        : 'text-slate-400 hover:text-slate-200 bg-surface-elevated'
+                        ? 'bg-accent/15 text-accent font-semibold'
+                        : 'text-slate-500 hover:text-slate-300 bg-surface-elevated'
                     }`}
                   >
-                    {p.label} ({p.depth})
+                    {p.label}
                   </button>
                 ))}
               </div>
@@ -1148,13 +1113,13 @@ export const AnalysisView: React.FC = () => {
 
             {isAnalyzing ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-300">
+                <div className="flex items-center justify-between text-xs text-slate-400">
                   <span>
                     {analysisLifecycle === 'finalizing'
-                      ? 'Finalizing Game Review report & saving...'
+                      ? 'Finalizing…'
                       : analysisLifecycle === 'initializing'
-                      ? 'Initializing engine...'
-                      : `Analyzing move ${analysisProgress.current} of ${analysisProgress.total}...`}
+                      ? 'Initializing engine…'
+                      : `Move ${analysisProgress.current} of ${analysisProgress.total}`}
                   </span>
                   <span className="font-mono text-accent">
                     {analysisProgress.total > 0
@@ -1162,7 +1127,7 @@ export const AnalysisView: React.FC = () => {
                       : '0%'}
                   </span>
                 </div>
-                <div className="w-full bg-surface-elevated h-2 rounded-full overflow-hidden border border-surface-border">
+                <div className="w-full bg-surface-elevated h-1.5 rounded-full overflow-hidden">
                   <div
                     className="bg-accent h-full transition-all duration-300"
                     style={{
@@ -1176,35 +1141,35 @@ export const AnalysisView: React.FC = () => {
                 </div>
                 <button
                   onClick={stopAnalysis}
-                  className="w-full py-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition"
+                  className="w-full py-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/15 rounded-lg transition"
                 >
-                  Cancel Analysis
+                  Cancel
                 </button>
               </div>
             ) : (
               <div className="space-y-2">
                 {analysisLifecycle === 'failed' && (
-                  <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
-                    <div className="flex items-center space-x-1.5 font-bold mb-1">
-                      <AlertTriangle size={14} />
-                      <span>Analysis Incomplete</span>
+                  <div className="p-2.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs">
+                    <div className="flex items-center gap-1.5 font-medium mb-1">
+                      <AlertTriangle size={13} />
+                      <span>Analysis failed</span>
                     </div>
-                    <p className="text-[11px] text-slate-300 mb-2">
-                      {analysisError || 'Engine evaluation stopped unexpectedly. You can safely retry.'}
+                    <p className="text-[11px] text-slate-400 mb-2">
+                      {analysisError || 'Engine stopped unexpectedly. You can safely retry.'}
                     </p>
                   </div>
                 )}
                 <button
                   onClick={() => startAnalysis(selectedDepth)}
-                  className="w-full py-2 px-3 bg-accent hover:bg-accent-hover text-black font-semibold text-xs rounded-lg transition flex items-center justify-center space-x-2 shadow"
+                  className="w-full py-2 px-3 bg-accent hover:bg-accent-hover text-black font-semibold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow"
                 >
-                  <Sparkles size={16} />
+                  <Sparkles size={14} />
                   <span>
                     {analysisLifecycle === 'failed'
-                      ? 'Retry Game Review'
+                      ? 'Retry analysis'
                       : activeAnalysis
-                      ? 'Re-Analyze with Stockfish'
-                      : 'Run Full Game Review'}
+                      ? 'Re-analyze'
+                      : 'Analyze game'}
                   </span>
                 </button>
               </div>
@@ -1212,39 +1177,39 @@ export const AnalysisView: React.FC = () => {
           </div>
 
           {/* Desktop Tabs Header */}
-          <div className="flex border-b border-surface-border bg-surface-elevated px-2 pt-2 gap-1 text-xs">
+          <div className="flex border-b border-surface-border/60 px-2 pt-2 gap-0.5 text-xs">
             <button
               onClick={() => setSidebarTab('coach')}
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-t-lg font-semibold transition border-b-2 ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg font-medium transition border-b-2 ${
                 sidebarTab === 'coach'
-                  ? 'bg-surface text-accent border-accent'
-                  : 'text-slate-400 hover:text-slate-200 border-transparent'
+                  ? 'text-slate-200 border-accent'
+                  : 'text-slate-500 hover:text-slate-300 border-transparent'
               }`}
             >
-              <Lightbulb size={14} />
-              <span>Coach Lesson</span>
+              <Lightbulb size={13} />
+              <span>Coach</span>
             </button>
             <button
               onClick={() => setSidebarTab('review')}
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-t-lg font-semibold transition border-b-2 ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg font-medium transition border-b-2 ${
                 sidebarTab === 'review'
-                  ? 'bg-surface text-accent border-accent'
-                  : 'text-slate-400 hover:text-slate-200 border-transparent'
+                  ? 'text-slate-200 border-accent'
+                  : 'text-slate-500 hover:text-slate-300 border-transparent'
               }`}
             >
-              <BarChart3 size={14} />
-              <span>Game Review</span>
+              <BarChart3 size={13} />
+              <span>Review</span>
             </button>
             <button
               onClick={() => setSidebarTab('moves')}
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-t-lg font-semibold transition border-b-2 ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg font-medium transition border-b-2 ${
                 sidebarTab === 'moves'
-                  ? 'bg-surface text-accent border-accent'
-                  : 'text-slate-400 hover:text-slate-200 border-transparent'
+                  ? 'text-slate-200 border-accent'
+                  : 'text-slate-500 hover:text-slate-300 border-transparent'
               }`}
             >
-              <ListOrdered size={14} />
-              <span>Move List</span>
+              <ListOrdered size={13} />
+              <span>Moves</span>
             </button>
           </div>
 

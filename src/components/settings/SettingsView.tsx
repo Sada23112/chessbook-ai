@@ -89,39 +89,40 @@ export const SettingsView: React.FC = () => {
   if (!settings) return null;
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto bg-background max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Settings</h1>
-        <p className="text-slate-400 text-sm mt-0.5">
-          Configure engine parameters, default player identities, and local database backups.
-        </p>
-      </div>
-
-      {backupStatus && (
-        <div className="mb-6 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-2">
-          <CheckCircle2 size={16} />
-          <span>{backupStatus}</span>
+    <div className="flex-1 flex flex-col overflow-y-auto bg-background">
+      <div className="max-w-3xl w-full mx-auto px-5 md:px-8 py-7 md:py-10">
+        <div className="mb-8">
+          <h1 className="text-xl font-semibold text-slate-100 tracking-tight">Settings</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Engine, player accounts, and data management.
+          </p>
         </div>
-      )}
 
-      <div className="space-y-6">
+        {backupStatus && (
+          <div className="mb-6 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/15 text-emerald-400 text-xs flex items-center gap-2">
+            <CheckCircle2 size={14} />
+            <span>{backupStatus}</span>
+          </div>
+        )}
+
+        <div className="space-y-4">
         {/* Engine Settings */}
-        <div className="bg-surface rounded-xl border border-surface-border p-6">
-          <h3 className="font-semibold text-slate-200 text-sm mb-4 flex items-center space-x-2">
-            <Cpu size={18} className="text-accent" />
-            <span>Stockfish Engine Preferences</span>
+        <div className="bg-surface rounded-2xl p-6">
+          <h3 className="font-medium text-slate-200 text-sm mb-4 flex items-center gap-2">
+            <Cpu size={16} className="text-accent" />
+            <span>Engine</span>
           </h3>
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">
-                Default Analysis Preset
+              <label className="text-xs text-slate-500 block mb-2">
+                Default analysis depth
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'quick', depth: 10, label: 'Quick (Depth 10)' },
-                  { id: 'standard', depth: 14, label: 'Standard (Depth 14)' },
-                  { id: 'deep', depth: 18, label: 'Deep (Depth 18)' },
+                  { id: 'quick', depth: 10, label: 'Quick (10)' },
+                  { id: 'standard', depth: 14, label: 'Standard (14)' },
+                  { id: 'deep', depth: 18, label: 'Deep (18)' },
                 ].map((preset) => (
                   <button
                     key={preset.id}
@@ -131,10 +132,10 @@ export const SettingsView: React.FC = () => {
                         engineDepth: preset.depth,
                       })
                     }
-                    className={`py-2 px-3 rounded-lg text-xs font-medium border transition ${
+                    className={`py-2 px-3 rounded-xl text-xs font-medium transition ${
                       settings.engineDepth === preset.depth
-                        ? 'bg-accent/15 text-accent border-accent/40 font-bold'
-                        : 'bg-surface-elevated text-slate-400 border-surface-border hover:text-slate-200'
+                        ? 'bg-accent/15 text-accent font-semibold'
+                        : 'bg-surface-elevated text-slate-400 hover:text-slate-300'
                     }`}
                   >
                     {preset.label}
@@ -143,8 +144,8 @@ export const SettingsView: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-2 flex items-center justify-between text-xs text-slate-300">
-              <span>Show Best Move Arrow on Board</span>
+            <div className="flex items-center justify-between text-sm text-slate-300">
+              <span>Show best move arrow</span>
               <input
                 type="checkbox"
                 checked={settings.showBestMoveArrow}
@@ -152,8 +153,8 @@ export const SettingsView: React.FC = () => {
                 className="w-4 h-4 accent-accent rounded cursor-pointer"
               />
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-300">
-              <span>Show Live Evaluation Bar</span>
+            <div className="flex items-center justify-between text-sm text-slate-300">
+              <span>Show evaluation bar</span>
               <input
                 type="checkbox"
                 checked={settings.showEvalBar}
@@ -165,69 +166,69 @@ export const SettingsView: React.FC = () => {
         </div>
 
         {/* Player Profiles */}
-        <div className="bg-surface rounded-xl border border-surface-border p-6">
-          <h3 className="font-semibold text-slate-200 text-sm mb-4 flex items-center space-x-2">
-            <User size={18} className="text-accent" />
-            <span>Default Player Accounts</span>
+        <div className="bg-surface rounded-2xl p-6">
+          <h3 className="font-medium text-slate-200 text-sm mb-4 flex items-center gap-2">
+            <User size={16} className="text-accent" />
+            <span>Player accounts</span>
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">
-                Chess.com Username
+              <label className="text-xs text-slate-500 block mb-1.5">
+                Chess.com username
               </label>
               <input
                 type="text"
                 value={chessComUser}
                 onChange={(e) => setChessComUser(e.target.value)}
                 placeholder="e.g. magnuscarlsen"
-                className="w-full bg-surface-muted border border-surface-border rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-accent"
+                className="w-full bg-surface-elevated border-none rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent/40 placeholder-slate-600"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">
-                Lichess Username
+              <label className="text-xs text-slate-500 block mb-1.5">
+                Lichess username
               </label>
               <input
                 type="text"
                 value={lichessUser}
                 onChange={(e) => setLichessUser(e.target.value)}
                 placeholder="e.g. DrNykterstein"
-                className="w-full bg-surface-muted border border-surface-border rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-accent"
+                className="w-full bg-surface-elevated border-none rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent/40 placeholder-slate-600"
               />
             </div>
           </div>
 
           <button
             onClick={handleSaveUsernames}
-            className="px-4 py-2 bg-accent hover:bg-accent-hover text-black font-semibold text-xs rounded-lg transition"
+            className="px-4 py-2 bg-accent hover:bg-accent-hover text-black font-semibold text-xs rounded-xl transition"
           >
-            Save Player Usernames
+            Save
           </button>
         </div>
 
-        {/* Data Portability (Export & Restore) */}
-        <div className="bg-surface rounded-xl border border-surface-border p-6">
-          <h3 className="font-semibold text-slate-200 text-sm mb-2 flex items-center space-x-2">
-            <Shield size={18} className="text-accent" />
-            <span>Local Data Portability</span>
+        {/* Data Portability */}
+        <div className="bg-surface rounded-2xl p-6">
+          <h3 className="font-medium text-slate-200 text-sm mb-1.5 flex items-center gap-2">
+            <Shield size={16} className="text-accent" />
+            <span>Data portability</span>
           </h3>
-          <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-            All your games, opening repertoires, analysis trees, and spaced repetition cards are stored strictly inside your browser's IndexedDB. Export a JSON backup to transfer your data across machines.
+          <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+            Everything is stored locally in your browser. Export a backup to move data across devices.
           </p>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2.5">
             <button
               onClick={handleExportBackup}
-              className="px-4 py-2 bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border rounded-lg text-xs font-semibold transition flex items-center space-x-2"
+              className="px-4 py-2 bg-surface-elevated hover:bg-surface-hover text-slate-300 rounded-xl text-xs font-medium transition flex items-center gap-2"
             >
-              <Download size={14} />
-              <span>Export Database Backup (.json)</span>
+              <Download size={13} />
+              <span>Export backup</span>
             </button>
 
-            <label className="px-4 py-2 bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border rounded-lg text-xs font-semibold transition flex items-center space-x-2 cursor-pointer">
-              <Upload size={14} />
-              <span>Restore Database (.json)</span>
+            <label className="px-4 py-2 bg-surface-elevated hover:bg-surface-hover text-slate-300 rounded-xl text-xs font-medium transition flex items-center gap-2 cursor-pointer">
+              <Upload size={13} />
+              <span>Restore backup</span>
               <input
                 type="file"
                 accept=".json"
@@ -239,22 +240,23 @@ export const SettingsView: React.FC = () => {
         </div>
 
         {/* Danger Zone */}
-        <div className="bg-rose-500/5 rounded-xl border border-rose-500/20 p-6">
-          <h3 className="font-semibold text-rose-400 text-sm mb-2 flex items-center space-x-2">
-            <AlertTriangle size={18} />
-            <span>Danger Zone</span>
+        <div className="bg-rose-500/5 rounded-2xl p-6">
+          <h3 className="font-medium text-rose-400/80 text-sm mb-1.5 flex items-center gap-2">
+            <AlertTriangle size={16} />
+            <span>Danger zone</span>
           </h3>
-          <p className="text-xs text-slate-400 mb-4">
-            Reset all local databases, saved game analyses, opening lines, and exercise histories.
+          <p className="text-xs text-slate-500 mb-4">
+            Permanently delete all games, analyses, and training history.
           </p>
           <button
             onClick={handleClearAllData}
-            className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-xs font-semibold transition flex items-center space-x-2"
+            className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-medium transition flex items-center gap-2"
           >
-            <Trash2 size={14} />
-            <span>Clear All Local Data</span>
+            <Trash2 size={13} />
+            <span>Clear all data</span>
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

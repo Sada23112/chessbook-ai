@@ -8,19 +8,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0f1215',
+        background: '#0b0f14',
         surface: {
-          DEFAULT: '#161b1f',
-          muted: '#121619',
-          elevated: '#1e2429',
-          border: '#2a3239',
-          hover: '#252d33'
+          DEFAULT: '#111720',
+          muted: '#0e1319',
+          elevated: '#18202c',
+          border: '#212d3d',
+          hover: '#1e2a38'
         },
         accent: {
           DEFAULT: '#22c55e',
           hover: '#16a34a',
           dark: '#15803d',
-          subtle: '#22c55e1a'
+          subtle: '#22c55e18'
         },
         chess: {
           best: '#22c55e',
@@ -37,7 +37,12 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace']
-      }
+      },
+      borderRadius: {
+        'xl': '0.75rem',
+        '2xl': '1rem',
+        '3xl': '1.25rem',
+      },
     },
   },
   plugins: [],

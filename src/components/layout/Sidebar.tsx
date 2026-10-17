@@ -31,44 +31,40 @@ export const Sidebar: React.FC = () => {
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-surface border-r border-surface-border transition-all duration-300 z-20 ${
-          collapsed ? 'w-18' : 'w-64'
+        className={`hidden md:flex flex-col bg-surface border-r border-surface-border/60 transition-all duration-300 z-20 ${
+          collapsed ? 'w-16' : 'w-60'
         }`}
       >
         {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-surface-border">
+        <div className="h-14 flex items-center justify-between px-3 border-b border-surface-border/60">
           {!collapsed && (
-            <div className="flex items-center space-x-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/40 flex items-center justify-center text-accent font-bold">
-                ♔
-              </div>
+            <div className="flex items-center gap-2.5 overflow-hidden pl-1">
+              <span className="text-lg leading-none select-none">♔</span>
               <div className="flex flex-col">
-                <span className="font-semibold text-slate-100 text-sm tracking-tight leading-tight">
+                <span className="font-semibold text-slate-100 text-[13px] tracking-tight leading-tight">
                   Chessbook AI
                 </span>
-                <span className="text-[11px] text-accent font-medium leading-none">
+                <span className="text-[10px] text-slate-500 font-normal leading-none mt-0.5">
                   Personal Coach
                 </span>
               </div>
             </div>
           )}
           {collapsed && (
-            <div className="mx-auto w-8 h-8 rounded-lg bg-accent/15 border border-accent/40 flex items-center justify-center text-accent font-bold">
-              ♔
-            </div>
+            <span className="mx-auto text-lg leading-none select-none text-slate-300">♔</span>
           )}
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-surface-elevated rounded-md transition"
+            className="p-1.5 text-slate-600 hover:text-slate-300 rounded-md transition shrink-0"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
         </div>
 
         {/* Navigation list */}
-        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
@@ -77,38 +73,36 @@ export const Sidebar: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setTab(item.id)}
-                className={`w-full flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                className={`w-full flex items-center rounded-lg px-3 py-2 text-sm transition-all ${
                   isActive
-                    ? 'bg-accent/15 text-accent border border-accent/30 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-surface-elevated'
-                } ${collapsed ? 'justify-center px-0' : 'space-x-3'}`}
+                    ? 'bg-surface-elevated text-slate-100 font-medium'
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-surface-elevated/60'
+                } ${collapsed ? 'justify-center px-0' : 'gap-3'}`}
                 title={collapsed ? item.label : undefined}
               >
-                <Icon size={18} className={isActive ? 'text-accent' : 'text-slate-400'} />
-                {!collapsed && <span>{item.label}</span>}
+                <Icon
+                  size={17}
+                  className={isActive ? 'text-accent' : 'text-slate-500'}
+                  strokeWidth={isActive ? 2.2 : 1.8}
+                />
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </button>
             );
           })}
         </nav>
 
-        {/* Engine status pill at footer */}
-        <div className="p-3 border-t border-surface-border">
-          <div
-            className={`flex items-center rounded-lg bg-surface-muted p-2.5 border border-surface-border/50 text-xs ${
-              collapsed ? 'justify-center' : 'space-x-2.5'
-            }`}
-          >
-            <Cpu
-              size={16}
-              className={isAnalyzing ? 'text-accent animate-spin' : 'text-slate-400'}
-            />
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-slate-300 truncate">
-                  {isAnalyzing ? 'Analyzing Game...' : 'Stockfish Ready'}
-                </p>
-                {isAnalyzing && (
-                  <div className="w-full bg-surface-elevated h-1 rounded-full mt-1 overflow-hidden">
+        {/* Engine status at footer */}
+        <div className="p-3 border-t border-surface-border/60">
+          {isAnalyzing ? (
+            <div className={`flex items-center gap-2 text-xs ${collapsed ? 'justify-center' : ''}`}>
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-60" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
+              </span>
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-accent font-medium truncate text-[11px]">Analyzing…</p>
+                  <div className="w-full bg-surface-border h-0.5 rounded-full mt-1 overflow-hidden">
                     <div
                       className="bg-accent h-full transition-all duration-200"
                       style={{
@@ -120,19 +114,23 @@ export const Sidebar: React.FC = () => {
                       }}
                     />
                   </div>
-                )}
-                {!isAnalyzing && (
-                  <p className="text-[10px] text-slate-500 truncate">Local Web Worker</p>
-                )}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={`flex items-center gap-2 text-xs ${collapsed ? 'justify-center' : ''}`}>
+              <Cpu size={14} className="text-slate-600 shrink-0" />
+              {!collapsed && (
+                <span className="text-slate-600 text-[11px] truncate">Stockfish ready</span>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 
       {/* Mobile Bottom Navigation */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-surface-border z-40 flex items-center justify-around px-1 py-1"
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-surface-border/60 z-40 flex items-center justify-around px-1 py-1"
         style={{ paddingBottom: 'max(0.35rem, env(safe-area-inset-bottom))' }}
       >
         {navItems.map((item) => {
@@ -157,14 +155,12 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setTab(item.id)}
-              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg font-medium transition min-h-[48px] ${
-                isActive
-                  ? 'text-accent font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg transition min-h-[48px] ${
+                isActive ? 'text-accent' : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              <Icon size={19} className={isActive ? 'text-accent' : 'text-slate-400'} />
-              <span className="mt-0.5 text-[9px] leading-tight truncate">{shortLabel}</span>
+              <Icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
+              <span className="mt-0.5 text-[9px] leading-tight truncate font-medium">{shortLabel}</span>
             </button>
           );
         })}

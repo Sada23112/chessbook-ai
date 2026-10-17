@@ -193,29 +193,29 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
     switch (status) {
       case 'mastered':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400">
             <Award size={12} />
             <span>Mastered</span>
           </span>
         );
       case 'completed':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400">
             <CheckCircle2 size={12} />
             <span>Completed</span>
           </span>
         );
       case 'in_progress':
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400">
             <Sparkles size={12} />
-            <span>In Progress</span>
+            <span>In progress</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-500/20 text-slate-400 border border-slate-500/30">
-            <span>Not Started</span>
+          <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400">
+            <span>Not started</span>
           </span>
         );
     }
@@ -227,52 +227,46 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
       <div className="flex items-center justify-between gap-3 mb-6">
         <button
           onClick={onBackToLibrary}
-          className="p-2 sm:px-3 sm:py-2 rounded-xl bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white border border-surface-border transition flex items-center space-x-1.5 text-xs font-semibold"
+          className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-surface hover:bg-surface-elevated text-slate-300 hover:text-white transition flex items-center space-x-1.5 text-xs font-medium"
         >
           <ArrowLeft size={16} />
-          <span>Back to Library</span>
+          <span>Back to library</span>
         </button>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={() => onBrowseMoveTree(repertoire)}
-            className="px-3 py-2 rounded-xl bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white border border-surface-border transition flex items-center space-x-1.5 text-xs font-semibold"
+            className="px-3.5 py-2 rounded-xl bg-surface-elevated hover:bg-surface-border text-slate-300 hover:text-white transition flex items-center space-x-1.5 text-xs font-medium"
           >
             <Compass size={15} className="text-accent" />
-            <span>Browse Move Tree</span>
+            <span>Browse move tree</span>
           </button>
 
           <button
             onClick={handleResetProgress}
             disabled={isResetting || lineRecords.length === 0}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-surface-elevated hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 disabled:opacity-40 disabled:hover:bg-surface-elevated border border-surface-border transition flex items-center space-x-1 text-xs font-semibold"
+            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-surface hover:bg-rose-500/10 text-slate-400 hover:text-rose-300 disabled:opacity-40 transition flex items-center space-x-1 text-xs font-medium"
             title="Reset course progress"
           >
             <RotateCcw size={14} />
-            <span className="hidden sm:inline">Reset Progress</span>
+            <span className="hidden sm:inline">Reset progress</span>
           </button>
         </div>
       </div>
 
       {/* Course Header Banner */}
-      <div className="bg-surface rounded-2xl border border-surface-border p-5 sm:p-6 mb-6 shadow-sm">
+      <div className="bg-surface rounded-2xl p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex-1 min-w-0">
             {/* Badges */}
             <div className="flex items-center space-x-2 mb-2.5">
               {previewVariation?.eco && (
-                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-surface-elevated border border-surface-border text-accent">
+                <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-surface-elevated text-accent">
                   {previewVariation.eco}
                 </span>
               )}
-              <span
-                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                  repertoire.color === 'white'
-                    ? 'bg-slate-100 text-slate-900 border-white'
-                    : 'bg-slate-900 text-slate-100 border-slate-700'
-                }`}
-              >
-                {repertoire.color} Course
+              <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-surface-elevated text-slate-300 capitalize">
+                {repertoire.color} course
               </span>
               {getStatusBadge(courseProgress.status)}
             </div>
@@ -286,7 +280,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
             </p>
 
             {/* Quick Summary Meta */}
-            <div className="flex flex-wrap items-center gap-4 mt-4 text-xs text-slate-400">
+            <div className="flex flex-wrap items-center gap-5 mt-4 text-xs text-slate-400">
               <div className="flex items-center space-x-1.5">
                 <Layers size={14} className="text-accent" />
                 <span>{course.lessons.length} Learning Levels</span>
@@ -300,7 +294,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                 <span>
                   {courseProgress.estimatedMinutesRemaining > 0
                     ? `~${courseProgress.estimatedMinutesRemaining} mins remaining`
-                    : 'Course completed!'}
+                    : 'Course completed'}
                 </span>
               </div>
             </div>
@@ -308,7 +302,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
           {/* Representative Board Preview */}
           {previewVariation && (
-            <div className="flex items-center space-x-4 p-3 bg-surface-elevated/70 border border-surface-border rounded-xl shrink-0 self-center md:self-auto">
+            <div className="flex items-center space-x-4 p-3 bg-surface-elevated rounded-2xl shrink-0 self-center md:self-auto">
               <CompactBoardPreview
                 moves={previewVariation.moves}
                 targetPly={previewPly}
@@ -316,8 +310,8 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                 size={110}
               />
               <div className="text-xs">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
-                  Main Line Target
+                <span className="text-[11px] font-medium text-slate-400 block">
+                  Main line target
                 </span>
                 <span className="text-xs font-semibold text-slate-200 block truncate max-w-[150px]">
                   {previewVariation.name}
@@ -332,28 +326,26 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
       </div>
 
       {/* Overall Progress & Primary Actions Bar */}
-      <div className="bg-surface rounded-2xl border border-surface-border p-5 sm:p-6 mb-8">
+      <div className="bg-surface rounded-2xl p-6 mb-8">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Progress Visual */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-                Course Progress
+              <span className="text-xs font-semibold text-slate-300">
+                Course progress
               </span>
-              <span className="text-xs font-mono font-bold text-accent">
+              <span className="text-xs font-mono font-semibold text-accent">
                 {courseProgress.completedLines} of {courseProgress.totalLines} lines completed ·{' '}
                 {courseProgress.percentage}%
               </span>
             </div>
 
             {/* Visual animated progress bar */}
-            <div className="w-full h-3 bg-surface-elevated rounded-full overflow-hidden border border-surface-border">
+            <div className="w-full h-2.5 bg-surface-elevated rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-500 rounded-full ${
                   courseProgress.percentage === 100
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                    : courseProgress.percentage > 50
-                    ? 'bg-gradient-to-r from-accent to-emerald-400'
+                    ? 'bg-emerald-400'
                     : 'bg-accent'
                 }`}
                 style={{ width: `${courseProgress.percentage}%` }}
@@ -362,33 +354,33 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
             {/* Metrics Breakdown Chips */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4">
-              <div className="bg-surface-elevated/80 border border-surface-border rounded-xl p-2.5 text-center">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+              <div className="bg-surface-elevated rounded-xl p-3 text-center">
+                <span className="text-[11px] text-slate-400 font-medium block">
                   Completed
                 </span>
                 <span className="text-base font-bold font-mono text-slate-100">
                   {courseProgress.completedLines} / {courseProgress.totalLines}
                 </span>
               </div>
-              <div className="bg-surface-elevated/80 border border-surface-border rounded-xl p-2.5 text-center">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+              <div className="bg-surface-elevated rounded-xl p-3 text-center">
+                <span className="text-[11px] text-slate-400 font-medium block">
                   Mastered
                 </span>
                 <span className="text-base font-bold font-mono text-emerald-400">
                   {courseProgress.masteredLines}
                 </span>
               </div>
-              <div className="bg-surface-elevated/80 border border-surface-border rounded-xl p-2.5 text-center">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                  Needs Review
+              <div className="bg-surface-elevated rounded-xl p-3 text-center">
+                <span className="text-[11px] text-slate-400 font-medium block">
+                  Needs review
                 </span>
                 <span className="text-base font-bold font-mono text-amber-400">
                   {courseProgress.difficultLines}
                 </span>
               </div>
-              <div className="bg-surface-elevated/80 border border-surface-border rounded-xl p-2.5 text-center">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold block">
-                  Time Left
+              <div className="bg-surface-elevated rounded-xl p-3 text-center">
+                <span className="text-[11px] text-slate-400 font-medium block">
+                  Time left
                 </span>
                 <span className="text-base font-bold font-mono text-slate-300">
                   {courseProgress.estimatedMinutesRemaining}m
@@ -401,33 +393,33 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
           <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 lg:w-56 shrink-0 justify-center">
             <button
               onClick={handleContinueLearning}
-              className="py-3 px-4 bg-accent hover:bg-accent-hover text-black font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-md"
+              className="py-3 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2"
             >
               <Play size={16} className="fill-black" />
               <span>
                 {courseProgress.completedLines === 0
-                  ? 'Start Learning'
+                  ? 'Start learning'
                   : courseProgress.percentage === 100
-                  ? 'Review All Lines'
-                  : 'Continue Learning'}
+                  ? 'Review all lines'
+                  : 'Continue learning'}
               </span>
             </button>
 
             <button
               onClick={handleStartFromBeginning}
-              className="py-2.5 px-4 bg-surface-elevated hover:bg-surface-border text-slate-200 font-semibold rounded-xl text-xs border border-surface-border transition flex items-center justify-center space-x-2"
+              className="py-2.5 px-4 bg-surface-elevated hover:bg-surface-border text-slate-200 font-medium rounded-xl text-xs transition flex items-center justify-center space-x-2"
             >
               <RotateCcw size={14} />
-              <span>Start from Beginning</span>
+              <span>Start from beginning</span>
             </button>
 
             {courseProgress.difficultLines > 0 && (
               <button
                 onClick={handleReviewMistakes}
-                className="py-2.5 px-4 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-semibold rounded-xl text-xs border border-amber-500/30 transition flex items-center justify-center space-x-2"
+                className="py-2.5 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-medium rounded-xl text-xs transition flex items-center justify-center space-x-2"
               >
                 <AlertCircle size={14} />
-                <span>Review Mistakes ({courseProgress.difficultLines})</span>
+                <span>Review mistakes ({courseProgress.difficultLines})</span>
               </button>
             )}
           </div>
@@ -459,27 +451,27 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
             return (
               <div
                 key={lesson.id}
-                className={`bg-surface rounded-2xl border transition duration-200 overflow-hidden ${
+                className={`bg-surface rounded-2xl transition duration-200 overflow-hidden ${
                   lessonSummary.recallTestPassed
-                    ? 'border-emerald-500/40 bg-surface/90'
+                    ? 'ring-1 ring-emerald-500/30'
                     : lessonSummary.isLocked
-                    ? 'border-surface-border/50 opacity-70 bg-surface/60'
-                    : 'border-surface-border hover:border-surface-border/90'
+                    ? 'opacity-60'
+                    : ''
                 }`}
               >
                 {/* Lesson Header Card */}
-                <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-start space-x-3.5 flex-1 min-w-0">
                     {/* Level Number Badge */}
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 border ${
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-semibold shrink-0 ${
                         lessonSummary.recallTestPassed
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          ? 'bg-emerald-500/10 text-emerald-400'
                           : lessonSummary.isLocked
-                          ? 'bg-surface-elevated/40 text-slate-500 border-surface-border/50'
+                          ? 'bg-surface-elevated text-slate-500'
                           : lessonSummary.learningStageCompleted
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                          : 'bg-accent/20 text-accent border-accent/40'
+                          ? 'bg-amber-500/10 text-amber-300'
+                          : 'bg-accent/10 text-accent'
                       }`}
                     >
                       {lessonSummary.recallTestPassed ? (
@@ -493,17 +485,17 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-slate-400">
+                        <span className="text-xs font-semibold text-slate-400">
                           Level {lesson.levelNumber}
                         </span>
                         <h3 className="text-sm font-bold text-slate-100">{lesson.title}</h3>
                         <span
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                             lesson.difficulty === 'Beginner'
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              ? 'bg-emerald-500/10 text-emerald-400'
                               : lesson.difficulty === 'Intermediate'
-                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                              : 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                              ? 'bg-blue-500/10 text-blue-400'
+                              : 'bg-purple-500/10 text-purple-400'
                           }`}
                         >
                           {lesson.difficulty}
@@ -517,41 +509,41 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                       {/* Two-Stage Progress Badges */}
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         {lessonSummary.isLocked ? (
-                          <span className="text-[11px] font-semibold text-amber-400/90 flex items-center space-x-1">
+                          <span className="text-xs font-medium text-amber-400/90 flex items-center space-x-1">
                             <Lock size={12} />
-                            <span>Locked: Pass Level {lesson.levelNumber - 1} Blind Recall Test to unlock</span>
+                            <span>Locked: Pass Level {lesson.levelNumber - 1} recall test to unlock</span>
                           </span>
                         ) : (
                           <>
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center space-x-1 ${
+                              className={`text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center space-x-1 ${
                                 lessonSummary.learningStageCompleted
-                                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                                  : 'bg-surface-elevated text-slate-400 border-surface-border'
+                                  ? 'bg-emerald-500/10 text-emerald-400'
+                                  : 'bg-surface-elevated text-slate-400'
                               }`}
                             >
                               <Eye size={11} />
                               <span>
-                                Stage 1: {lessonSummary.learningStageCompleted ? 'Lines Learned ✓' : 'Learning with Arrows'}
+                                Stage 1: {lessonSummary.learningStageCompleted ? 'Lines learned ✓' : 'Guided'}
                               </span>
                             </span>
 
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center space-x-1 ${
+                              className={`text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center space-x-1 ${
                                 lessonSummary.recallTestPassed
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                  ? 'bg-amber-500/10 text-amber-400'
                                   : lessonSummary.learningStageCompleted
-                                  ? 'bg-blue-500/15 text-blue-300 border-blue-500/30 font-semibold animate-pulse'
-                                  : 'bg-surface-elevated text-slate-500 border-surface-border'
+                                  ? 'bg-blue-500/10 text-blue-300'
+                                  : 'bg-surface-elevated text-slate-500'
                               }`}
                             >
                               <ShieldCheck size={11} />
                               <span>
                                 Stage 2:{' '}
                                 {lessonSummary.recallTestPassed
-                                  ? 'Blind Recall Passed ✓'
+                                  ? 'Recall test passed ✓'
                                   : lessonSummary.learningStageCompleted
-                                  ? 'Ready for Test'
+                                  ? 'Ready for test'
                                   : 'Locked'}
                               </span>
                             </span>
@@ -561,7 +553,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
                       {/* Lesson Progress Bar */}
                       <div className="flex items-center space-x-3 text-xs">
-                        <div className="w-32 sm:w-48 h-2 bg-surface-elevated rounded-full overflow-hidden border border-surface-border">
+                        <div className="w-32 sm:w-48 h-2 bg-surface-elevated rounded-full overflow-hidden">
                           <div
                             className={`h-full transition-all duration-300 rounded-full ${
                               lessonSummary.recallTestPassed ? 'bg-emerald-400' : 'bg-accent'
@@ -569,7 +561,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                             style={{ width: `${lessonSummary.percentage}%` }}
                           />
                         </div>
-                        <span className="text-[11px] font-mono text-slate-400">
+                        <span className="text-xs font-mono text-slate-400">
                           {lessonSummary.completedLines} of {lessonSummary.totalLines} lines (
                           {lessonSummary.percentage}%)
                         </span>
@@ -580,7 +572,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                   {/* Lesson Controls */}
                   <div className="flex items-center space-x-2 shrink-0 self-end md:self-auto">
                     {lessonSummary.isLocked ? (
-                      <div className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-surface-elevated/60 text-slate-500 border border-surface-border text-xs font-semibold">
+                      <div className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-surface-elevated text-slate-500 text-xs font-medium">
                         <Lock size={13} />
                         <span>Locked</span>
                       </div>
@@ -596,10 +588,10 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                             false
                           )
                         }
-                        className="py-2 px-3.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-accent hover:bg-accent-hover text-black shadow-sm"
+                        className="py-2 px-3.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 bg-accent hover:bg-accent-hover text-black"
                       >
                         <Eye size={14} />
-                        <span>Learn Lines (Guided)</span>
+                        <span>Learn lines (Guided)</span>
                       </button>
                     ) : !lessonSummary.recallTestPassed ? (
                       <button
@@ -612,10 +604,10 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                             true
                           )
                         }
-                        className="py-2 px-3.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black shadow-md font-bold"
+                        className="py-2 px-3.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 bg-accent hover:bg-accent-hover text-black"
                       >
                         <ShieldCheck size={14} />
-                        <span>Test My Memory</span>
+                        <span>Test my memory</span>
                       </button>
                     ) : (
                       <div className="flex items-center space-x-1.5">
@@ -629,7 +621,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                               false
                             )
                           }
-                          className="py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border transition flex items-center space-x-1"
+                          className="py-1.5 px-2.5 rounded-lg text-xs font-medium bg-surface-elevated hover:bg-surface-border text-slate-200 transition flex items-center space-x-1"
                         >
                           <Eye size={12} />
                           <span>Guided</span>
@@ -644,7 +636,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                               true
                             )
                           }
-                          className="py-1.5 px-2.5 rounded-lg text-xs font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center space-x-1"
+                          className="py-1.5 px-2.5 rounded-lg text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition flex items-center space-x-1"
                         >
                           <ShieldCheck size={12} />
                           <span>Retest</span>
@@ -654,7 +646,7 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
                     <button
                       onClick={() => toggleLessonExpanded(lesson.id)}
-                      className="p-2 rounded-xl bg-surface-elevated hover:bg-surface-border text-slate-400 hover:text-white border border-surface-border transition"
+                      className="p-2 rounded-xl bg-surface-elevated hover:bg-surface-border text-slate-400 hover:text-white transition"
                       title={isExpanded ? 'Collapse variation lines' : 'Expand variation lines'}
                     >
                       {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -664,9 +656,9 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
                 {/* Expanded Lesson Lines */}
                 {isExpanded && (
-                  <div className="border-t border-surface-border/70 bg-surface-elevated/40 px-4 py-3 sm:px-5 space-y-2">
-                    <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                      Included Opening Lines ({lesson.variations.length})
+                  <div className="border-t border-surface-elevated bg-surface-elevated/40 px-5 py-4 space-y-2">
+                    <div className="text-xs font-medium text-slate-400 mb-1">
+                      Included opening lines ({lesson.variations.length})
                     </div>
                     {lesson.variations.map((v, idx) => {
                       const record = lineRecordsMap.get(v.id);
@@ -677,22 +669,22 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
                       return (
                         <div
                           key={v.id}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-surface border border-surface-border/60 hover:border-surface-border transition text-xs"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-surface hover:bg-surface/80 transition text-xs"
                         >
                           <div className="flex items-center space-x-2.5 min-w-0">
-                            <span className="text-[11px] font-mono text-slate-500 w-5">
+                            <span className="text-xs font-mono text-slate-500 w-5">
                               #{idx + 1}
                             </span>
                             {v.eco && (
-                              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-elevated border border-surface-border text-accent">
+                              <span className="font-mono text-xs font-medium px-1.5 py-0.5 rounded bg-surface-elevated text-accent">
                                 {v.eco}
                               </span>
                             )}
                             <div className="min-w-0">
-                              <span className="font-semibold text-slate-200 block truncate">
+                              <span className="font-medium text-slate-200 block truncate">
                                 {v.name}
                               </span>
-                              <span className="text-[11px] font-mono text-slate-400 truncate block">
+                              <span className="text-xs font-mono text-slate-400 truncate block">
                                 {v.moves.slice(0, 5).join(' ')}... ({v.moves.length} plies)
                               </span>
                             </div>
@@ -700,32 +692,32 @@ export const OpeningCourseView: React.FC<OpeningCourseViewProps> = ({
 
                           <div className="flex items-center space-x-2.5 shrink-0 self-end sm:self-auto">
                             {isLineMastered ? (
-                              <span className="font-mono text-[11px] font-bold text-amber-400 flex items-center space-x-1">
+                              <span className="font-mono text-xs font-semibold text-amber-400 flex items-center space-x-1">
                                 <Award size={12} />
                                 <span>Mastered</span>
                               </span>
                             ) : isLineCompleted ? (
-                              <span className="font-mono text-[11px] font-bold text-emerald-400 flex items-center space-x-1">
+                              <span className="font-mono text-xs font-semibold text-emerald-400 flex items-center space-x-1">
                                 <CheckCircle2 size={12} />
                                 <span>Completed</span>
                               </span>
                             ) : record?.attemptsCount ? (
-                              <span className="font-mono text-[11px] text-blue-400">
-                                In Progress
+                              <span className="font-mono text-xs text-blue-400">
+                                In progress
                               </span>
                             ) : (
-                              <span className="text-[11px] text-slate-500">Not started</span>
+                              <span className="text-xs text-slate-500">Not started</span>
                             )}
 
                             {record?.accuracy !== undefined && (
-                              <span className="font-mono text-[11px] text-slate-400">
+                              <span className="font-mono text-xs text-slate-400">
                                 {record.accuracy}% acc
                               </span>
                             )}
 
                             <button
                               onClick={() => onStartLessonTraining(repertoire, lesson, v.id)}
-                              className="py-1 px-2.5 rounded-lg bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border text-[11px] font-semibold transition flex items-center space-x-1"
+                              className="py-1.5 px-3 rounded-lg bg-surface-elevated hover:bg-surface-border text-slate-200 text-xs font-medium transition flex items-center space-x-1"
                             >
                               <Play size={10} />
                               <span>Train</span>

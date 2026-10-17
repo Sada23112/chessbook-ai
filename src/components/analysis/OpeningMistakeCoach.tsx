@@ -216,20 +216,20 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
   if (!analysis) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-lg mx-auto">
-        <div className="w-16 h-16 rounded-2xl bg-surface-elevated border border-surface-border flex items-center justify-center text-accent text-3xl mb-4 shadow">
+        <div className="w-14 h-14 rounded-2xl bg-surface-elevated flex items-center justify-center text-accent text-2xl mb-4">
           ♟
         </div>
-        <h2 className="text-xl font-bold text-slate-100 mb-2">Analysis Required</h2>
+        <h2 className="text-xl font-semibold text-slate-100 mb-2">Analysis required</h2>
         <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-          Run engine analysis to detect your opening inaccuracies and learn how to reach a better position.
+          Run engine analysis to detect your opening inaccuracies and explore optimal continuations.
         </p>
         <button
           onClick={onStartFullAnalysis}
           disabled={isAnalyzing}
-          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg shadow transition flex items-center space-x-2"
+          className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-medium rounded-xl transition flex items-center space-x-2"
         >
           <Sparkles size={16} />
-          <span>{isAnalyzing ? 'Analyzing Game...' : 'Analyze Opening Moves'}</span>
+          <span>{isAnalyzing ? 'Analyzing game...' : 'Analyze opening moves'}</span>
         </button>
       </div>
     );
@@ -239,26 +239,26 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
   if (!hasOpeningMistakes || mistakes.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-xl mx-auto my-8">
-        <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-3xl mb-4 shadow">
-          <ShieldCheck size={36} />
+        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4">
+          <ShieldCheck size={32} />
         </div>
-        <h2 className="text-2xl font-bold text-slate-100 mb-2">Excellent Opening Play!</h2>
+        <h2 className="text-2xl font-bold text-slate-100 mb-2">Excellent opening play</h2>
         <p className="text-slate-300 text-sm leading-relaxed mb-6">
-          No significant inaccuracies or blunders were found in your opening phase (up to ply {openingBoundary.endPly}). You followed sound opening principles and maintained a solid, playable position.
+          No significant inaccuracies or blunders were found in your opening phase (up to ply {openingBoundary.endPly}). You followed sound opening principles and maintained a solid position.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={onOpenFullGame}
-            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg text-xs transition shadow flex items-center justify-center space-x-2"
+            className="px-5 py-2.5 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2"
           >
-            <span>Review Full Game</span>
+            <span>Review full game</span>
             <ChevronRight size={16} />
           </button>
           <button
             onClick={onFinishReview}
-            className="px-5 py-2.5 bg-surface-elevated hover:bg-surface-border text-slate-300 font-semibold rounded-lg text-xs transition border border-surface-border"
+            className="px-5 py-2.5 bg-surface-elevated hover:bg-surface-border text-slate-300 font-medium rounded-xl text-xs transition"
           >
-            Back to Game Summary
+            Back to summary
           </button>
         </div>
       </div>
@@ -266,36 +266,36 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col p-3 sm:p-6 pb-24 md:pb-6 overflow-y-auto bg-background">
+    <div className="flex-1 flex flex-col p-4 sm:p-6 pb-24 md:pb-6 overflow-y-auto bg-background">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-surface-border pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
-              Opening Coach
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent">
+              Opening analysis
             </span>
             <span className="text-xs font-mono text-slate-400">
-              {game.eco ? `${game.eco} — ` : ''}
+              {game.eco ? `${game.eco} · ` : ''}
               {game.opening || 'Opening Phase'}
             </span>
           </div>
           <h2 className="text-xl font-bold text-slate-100 mt-1">
-            Opening Mistake {currentMistakeIndex + 1} of {mistakes.length}
+            Opening mistake {currentMistakeIndex + 1} of {mistakes.length}
           </h2>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={onFinishReview}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface hover:bg-surface-border text-slate-300 border border-surface-border transition"
+            className="px-3.5 py-2 rounded-xl text-xs font-medium bg-surface hover:bg-surface-elevated text-slate-300 transition"
           >
-            Game Summary
+            Game summary
           </button>
           <button
             onClick={onOpenFullGame}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-surface-elevated hover:bg-surface-border text-slate-200 border border-surface-border transition flex items-center space-x-1"
+            className="px-3.5 py-2 rounded-xl text-xs font-medium bg-surface-elevated hover:bg-surface-border text-slate-200 transition flex items-center space-x-1.5"
           >
-            <span>Full Game</span>
+            <span>Full game</span>
             <ChevronRight size={14} />
           </button>
         </div>
@@ -305,10 +305,10 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-1">
         {/* Left Column: Interactive Chessboard */}
         <div className="lg:col-span-7 flex flex-col items-center">
-          <div className="w-full max-w-[480px] flex items-center justify-between mb-2 text-xs font-mono text-slate-400">
-            <span className="flex items-center space-x-1.5 font-sans font-semibold text-slate-200">
+          <div className="w-full max-w-[480px] flex items-center justify-between mb-2.5 text-xs text-slate-400">
+            <span className="flex items-center space-x-2 font-medium text-slate-200">
               <span
-                className={`w-3 h-3 rounded-full ${
+                className={`w-2.5 h-2.5 rounded-full ${
                   activeMistake.turn === 'w' ? 'bg-white' : 'bg-slate-900 border border-slate-600'
                 }`}
               />
@@ -316,8 +316,8 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
                 {activeMistake.turn === 'w' ? 'White' : 'Black'} to move (Ply {activeMistake.ply})
               </span>
             </span>
-            <span className="text-rose-400 font-bold">
-              Played: <span className="font-mono">{activeMistake.playedSan}</span>
+            <span className="text-rose-400 font-medium">
+              Played: <span className="font-mono font-bold">{activeMistake.playedSan}</span>
             </span>
           </div>
 
@@ -340,15 +340,15 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
 
           {/* Stepper controls under board if demonstrating */}
           {isDemonstrating && activeMistake.demonstrationSteps.length > 0 && (
-            <div className="w-full max-w-[480px] mt-3 p-2.5 rounded-xl bg-surface-elevated border border-surface-border flex items-center justify-between text-xs">
-              <span className="font-semibold text-slate-300">
+            <div className="w-full max-w-[480px] mt-3 p-3 rounded-2xl bg-surface-elevated flex items-center justify-between text-xs">
+              <span className="font-medium text-slate-300">
                 Engine line ({activeDemoStepIndex + 1}/{activeMistake.demonstrationSteps.length})
               </span>
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => handleSelectDemoStep(activeDemoStepIndex - 1)}
                   disabled={activeDemoStepIndex === 0}
-                  className="p-1 rounded bg-surface hover:bg-surface-border disabled:opacity-30 text-slate-300 transition"
+                  className="p-1 rounded-lg bg-surface hover:bg-surface-border disabled:opacity-30 text-slate-300 transition"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -357,7 +357,7 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
                     <button
                       key={idx}
                       onClick={() => handleSelectDemoStep(idx)}
-                      className={`px-1.5 py-0.5 rounded font-bold transition ${
+                      className={`px-2 py-0.5 rounded-md font-bold transition ${
                         activeDemoStepIndex === idx
                           ? 'bg-accent text-black'
                           : 'bg-surface text-slate-400 hover:text-slate-200'
@@ -370,7 +370,7 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
                 <button
                   onClick={() => handleSelectDemoStep(activeDemoStepIndex + 1)}
                   disabled={activeDemoStepIndex >= activeMistake.demonstrationSteps.length - 1}
-                  className="p-1 rounded bg-surface hover:bg-surface-border disabled:opacity-30 text-slate-300 transition"
+                  className="p-1 rounded-lg bg-surface hover:bg-surface-border disabled:opacity-30 text-slate-300 transition"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -380,42 +380,42 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
         </div>
 
         {/* Right Column: Coach Feedback, Comparison & Progression */}
-        <div className="lg:col-span-5 bg-surface rounded-xl border border-surface-border p-5 flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-surface rounded-2xl p-6 flex flex-col justify-between">
           <div className="space-y-4">
             {/* Mistake Context Header */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     activeMistake.classification === 'blunder'
-                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                      : 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                      ? 'bg-rose-500/10 text-rose-400'
+                      : 'bg-orange-500/10 text-orange-400'
                   }`}
                 >
                   {activeMistake.classification} (CPL -{activeMistake.cpl})
                 </span>
                 {activeMistake.isRepertoireDeviation && (
-                  <span className="text-[11px] text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded font-medium">
-                    Repertoire Divergence
+                  <span className="text-xs text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full font-medium">
+                    Repertoire divergence
                   </span>
                 )}
               </div>
 
               <h3 className="text-base font-bold text-slate-100">
-                Find the Better Opening Continuation
+                Find the better continuation
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed mt-1">
-                In your game, you played <span className="font-mono text-rose-400 font-bold">{activeMistake.playedSan}</span>.
+                In your game, you played <span className="font-mono text-rose-400 font-semibold">{activeMistake.playedSan}</span>.
                 Make the move on the board that leads to a healthier, better position.
               </p>
             </div>
 
             {/* Status Feedback: Correct */}
             {isSolved && (
-              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 animate-in fade-in">
+              <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-400">
                 <div className="flex items-center space-x-2 font-bold text-sm mb-1">
                   <CheckCircle2 size={18} />
-                  <span>Correct! You found {activeMistake.bestMoveSan}</span>
+                  <span>Correct — you found {activeMistake.bestMoveSan}</span>
                 </div>
                 <p className="text-xs text-slate-200 leading-relaxed">
                   {activeMistake.beginnerLesson}
@@ -425,20 +425,20 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
 
             {/* Status Feedback: Incorrect */}
             {isIncorrect && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 animate-in fade-in">
+              <div className="p-4 rounded-2xl bg-rose-500/10 text-rose-400">
                 <div className="flex items-center space-x-2 font-bold text-sm mb-1">
                   <XCircle size={18} />
                   <span>Not the best alternative</span>
                 </div>
                 <p className="text-xs text-slate-200 leading-relaxed">
-                  That move doesn't achieve optimal central control or piece activity. The position remains active so you can try again!
+                  That move doesn't achieve optimal central control or piece activity. Try another candidate move on the board.
                 </p>
               </div>
             )}
 
             {/* Status Feedback: Revealed */}
             {isRevealed && (
-              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 animate-in fade-in">
+              <div className="p-4 rounded-2xl bg-amber-500/10 text-amber-300">
                 <div className="flex items-center space-x-2 font-bold text-sm mb-1">
                   <Eye size={18} />
                   <span>Recommended: {activeMistake.bestMoveSan}</span>
@@ -451,10 +451,10 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
 
             {/* Hint Box */}
             {showHint && !isDemonstrating && (
-              <div className="p-3 rounded-lg bg-surface-elevated border border-surface-border text-xs text-slate-300 flex items-start space-x-2">
+              <div className="p-3.5 rounded-2xl bg-surface-elevated text-xs text-slate-300 flex items-start space-x-2.5">
                 <Lightbulb size={16} className="text-amber-400 mt-0.5 shrink-0" />
                 <div>
-                  <span className="font-semibold text-amber-400 block mb-0.5">Opening Hint</span>
+                  <span className="font-semibold text-amber-400 block mb-0.5">Opening hint</span>
                   <span>
                     Look for a move starting from square <span className="font-mono text-sky-400 font-bold uppercase">{activeMistake.bestMoveUci.slice(0, 2)}</span>. Focus on controlling central space and king safety.
                   </span>
@@ -464,11 +464,11 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
 
             {/* Reaching a Better Position Demonstration Box */}
             {isDemonstrating && (
-              <div className="p-3.5 rounded-xl bg-surface-elevated border border-surface-border space-y-3">
-                <div className="flex items-center justify-between border-b border-surface-border/60 pb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-accent flex items-center space-x-1.5">
+              <div className="p-4 rounded-2xl bg-surface-elevated space-y-3">
+                <div className="flex items-center justify-between pb-2">
+                  <span className="text-xs font-semibold text-accent flex items-center space-x-1.5">
                     <TrendingUp size={14} />
-                    <span>How This Reaches a Better Position</span>
+                    <span>How this reaches a better position</span>
                   </span>
                 </div>
 
@@ -476,17 +476,17 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
                   {activeMistake.comparison.summaryExplanation}
                 </p>
 
-                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                  <div className="p-2 rounded bg-surface border border-surface-border">
-                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                  <div className="p-3 rounded-xl bg-surface">
+                    <span className="text-slate-400 block text-[11px] font-medium">
                       Material & Dynamics
                     </span>
                     <span className="text-slate-200 font-medium">
                       {activeMistake.comparison.materialAdvantage}
                     </span>
                   </div>
-                  <div className="p-2 rounded bg-surface border border-surface-border">
-                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">
+                  <div className="p-3 rounded-xl bg-surface">
+                    <span className="text-slate-400 block text-[11px] font-medium">
                       King Safety
                     </span>
                     <span className="text-slate-200 font-medium">
@@ -499,23 +499,23 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-2 pt-4 border-t border-surface-border mt-4">
+          <div className="space-y-2 pt-5 border-t border-surface-border mt-5">
             {isDemonstrating ? (
               <div className="space-y-2">
                 {currentMistakeIndex < mistakes.length - 1 ? (
                   <button
                     onClick={() => setCurrentMistakeIndex((i) => i + 1)}
-                    className="w-full py-2.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg text-xs transition flex items-center justify-center space-x-2 shadow"
+                    className="w-full py-3 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2"
                   >
-                    <span>Continue to Next Opening Mistake</span>
+                    <span>Continue to next mistake</span>
                     <ArrowRight size={16} />
                   </button>
                 ) : (
                   <button
                     onClick={onFinishReview}
-                    className="w-full py-2.5 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-lg text-xs transition flex items-center justify-center space-x-2 shadow"
+                    className="w-full py-3 px-4 bg-accent hover:bg-accent-hover text-black font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2"
                   >
-                    <span>Finish Opening Review</span>
+                    <span>Finish opening review</span>
                     <Award size={16} />
                   </button>
                 )}
@@ -525,17 +525,17 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
                 <button
                   onClick={() => setShowHint(true)}
                   disabled={showHint}
-                  className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-border disabled:opacity-50 text-slate-300 rounded-lg text-xs font-medium border border-surface-border transition flex items-center justify-center space-x-1.5"
+                  className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border disabled:opacity-50 text-slate-300 rounded-xl text-xs font-medium transition flex items-center justify-center space-x-1.5"
                 >
                   <Lightbulb size={14} className="text-amber-400" />
-                  <span>Show Hint</span>
+                  <span>Show hint</span>
                 </button>
                 <button
                   onClick={handleRevealSolution}
-                  className="flex-1 py-2 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 rounded-lg text-xs font-medium border border-surface-border transition flex items-center justify-center space-x-1.5"
+                  className="flex-1 py-2.5 px-3 bg-surface-elevated hover:bg-surface-border text-slate-300 rounded-xl text-xs font-medium transition flex items-center justify-center space-x-1.5"
                 >
                   <Eye size={14} className="text-slate-400" />
-                  <span>Reveal Solution</span>
+                  <span>Reveal solution</span>
                 </button>
               </div>
             )}
@@ -543,10 +543,10 @@ export const OpeningMistakeCoach: React.FC<OpeningMistakeCoachProps> = ({
             {isIncorrect && (
               <button
                 onClick={handleRetry}
-                className="w-full py-2 px-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-lg text-xs font-semibold border border-rose-500/40 transition flex items-center justify-center space-x-1.5 shadow"
+                className="w-full py-2.5 px-3 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5"
               >
                 <RotateCcw size={14} />
-                <span>Try Again</span>
+                <span>Try again</span>
               </button>
             )}
           </div>

@@ -195,47 +195,47 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-background overflow-y-auto">
       {/* Header Bar */}
-      <div className="p-3 sm:p-4 bg-surface border-b border-surface-border flex items-center justify-between shrink-0">
-        <div className="flex items-center space-x-3 min-w-0">
+      <div className="px-5 py-4 bg-surface border-b border-surface-border/60 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={onExit}
-            className="p-2 rounded-xl bg-surface-elevated hover:bg-surface-border text-slate-300 transition"
+            className="p-2 rounded-xl bg-surface-elevated hover:bg-surface-hover text-slate-400 hover:text-slate-200 transition"
             title="Return"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} />
           </button>
           <div className="min-w-0">
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-slate-100 text-sm sm:text-base truncate">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-slate-100 text-sm sm:text-base truncate">
                 Anti-Opening Trainer
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
                 Defense & Refutation
               </span>
             </div>
-            <p className="text-xs text-slate-400 truncate">
-              Learn how to neutralize aggressive gambits, traps, and tricky sidelines
+            <p className="text-xs text-slate-500 truncate mt-0.5">
+              Neutralize aggressive gambits, traps, and tricky sidelines
             </p>
           </div>
         </div>
 
         {/* Guided vs Recall Toggle */}
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center bg-surface-elevated border border-surface-border rounded-xl p-0.5 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-surface-elevated rounded-xl p-0.5 text-xs">
             <button
               onClick={() => {
                 setLearningMode('guided');
                 setShowHint(false);
                 setShowSolution(false);
               }}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
                 learningMode === 'guided'
-                  ? 'bg-accent text-black font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-accent/15 text-accent font-semibold'
+                  : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               <Eye size={13} />
-              <span className="hidden sm:inline">Guided Mode</span>
+              <span className="hidden sm:inline">Guided</span>
             </button>
             <button
               onClick={() => {
@@ -243,32 +243,32 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
                 setShowHint(false);
                 setShowSolution(false);
               }}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
                 learningMode === 'recall'
-                  ? 'bg-amber-500 text-black font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-amber-500/15 text-amber-400 font-semibold'
+                  : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               <EyeOff size={13} />
-              <span className="hidden sm:inline">Blind Recall</span>
+              <span className="hidden sm:inline">Recall</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Two-Column Layout */}
-      <div className="flex-1 p-3 sm:p-5 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <div className="flex-1 p-4 sm:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Chessboard & Move Ribbon (7 cols) */}
         <div className="lg:col-span-7 flex flex-col items-center space-y-3">
           {/* Target Opening Selector Header */}
-          <div className="w-full bg-surface border border-surface-border rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-sm">
-            <div className="flex items-center space-x-2 min-w-0">
-              <ShieldAlert className="text-amber-400 shrink-0" size={20} />
+          <div className="w-full bg-surface rounded-2xl p-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <ShieldAlert className="text-amber-400 shrink-0" size={18} />
               <div className="min-w-0">
-                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                  Defending Against
+                <span className="text-xs text-slate-500 block">
+                  Defending against
                 </span>
-                <span className="font-bold text-slate-100 text-sm truncate block">
+                <span className="font-medium text-slate-100 text-sm truncate block">
                   {guide.targetOpeningName}
                 </span>
               </div>
@@ -283,7 +283,7 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
                   resetExercise(found);
                 }
               }}
-              className="px-3 py-1.5 rounded-xl bg-surface-elevated border border-surface-border text-xs text-slate-200 font-semibold focus:outline-none focus:ring-1 focus:ring-accent"
+              className="px-3 py-1.5 rounded-xl bg-surface-elevated text-xs text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-accent/40"
             >
               {allGuides.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -313,13 +313,13 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
           </div>
 
           {/* Solution Ribbon & Controls */}
-          <div className="w-full max-w-[500px] bg-surface border border-surface-border rounded-xl p-3 flex items-center justify-between gap-2">
+          <div className="w-full max-w-[500px] bg-surface rounded-2xl p-4 flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-                {isDefenderTurn ? `Your Turn (${defendingColor})` : 'Opponent Move'}
+              <span className="text-xs text-slate-500 block mb-0.5">
+                {isDefenderTurn ? `Your turn (${defendingColor})` : 'Opponent move'}
               </span>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-sm text-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm text-slate-200">
                   {learningMode === 'guided' || showSolution
                     ? `Play ${expectedMoveSan}`
                     : isDefenderTurn
@@ -329,19 +329,19 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center space-x-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               {learningMode === 'recall' && !showSolution && !isComplete && (
                 <>
                   <button
                     onClick={() => setShowHint(true)}
-                    className="py-1.5 px-2.5 rounded-lg bg-surface-elevated hover:bg-surface-border text-amber-300 border border-surface-border text-xs font-semibold transition flex items-center space-x-1"
+                    className="py-1.5 px-2.5 rounded-xl bg-surface-elevated hover:bg-surface-hover text-amber-300 text-xs font-medium transition flex items-center gap-1"
                   >
                     <Lightbulb size={13} />
                     <span>Hint</span>
                   </button>
                   <button
                     onClick={() => setShowSolution(true)}
-                    className="py-1.5 px-2.5 rounded-lg bg-surface-elevated hover:bg-surface-border text-slate-300 border border-surface-border text-xs font-semibold transition flex items-center space-x-1"
+                    className="py-1.5 px-2.5 rounded-xl bg-surface-elevated hover:bg-surface-hover text-slate-300 text-xs font-medium transition flex items-center gap-1"
                   >
                     <Eye size={13} />
                     <span>Show</span>
@@ -351,10 +351,10 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
 
               <button
                 onClick={() => resetExercise(selectedItem)}
-                className="p-2 rounded-lg bg-surface-elevated hover:bg-surface-border text-slate-400 hover:text-white border border-surface-border transition"
+                className="p-2 rounded-xl bg-surface-elevated hover:bg-surface-hover text-slate-400 hover:text-white transition"
                 title="Reset Position"
               >
-                <RotateCcw size={15} />
+                <RotateCcw size={14} />
               </button>
             </div>
           </div>
@@ -362,10 +362,10 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
           {/* Feedback Banner */}
           {feedbackMessage && (
             <div
-              className={`w-full max-w-[500px] p-3 rounded-xl border text-xs font-medium transition animate-in fade-in duration-200 ${
+              className={`w-full max-w-[500px] p-3.5 rounded-2xl text-xs font-medium transition animate-in fade-in duration-200 ${
                 isSuccess
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                  : 'bg-rose-500/15 border-rose-500/40 text-rose-300'
+                  ? 'bg-emerald-500/10 text-emerald-300'
+                  : 'bg-rose-500/10 text-rose-300'
               }`}
             >
               {feedbackMessage}
@@ -374,40 +374,40 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
         </div>
 
         {/* Right Column: Strategic Threat Analysis & Plan (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="lg:col-span-5 space-y-3">
           {/* Guide Summary Card */}
-          <div className="bg-surface border border-surface-border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+          <div className="bg-surface rounded-2xl p-5 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-medium text-slate-400">
                 Recommended Defense
               </span>
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
                   guide.isRefutation
-                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                    : 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-sky-500/10 text-sky-400'
                 }`}
               >
-                {guide.isRefutation ? 'Direct Refutation' : 'Solid Neutralization'}
+                {guide.isRefutation ? 'Direct Refutation' : 'Neutralization'}
               </span>
             </div>
 
-            <h3 className="text-base font-bold text-slate-100">
+            <h3 className="text-sm font-semibold text-slate-100">
               {guide.recommendedResponseName}
             </h3>
 
-            <p className="text-xs text-slate-300 leading-relaxed">{guide.explanation}</p>
+            <p className="text-xs text-slate-400 leading-relaxed">{guide.explanation}</p>
           </div>
 
           {/* Opponent's Threats Card */}
-          <div className="bg-surface border border-surface-border rounded-2xl p-4 sm:p-5 shadow-sm space-y-2.5">
-            <div className="flex items-center space-x-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
-              <AlertTriangle size={15} />
+          <div className="bg-surface rounded-2xl p-5 space-y-2">
+            <div className="flex items-center gap-2 text-rose-400 font-medium text-xs">
+              <AlertTriangle size={14} />
               <span>Opponent’s Main Threats</span>
             </div>
-            <ul className="space-y-1.5 text-xs text-slate-300">
+            <ul className="space-y-1.5 text-xs text-slate-400">
               {guide.opponentThreats.map((threat, idx) => (
-                <li key={idx} className="flex items-start space-x-2">
+                <li key={idx} className="flex items-start gap-2">
                   <span className="text-rose-400 font-bold">•</span>
                   <span>{threat}</span>
                 </li>
@@ -416,26 +416,26 @@ export const AntiOpeningTrainerView: React.FC<AntiOpeningTrainerViewProps> = ({
           </div>
 
           {/* Defender's Strategic Plan Card */}
-          <div className="bg-surface border border-surface-border rounded-2xl p-4 sm:p-5 shadow-sm space-y-2.5">
-            <div className="flex items-center space-x-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-              <ShieldCheck size={15} />
+          <div className="bg-surface rounded-2xl p-5 space-y-2">
+            <div className="flex items-center gap-2 text-emerald-400 font-medium text-xs">
+              <ShieldCheck size={14} />
               <span>Recommended Positional Plan</span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               {guide.positionalPlan}
             </p>
           </div>
 
           {/* Common Mistakes to Avoid */}
-          <div className="bg-surface border border-surface-border rounded-2xl p-4 sm:p-5 shadow-sm space-y-2.5">
-            <div className="flex items-center space-x-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-              <HelpCircle size={15} />
+          <div className="bg-surface rounded-2xl p-5 space-y-2">
+            <div className="flex items-center gap-2 text-amber-400 font-medium text-xs">
+              <HelpCircle size={14} />
               <span>Common Defender Mistakes</span>
             </div>
-            <ul className="space-y-1.5 text-xs text-slate-300">
+            <ul className="space-y-1.5 text-xs text-slate-400">
               {guide.commonDefenderMistakes.map((mistake, idx) => (
-                <li key={idx} className="flex items-start space-x-2">
-                  <span className="text-amber-400 font-bold">⚠</span>
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-amber-400 font-bold">•</span>
                   <span>{mistake}</span>
                 </li>
               ))}
